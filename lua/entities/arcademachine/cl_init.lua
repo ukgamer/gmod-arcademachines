@@ -93,7 +93,9 @@ function ENT:Think()
 
     if self.Active and self.Game then
         if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
-            if self:GetPlayer():KeyReleased(IN_WALK) then
+            local pressed = input.LookupBinding("+walk") and self:GetPlayer():KeyDown(IN_WALK) or input.IsKeyDown(KEY_LALT)
+
+            if pressed then
                 if not PressedScore then
                     net.Start("arcademachine_insertcoin")
                     net.SendToServer()
