@@ -127,6 +127,10 @@ function ENT:Draw()
     self:UpdateScreen()
 end
 
+function ENT:OnBlockerCreated(name, old, new)
+    new.RenderOverride = function() end
+end
+
 -- Isn't called when player becomes nil...
 function ENT:OnPlayerChange(name, old, new)
     if not self.Game then return end

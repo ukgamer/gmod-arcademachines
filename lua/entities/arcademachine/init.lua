@@ -26,7 +26,7 @@ end
 concommand.Add("arcademachine_addcsgamefiles", AddCSGameFiles)
 AddCSGameFiles()
 
-ENT.CoinCost = 100
+ENT.MSCoinCost = 100
 
 function ENT:SpawnFunction(ply, tr)
     if (!tr.Hit) then return end
@@ -77,10 +77,25 @@ function ENT:Initialize()
     seat:SetNotSolid(true)
     self:DeleteOnRemove(seat)
 
+    -- Blocker
+    local blocker = ents.Create("prop_physics")
+    blocker:SetModel("models/hunter/blocks/cube025x025x025.mdl")
+    blocker:SetParent(self)
+    blocker:SetLocalPos(Vector(30, 0, -7))
+    blocker:SetRenderMode(RENDERMODE_NONE)
+    blocker:SetMoveType(MOVETYPE_NONE)
+    blocker:DrawShadow(false)
+    blocker:Spawn()
+    blocker:SetNotSolid(true)
+    self:DeleteOnRemove(blocker)
+    self.BlockerInitialized = false
+
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
+        self:SetBlocker(blocker)
         self:SetOwner(nil)
         seat:SetOwner(self:GetOwner())
+        blocker:SetOwner(self:GetOwner())
     end)
 end
 
@@ -100,7 +115,14 @@ function ENT:Use(activator, caller)
     if not IsValid(self:GetPlayer()) then
         self:SetPlayer(activator)
         self:GetPlayer():EnterVehicle(self:GetSeat())
-        activator:ChatPrint("This machine takes " .. self.CoinCost .. " Metastruct coin(s) at a time.")
+
+        if not self.BlockerInitialized then
+            self:GetBlocker():PhysicsInitBox(Vector(-16, -16, 0), Vector(16, 16, 72))
+            self.BlockerInitialized = true
+        end
+        self:GetBlocker():SetNotSolid(false)
+
+        activator:ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
         activator:ChatPrint("Press your WALK key (ALT by default) to insert coins or USE (E by default) to exit (you will lose any ununsed coins!).")
     else
         activator:ChatPrint("Someone is already using this arcade machine.")
@@ -112,7 +134,9 @@ function ENT:OnRemove()
 end
 
 hook.Add("PlayerLeaveVehicle", "arcademachine_leavevehicle", function(ply, veh)
-    if not veh.ArcadeMachine then return end
+    if not IsValid(veh.ArcadeMachine) or not IsValid(veh.ArcadeMachine:GetBlocker()) then return end
+
+    veh.ArcadeMachine:GetBlocker():SetNotSolid(true)
 
     ply:SetPos(veh:GetPos() + veh:GetForward() * -10 + veh:GetUp() * 10)
     ply:SetEyeAngles((veh.ArcadeMachine:GetPos() - ply:EyePos()):Angle())
@@ -125,8 +149,8 @@ net.Receive("arcademachine_insertcoin", function(len, ply)
     if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
 
     if ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
-        if ply:GetCoins() > veh.ArcadeMachine.CoinCost then
-            ply:TakeCoins(veh.ArcadeMachine.CoinCost, "Arcade")
+        if ply:GetCoins() > veh.ArcadeMachine.MSCoinCost then
+            ply:TakeCoins(veh.ArcadeMachine.MSCoinCost, "Arcade")
         else
             ply:ChatPrint("You don't have enough coins!")
             return
