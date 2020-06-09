@@ -40,3 +40,7 @@ function ENT:SetupDataTables()
     self:NetworkVarNotify("Seat", self.OnSeatCreated)
     self:NetworkVarNotify("Blocker", self.OnBlockerCreated)
 end
+
+function ENT:CanProperty()
+    return false
+end
