@@ -44,7 +44,8 @@ function ENT:Initialize()
         "UnlitGeneric",
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
-            ["$model"] = 1
+            ["$model"] = 1,
+            ["$nodecals"] = 1
         }
     )
 
