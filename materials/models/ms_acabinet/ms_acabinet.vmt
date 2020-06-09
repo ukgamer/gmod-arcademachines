@@ -1,0 +1,5 @@
+VertexLitGeneric
+{
+	$basetexture "models/ms_acabinet/ms_acabinet"
+	$surfaceprop Metal
+}

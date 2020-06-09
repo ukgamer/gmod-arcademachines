@@ -1,0 +1,9 @@
+VertexLitGeneric
+{
+	$basetexture "models/ms_acabinet/ms_acabinet_screen"
+	$surfaceprop Glass
+
+	$envmap "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.30 0.30 0.30]"
+}
