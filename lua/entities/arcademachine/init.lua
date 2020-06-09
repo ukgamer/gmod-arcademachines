@@ -120,31 +120,31 @@ end)
 
 util.AddNetworkString("arcademachine_insertcoin")
 net.Receive("arcademachine_insertcoin", function(len, ply)
-    local machine = net.ReadEntity()
+    local veh = ply:GetVehicle()
 
-    if not IsValid(machine) then return end
+    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
 
-    if ply.TakeCoins and machine:GetPlayer() == ply then
-        if ply:GetCoins() > machine.CoinCost then
-            ply:TakeCoins(machine.CoinCost, "Arcade")
+    if ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
+        if ply:GetCoins() > veh.ArcadeMachine.CoinCost then
+            ply:TakeCoins(veh.ArcadeMachine.CoinCost, "Arcade")
         else
             ply:ChatPrint("You don't have enough coins!")
             return
         end
     end
 
-    machine:SetCoins(machine:GetCoins() + 1)
+    veh.ArcadeMachine:SetCoins(veh.ArcadeMachine:GetCoins() + 1)
 end)
 
 util.AddNetworkString("arcademachine_takecoins")
 net.Receive("arcademachine_takecoins", function(len, ply)
-    local machine = net.ReadEntity()
+    local veh = ply:GetVehicle()
 
-    if not IsValid(machine) or machine:GetPlayer() ~= ply then return end
+    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
 
     local amount = net.ReadInt(16)
 
-    if not amount or amount > machine:GetCoins() then return end
+    if not amount or amount > veh.ArcadeMachine:GetCoins() then return end
 
-    machine:SetCoins(machine:GetCoins() - amount)
+    veh.ArcadeMachine:SetCoins(veh.ArcadeMachine:GetCoins() - amount)
 end)

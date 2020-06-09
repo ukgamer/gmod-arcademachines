@@ -95,7 +95,6 @@ function ENT:Think()
             if self:GetPlayer():KeyReleased(IN_WALK) then
                 if not PressedScore then
                     net.Start("arcademachine_insertcoin")
-                        net.WriteEntity(self)
                     net.SendToServer()
     
                     PressedScore = true
@@ -218,7 +217,6 @@ function ENT:TakeCoins(amount)
     if not amount or amount > self:GetCoins() then return end
 
     net.Start("arcademachine_takecoins")
-        net.WriteEntity(self)
         net.WriteInt(amount, 16)
     net.SendToServer()
 end

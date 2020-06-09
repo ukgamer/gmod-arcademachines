@@ -9,10 +9,9 @@ local theMachine = nil
 local thePlayer = nil
 local x, y, w, h = 0, 0, 0, 0
 local mw, mh = 0, 0
-local isPlaying = false
 local now = RealTime()
 local gameOverAt = 0
-local gameState = 0
+local gameState = 0 -- 0 = Attract mode 1 = Playing 2 = Waiting for coins update
 
 -- REQUIRED
 function GAME:Init(ent, screenWidth, screenHeight, marqueeWidth, marqueeHeight)
@@ -29,11 +28,15 @@ function GAME:Destroy()
     
 end
 
--- Custom function
+-- Custom functions
 function GAME:Start()
     x, y = w / 2, h / 2
     gameOverAt = now + 10
     gameState = 1
+end
+
+function GAME:Stop()
+    gameState = 0
 end
 
 -- REQUIRED
@@ -42,30 +45,35 @@ end
 function GAME:Update()
     now = RealTime()
 
-    isPlaying = IsValid(thePlayer) and theMachine:GetCoins() > 0
+    if gameState == 0 then return end
+    if not IsValid(thePlayer) then
+        self:Stop()
+        return
+    end
 
-    if not isPlaying then return end
-
-    if now >= gameOverAt and gameState == 1 then
+    if now >= gameOverAt and gameState ~= 2 then
+        -- Taking coins takes time to be processed by the server and for
+        -- OnCoinsLost to be called, so wait until the coin amount has changed
+        -- to know whether to end the game/lose a life/etc.
         theMachine:TakeCoins(1)
-        gameState = 0
+        gameState = 2
         return
     end
 
     if thePlayer:KeyDown(IN_MOVELEFT) then
-        x = x > 5 and x - 1 or x
+        x = x > 5 and x - (100 * FrameTime()) or x
     end
 
     if thePlayer:KeyDown(IN_MOVERIGHT) then
-        x = x < w - 5 and x + 1 or x
+        x = x < w - 5 and x + (100 * FrameTime()) or x
     end
 
     if thePlayer:KeyDown(IN_BACK) then
-        y = y < h - 5 and y + 1 or y
+        y = y < h - 5 and y + (100 * FrameTime()) or y
     end
 
     if thePlayer:KeyDown(IN_FORWARD) then
-        y = y > 5 and y - 1 or y
+        y = y > 5 and y - (100 * FrameTime()) or y
     end
 end
 
@@ -85,7 +93,7 @@ end
 -- Called every frame while the local player is nearby
 -- The screen is cleared to black for you
 function GAME:Draw()
-    if not isPlaying then
+    if gameState == 0 then
         surface.SetDrawColor(HSVToColor(now * 50 % 360, 1, 0.5))
         surface.DrawRect(0, 0, w, h)
 
@@ -100,7 +108,7 @@ function GAME:Draw()
     surface.SetDrawColor(255, 0, 0, 255)
     surface.DrawRect(x - 10, y - 10, 20, 20)
 
-    local txt = "GAME OVER IN " .. math.floor(gameOverAt - now)
+    local txt = "GAME OVER IN " .. math.max(0, math.floor(gameOverAt - now))
 
     surface.SetFont("DermaLarge")
     local tw, th = surface.GetTextSize(txt)
@@ -143,6 +151,10 @@ end
 
 function GAME:OnCoinsLost(ply, old, new)
     if ply ~= LocalPlayer() then return end
+
+    if new == 0 then
+        self:Stop()
+    end
 
     if new > 0 then
         self:Start()
