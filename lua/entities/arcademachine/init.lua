@@ -122,7 +122,9 @@ function ENT:Use(activator, caller)
         end
         self:GetBlocker():SetNotSolid(false)
 
-        activator:ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
+        if self.MSCoinCost > 0 then
+            activator:ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
+        end
         activator:ChatPrint("Press your WALK key (ALT by default) to insert coins or USE (E by default) to exit (you will lose any ununsed coins!).")
     else
         activator:ChatPrint("Someone is already using this arcade machine.")
@@ -148,7 +150,7 @@ net.Receive("arcademachine_insertcoin", function(len, ply)
 
     if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
 
-    if ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
+    if veh.ArcadeMachine.MSCoinCost > 0 and ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
         if ply:GetCoins() > veh.ArcadeMachine.MSCoinCost then
             ply:TakeCoins(veh.ArcadeMachine.MSCoinCost, "Arcade")
         else
