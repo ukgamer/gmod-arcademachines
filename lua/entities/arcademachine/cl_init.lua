@@ -52,8 +52,12 @@ function ENT:Initialize()
     self.Entity:SetSubMaterial(4, "!ArcadeMachine_Screen_Material_" .. self:EntIndex())
     self.Entity:SetSubMaterial(3, "!ArcadeMachine_Marquee_Material_" .. self:EntIndex())
 
-    self.Active = self.Active
+    self.Active = self.Active or false
     self.Game = self.Game or nil
+
+    if self:GetCurrentGame() and not self.Game then
+        self:LoadGameFromFile(self:GetCurrentGame())
+    end
 
     self:UpdateMarquee()
     self:UpdateScreen()
@@ -200,7 +204,11 @@ end
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    self:SetGame(new == "" and "" or include("games/" .. new .. ".lua"))
+    self:LoadGameFromFile(new)
+end
+
+function ENT:LoadGameFromFile(filename)
+    self:SetGame(filename == "" and "" or include("games/" .. filename .. ".lua"))
 end
 
 function ENT:SetGame(game)
