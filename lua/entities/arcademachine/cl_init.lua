@@ -45,7 +45,7 @@ function ENT:Initialize()
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
             ["$model"] = 1,
-            ["$nodecals"] = 1
+            ["$nodecal"] = 1
         }
     )
 
