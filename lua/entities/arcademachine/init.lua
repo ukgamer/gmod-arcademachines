@@ -103,6 +103,7 @@ function ENT:Think()
     if not IsValid(self:GetPlayer()) or self:GetSeat():GetDriver() ~= self:GetPlayer() then
         self:SetPlayer(nil)
         self:SetCoins(0)
+        self:GetBlocker():SetNotSolid(true)
     end
 
     self:NextThink(CurTime() + 0.1)
