@@ -126,7 +126,7 @@ function ENT:Use(activator, caller)
         if self:GetPlayer().TakeCoins and self.MSCoinCost > 0 then
             self:GetPlayer():ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
         end
-        self:GetPlayer():ChatPrint("Press your WALK key (ALT by default) to insert coins or USE (E by default) to exit (you will lose any ununsed coins!).")
+        self:GetPlayer():ChatPrint("Press your WALK key (ALT by default) to insert coins, scroll wheel to zoom and USE (E by default) to exit (you will lose any ununsed coins!).")
     else
         activator:ChatPrint("Someone is already using this arcade machine.")
     end

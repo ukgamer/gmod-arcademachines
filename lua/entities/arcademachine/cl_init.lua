@@ -1,5 +1,7 @@
 include("shared.lua")
 
+local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
+
 local ScreenWidth = 512
 local ScreenHeight = 512
 local MarqueeWidth = 256
@@ -83,7 +85,7 @@ function ENT:Think()
         self.LastPlayer = nil
     end
 
-    if math.sqrt(LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos())) > self.MaxDist then
+    if LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
         if self.Active then
             self.Active = false
             self:OnLeftRange()
@@ -249,8 +251,34 @@ hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
 
     if not IsValid(machine) then return end
 
-    view.origin = veh:GetPos() + veh:GetUp() * (machine:GetBodygroup(0) == 0 and 64 or 72)
+    if machine:GetBodygroup(0) == 1 then
+        view.origin = veh:GetPos() + veh:GetRight() * -8 + veh:GetUp() * 72
+    else
+        view.origin = veh:GetPos() + veh:GetUp() * 64
+    end
+
+    view.fov = FOV:GetInt()
+
     return view
+end)
+
+hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
+    local veh = LocalPlayer():GetVehicle()
+    
+    if not IsValid(veh) then return end
+
+    local machine = veh.ArcadeMachine
+
+    if not IsValid(machine) then return end
+
+    local fov = FOV:GetInt()
+
+    if cmd:GetMouseWheel() < 0 and fov < 100 then
+        FOV:SetInt(fov + 2)
+    end
+    if cmd:GetMouseWheel() > 0 and fov > 40 then
+        FOV:SetInt(fov - 2)
+    end
 end)
 
 hook.Add("ScoreboardShow", "arcademachine_scoreboard", function()
