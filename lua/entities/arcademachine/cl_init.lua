@@ -7,6 +7,10 @@ local ScreenHeight = 512
 local MarqueeWidth = 256
 local MarqueeHeight = 80
 
+local PressedScore = false
+local PressedUse = false
+local HoldUseUntil = 0
+
 ENT.Initialized = false
 
 function ENT:Initialize()
@@ -70,8 +74,6 @@ function ENT:OnRemove()
         self.Game:Destroy()
     end
 end
-
-local PressedScore = false
 
 function ENT:Think()
     -- Work around init not being called on the client sometimes
@@ -278,6 +280,19 @@ hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
     end
     if cmd:GetMouseWheel() > 0 and fov > 40 then
         FOV:SetInt(fov - 2)
+    end
+
+    if bit.band(cmd:GetButtons(), IN_USE) ~= 0 then
+        if not PressedUse then
+            PressedUse = true
+            HoldUseUntil = RealTime() + 0.8
+        elseif RealTime() >= HoldUseUntil then
+            net.Start("arcademachine_leave")
+            net.SendToServer()
+            PressedUse = false
+        end
+    else
+        PressedUse = false
     end
 end)
 

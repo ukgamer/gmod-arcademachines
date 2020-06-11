@@ -97,6 +97,8 @@ function ENT:Initialize()
         seat:SetOwner(self:GetOwner())
         blocker:SetOwner(self:GetOwner())
     end)
+
+    self.CanLeaveVehicle = false
 end
 
 function ENT:Think()
@@ -116,6 +118,7 @@ function ENT:Use(activator, caller)
     if not IsValid(self:GetPlayer()) then
         self:SetPlayer(activator)
         self:GetPlayer():EnterVehicle(self:GetSeat())
+        self.CanLeaveVehicle = false
 
         if not self.BlockerInitialized then
             self:GetBlocker():PhysicsInitBox(Vector(-16, -16, 0), Vector(16, 16, 72))
@@ -126,7 +129,7 @@ function ENT:Use(activator, caller)
         if self:GetPlayer().TakeCoins and self.MSCoinCost > 0 then
             self:GetPlayer():ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
         end
-        self:GetPlayer():ChatPrint("Press your WALK key (ALT by default) to insert coins, scroll wheel to zoom and USE (E by default) to exit (you will lose any ununsed coins!).")
+        self:GetPlayer():ChatPrint("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
     else
         activator:ChatPrint("Someone is already using this arcade machine.")
     end
@@ -135,6 +138,24 @@ end
 function ENT:OnRemove()
 
 end
+
+-- To stop people accidentally tapping E and leaving, don't let them leave normally
+-- the client has to tell us in a net message that they really want to leave
+hook.Add("CanExitVehicle", "arcademachine_canexitvehicle", function(veh, ply)
+    if not veh.ArcadeMachine then return end
+
+    return veh.ArcadeMachine.CanLeaveVehicle
+end)
+
+util.AddNetworkString("arcademachine_leave")
+net.Receive("arcademachine_leave", function(len, ply)
+    local veh = ply:GetVehicle()
+
+    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
+
+    veh.ArcadeMachine.CanLeaveVehicle = true
+    ply:ExitVehicle()
+end)
 
 hook.Add("PlayerLeaveVehicle", "arcademachine_leavevehicle", function(ply, veh)
     if not IsValid(veh.ArcadeMachine) or not IsValid(veh.ArcadeMachine:GetBlocker()) then return end
