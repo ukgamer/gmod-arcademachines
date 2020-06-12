@@ -35,10 +35,10 @@ function ENT:SetupDataTables()
         self:NetworkVarNotify("Player", self.OnPlayerChange)
         self:NetworkVarNotify("CurrentGame", self.OnGameChange)
         self:NetworkVarNotify("Coins", self.OnCoinsChange)
+        self:NetworkVarNotify("Blocker", self.OnBlockerCreated)
     end
 
     self:NetworkVarNotify("Seat", self.OnSeatCreated)
-    self:NetworkVarNotify("Blocker", self.OnBlockerCreated)
 end
 
 function ENT:CanProperty()

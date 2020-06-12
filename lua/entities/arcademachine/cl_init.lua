@@ -87,6 +87,12 @@ function ENT:Think()
         self.LastPlayer = nil
     end
 
+    -- If we weren't nearby when the machine was spawned we won't get notified
+    -- when the seat was created so manually call OnSeatCreated
+    if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeMachine then
+        self:OnSeatCreated("Seat", self:GetSeat(), self:GetSeat())
+    end
+
     if LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
         if self.Active then
             self.Active = false
