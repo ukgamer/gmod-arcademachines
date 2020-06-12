@@ -1,27 +1,26 @@
--- You can call machine:SetGame(GAME) on the client to test your game
+--[[
+    You can call machine:SetGame(GAME) on the client to test your game
+    Available globals:
+    MACHINE
+    SCREEN_WIDTH
+    SCREEN_HEIGHT
+    MARQUEE_WIDTH
+    MARQUEE_HEIGHT
+--]]
 
 GAME = {}
 
 -- REQUIRED
 GAME.Name = "Test Game"
 
-local theMachine = nil
 local thePlayer = nil
-local x, y, w, h = 0, 0, 0, 0
-local mw, mh = 0, 0
+local x, y = 0, 0
 local now = RealTime()
 local gameOverAt = 0
 local gameState = 0 -- 0 = Attract mode 1 = Playing 2 = Waiting for coins update
 
--- REQUIRED
-function GAME:Init(ent, screenWidth, screenHeight, marqueeWidth, marqueeHeight)
-    theMachine = ent
+function GAME:Init()
 
-    w = screenWidth
-    h = screenHeight
-
-    mw = marqueeWidth
-    mh = marqueeHeight
 end
 
 function GAME:Destroy()
@@ -30,7 +29,7 @@ end
 
 -- Custom functions
 function GAME:Start()
-    x, y = w / 2, h / 2
+    x, y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
     gameOverAt = now + 10
     gameState = 1
 end
@@ -55,7 +54,7 @@ function GAME:Update()
         -- Taking coins takes time to be processed by the server and for
         -- OnCoinsLost to be called, so wait until the coin amount has changed
         -- to know whether to end the game/lose a life/etc.
-        theMachine:TakeCoins(1)
+        MACHINE:TakeCoins(1)
         gameState = 2
         return
     end
@@ -65,11 +64,11 @@ function GAME:Update()
     end
 
     if thePlayer:KeyDown(IN_MOVERIGHT) then
-        x = x < w - 5 and x + (100 * FrameTime()) or x
+        x = x < SCREEN_WIDTH - 5 and x + (100 * FrameTime()) or x
     end
 
     if thePlayer:KeyDown(IN_BACK) then
-        y = y < h - 5 and y + (100 * FrameTime()) or y
+        y = y < SCREEN_HEIGHT - 5 and y + (100 * FrameTime()) or y
     end
 
     if thePlayer:KeyDown(IN_FORWARD) then
@@ -80,12 +79,12 @@ end
 -- Called once on init
 function GAME:DrawMarquee()
     surface.SetDrawColor(0, 0, 255, 255)
-    surface.DrawRect(0, 0, mw, mh)
+    surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 
     surface.SetFont("DermaLarge")
     local tw, th = surface.GetTextSize("Test Game!")
     surface.SetTextColor(255, 255, 255, 255)
-    surface.SetTextPos((mw / 2) - (tw / 2), (mh / 2) - (th / 2))
+    surface.SetTextPos((MARQUEE_WIDTH / 2) - (tw / 2), (MARQUEE_HEIGHT / 2) - (th / 2))
     surface.DrawText("Test Game!")
 end
 
@@ -95,12 +94,12 @@ end
 function GAME:Draw()
     if gameState == 0 then
         surface.SetDrawColor(HSVToColor(now * 50 % 360, 1, 0.5))
-        surface.DrawRect(0, 0, w, h)
+        surface.DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
 
         surface.SetFont("DermaLarge")
         local tw, th = surface.GetTextSize("INSERT COIN")
         surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
-        surface.SetTextPos((w / 2) - (tw / 2), h - (th * 2))
+        surface.SetTextPos((SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2))
         surface.DrawText("INSERT COIN")
         return
     end
@@ -113,14 +112,14 @@ function GAME:Draw()
     surface.SetFont("DermaLarge")
     local tw, th = surface.GetTextSize(txt)
     surface.SetTextColor(255, 255, 255, 255)
-    surface.SetTextPos((w / 2) - tw / 2, (th * 2))
+    surface.SetTextPos((SCREEN_WIDTH / 2) - tw / 2, (th * 2))
     surface.DrawText(txt)
 
     surface.SetFont("DermaDefault")
-    local tw, th = surface.GetTextSize(theMachine:GetCoins() .. " COIN(S)")
+    local tw, th = surface.GetTextSize(MACHINE:GetCoins() .. " COIN(S)")
     surface.SetTextColor(255, 255, 255, 255)
-    surface.SetTextPos(10, h - (th * 2))
-    surface.DrawText(theMachine:GetCoins() .. " COIN(S)")
+    surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
+    surface.DrawText(MACHINE:GetCoins() .. " COIN(S)")
 end
 
 -- REQUIRED
@@ -140,7 +139,7 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    theMachine:EmitSound("garrysmod/content_downloaded.wav", 50)
+    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
 
     if ply ~= LocalPlayer() then return end
 

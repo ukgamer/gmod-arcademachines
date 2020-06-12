@@ -60,9 +60,10 @@ function ENT:Initialize()
 
     self.Active = self.Active or false
     self.Game = self.Game or nil
+    self.LoadedSounds = {}
 
     if self:GetCurrentGame() and not self.Game then
-        self:LoadGameFromFile(self:GetCurrentGame())
+        self:SetGame(self:GetCurrentGame())
     end
 
     self:UpdateMarquee()
@@ -119,6 +120,10 @@ function ENT:Think()
             else
                 PressedScore = false
             end
+        end
+
+        for _, v in ipairs(self.LoadedSounds) do
+            v:SetPos(self:GetPos())
         end
 
         self.Game:Update()
@@ -214,11 +219,25 @@ end
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    self:LoadGameFromFile(new)
+    self:SetGame(new)
 end
 
-function ENT:LoadGameFromFile(filename)
-    self:SetGame(filename == "" and "" or include("games/" .. filename .. ".lua"))
+local function WrappedInclusion(path, upvalues)
+    local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
+    
+    if istable(path) then
+        for _, val in pairs(path) do
+            if isfunction(val) then
+                setfenv(val, gameMeta)
+            end
+        end
+
+        return path
+    else
+        local gameFunc = CompileFile("games/" .. path .. ".lua")
+        setfenv(gameFunc, gameMeta)
+        return gameFunc()
+    end
 end
 
 function ENT:SetGame(game)
@@ -229,9 +248,19 @@ function ENT:SetGame(game)
         self.Game = nil
     end
 
+    table.Empty(self.LoadedSounds)
+
     if game and game ~= "" then
-        self.Game = game
-        self.Game:Init(self, ScreenWidth, ScreenHeight, MarqueeWidth, MarqueeHeight)
+        self.Game = WrappedInclusion(game, {
+            MACHINE = self,
+            SCREEN_WIDTH = ScreenWidth,
+            SCREEN_HEIGHT = ScreenHeight,
+            MARQUEE_WIDTH = MarqueeWidth,
+            MARQUEE_HEIGHT = MarqueeHeight
+        })
+        if self.Game.Init then
+            self.Game:Init()
+        end
     end
 
     self:UpdateMarquee()
@@ -244,6 +273,21 @@ function ENT:TakeCoins(amount)
     net.Start("arcademachine_takecoins")
         net.WriteInt(amount, 16)
     net.SendToServer()
+end
+
+function ENT:LoadSound(url, key, callback)
+    if IsValid(self.LoadedSounds[key]) then return end
+    sound.PlayURL(url, "3d noplay noblock", function(snd, err, errstr)
+        if not IsValid(snd) then
+            Error("Failed to load sound " .. key .. ": ", errstr)
+            return
+        end
+
+        snd:SetPos(self:GetPos())
+        self.LoadedSounds[key] = snd
+
+        if callback then callback(snd) end
+    end)
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
