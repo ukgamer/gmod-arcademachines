@@ -89,9 +89,12 @@ function ENT:Think()
     end
 
     -- If we weren't nearby when the machine was spawned we won't get notified
-    -- when the seat was created so manually call OnSeatCreated
+    -- when the seat/blocker was created so manually call
     if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeMachine then
-        self:OnSeatCreated("Seat", self:GetSeat(), self:GetSeat())
+        self:OnSeatCreated("Seat", nil, self:GetSeat())
+    end
+    if IsValid(self:GetBlocker()) and not self:GetBlocker().RenderOverride then
+        self:OnBlockerCreated("Blocker", nil, self:GetBlocker())
     end
 
     if LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
@@ -122,8 +125,8 @@ function ENT:Think()
             end
         end
 
-        for _, v in ipairs(self.LoadedSounds) do
-            v:SetPos(self:GetPos())
+        for _, v in pairs(self.LoadedSounds) do
+            v:SetPos(self.Entity:GetPos())
         end
 
         self.Game:Update()
@@ -283,7 +286,7 @@ function ENT:LoadSound(url, key, callback)
             return
         end
 
-        snd:SetPos(self:GetPos())
+        snd:SetPos(self.Entity:GetPos())
         self.LoadedSounds[key] = snd
 
         if callback then callback(snd) end
