@@ -74,6 +74,10 @@ function ENT:OnRemove()
     if self.Game and self.Game.Destroy then
         self.Game:Destroy()
     end
+
+    for k, v in pairs(self.LoadedSounds) do
+        v:Stop()
+    end
 end
 
 function ENT:Think()
@@ -251,6 +255,9 @@ function ENT:SetGame(game)
         self.Game = nil
     end
 
+    for k, v in pairs(self.LoadedSounds) do
+        v:Stop()
+    end
     table.Empty(self.LoadedSounds)
 
     if game and game ~= "" then
