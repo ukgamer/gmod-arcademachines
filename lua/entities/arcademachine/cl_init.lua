@@ -237,7 +237,7 @@ local function WrappedInclusion(path, upvalues)
 
         return path
     else
-        local gameFunc = CompileFile("games/" .. path .. ".lua")
+        local gameFunc = (isfunction(path) and path or CompileFile("games/" .. path .. ".lua"))
         setfenv(gameFunc, gameMeta)
         return gameFunc()
     end
@@ -254,13 +254,17 @@ function ENT:SetGame(game)
     table.Empty(self.LoadedSounds)
 
     if game and game ~= "" then
-        self.Game = WrappedInclusion(game, {
-            MACHINE = self,
-            SCREEN_WIDTH = ScreenWidth,
-            SCREEN_HEIGHT = ScreenHeight,
-            MARQUEE_WIDTH = MarqueeWidth,
-            MARQUEE_HEIGHT = MarqueeHeight
-        })
+        self.Game = WrappedInclusion(
+            game,
+            {
+                MACHINE = self,
+                SCREEN_WIDTH = ScreenWidth,
+                SCREEN_HEIGHT = ScreenHeight,
+                MARQUEE_WIDTH = MarqueeWidth,
+                MARQUEE_HEIGHT = MarqueeHeight,
+                COLLISION = include("lib/collision.lua")
+            }
+        )
         if self.Game.Init then
             self.Game:Init()
         end

@@ -6,6 +6,24 @@
     SCREEN_HEIGHT
     MARQUEE_WIDTH
     MARQUEE_HEIGHT
+
+    COLLISION:IsColliding(objA, objB)
+    objects should look like {
+        pos = Vector(),
+        ang = Vector(),
+        collision = {
+            type = COLLISION.COLLISION_TYPE_BOX, -- COLLISION_TYPE_BOX, COLLISION_TYPE_CIRCLE, COLLISION_TYPE_POLY
+            width = 5, -- if COLLISION_TYPE_BOX
+            height = 5, -- if COLLISION_TYPE_BOX
+            radius = 5, -- if COLLISION_TYPE_CIRCLE
+            vertices = { -- if COLLISION_TYPE_POLY
+                Vector(),
+                Vector(),
+                Vector(),
+                ...
+            }
+        }
+    }
 --]]
 
 GAME = {}
