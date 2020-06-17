@@ -22,6 +22,11 @@ local function AddCSGameFiles()
     for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
         AddCSLuaFile(ext .. file)
     end
+
+    ext = "lib/"
+    for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
+        AddCSLuaFile(ext .. file)
+    end
 end
 concommand.Add("arcademachine_addcsgamefiles", AddCSGameFiles)
 AddCSGameFiles()
