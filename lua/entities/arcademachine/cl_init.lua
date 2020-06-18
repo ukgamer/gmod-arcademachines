@@ -119,10 +119,17 @@ function ENT:Think()
 
             if pressed then
                 if not PressedScore then
+                    PressedScore = true
+
+                    local cost = self:GetMSCoinCost()
+
+                    if cost > 0 and LocalPlayer().GetCoins and LocalPlayer():GetCoins() < cost then
+                        notification.AddLegacy("You don't have enough coins!", NOTIFY_ERROR, 5)
+                        return
+                    end
+
                     net.Start("arcademachine_insertcoin")
                     net.SendToServer()
-    
-                    PressedScore = true
                 end
             else
                 PressedScore = false
@@ -167,6 +174,15 @@ function ENT:OnPlayerChange(name, old, new)
         if old ~= new then
             self.Game:OnStartPlaying(new)
             self.LastPlayer = new
+
+            local cost = self:GetMSCoinCost()
+
+            if new == LocalPlayer() then
+                if cost > 0 then
+                    notification.AddLegacy("This machine takes " .. cost .. " Metastruct coin(s) at a time.", NOTIFY_HINT, 10)
+                end
+                notification.AddLegacy("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).", NOTIFY_HINT, 10)
+            end
         end
     else
         self.Game:OnStopPlaying(old)
@@ -231,20 +247,10 @@ end
 
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
-    
-    if istable(path) then
-        for _, val in pairs(path) do
-            if isfunction(val) then
-                setfenv(val, gameMeta)
-            end
-        end
 
-        return path
-    else
-        local gameFunc = (isfunction(path) and path or CompileFile("games/" .. path .. ".lua"))
-        setfenv(gameFunc, gameMeta)
-        return gameFunc()
-    end
+    local gameFunc = (isfunction(path) and path or CompileFile("games/" .. path .. ".lua"))
+    setfenv(gameFunc, gameMeta)
+    return gameFunc()
 end
 
 function ENT:SetGame(game)

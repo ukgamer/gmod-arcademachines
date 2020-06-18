@@ -31,8 +31,6 @@ end
 concommand.Add("arcademachine_addcsgamefiles", AddCSGameFiles)
 AddCSGameFiles()
 
-ENT.MSCoinCost = 100
-
 function ENT:SpawnFunction(ply, tr)
     if (!tr.Hit) then return end
     
@@ -95,6 +93,10 @@ function ENT:Initialize()
     self:DeleteOnRemove(blocker)
     self.BlockerInitialized = false
 
+    if _R.Player.TakeCoins then
+        self:SetMSCoinCost(100)
+    end
+
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
         self:SetBlocker(blocker)
@@ -130,13 +132,6 @@ function ENT:Use(activator, caller)
             self.BlockerInitialized = true
         end
         self:GetBlocker():SetNotSolid(false)
-
-        if self:GetPlayer().TakeCoins and self.MSCoinCost > 0 then
-            self:GetPlayer():ChatPrint("This machine takes " .. self.MSCoinCost .. " Metastruct coin(s) at a time.")
-        end
-        self:GetPlayer():ChatPrint("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
-    else
-        activator:ChatPrint("Someone is already using this arcade machine.")
     end
 end
 
@@ -177,11 +172,12 @@ net.Receive("arcademachine_insertcoin", function(len, ply)
 
     if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
 
-    if veh.ArcadeMachine.MSCoinCost > 0 and ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
-        if ply:GetCoins() > veh.ArcadeMachine.MSCoinCost then
-            ply:TakeCoins(veh.ArcadeMachine.MSCoinCost, "Arcade")
+    local cost = veh.ArcadeMachine:GetMSCoinCost()
+
+    if cost > 0 and ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
+        if ply:GetCoins() > cost then
+            ply:TakeCoins(cost, "Arcade")
         else
-            ply:ChatPrint("You don't have enough coins!")
             return
         end
     end
