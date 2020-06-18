@@ -1,6 +1,8 @@
 include("shared.lua")
 
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
+local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
+local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
 
 local ScreenWidth = 512
 local ScreenHeight = 512
@@ -10,6 +12,9 @@ local MarqueeHeight = 80
 local PressedScore = false
 local PressedUse = false
 local HoldUseUntil = 0
+
+local PACState = nil
+local OutfitterState = nil
 
 ENT.Initialized = false
 
@@ -89,6 +94,11 @@ function ENT:Think()
     -- Workaround network var notify not triggering for null entity
     if self.Game and self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
         self.Game:OnStopPlaying(self.LastPlayer)
+        
+        if self.LastPlayer == LocalPlayer() then
+            self:OnLocalPlayerLeft()
+        end
+
         self.LastPlayer = nil
     end
 
@@ -175,17 +185,50 @@ function ENT:OnPlayerChange(name, old, new)
             self.Game:OnStartPlaying(new)
             self.LastPlayer = new
 
-            local cost = self:GetMSCoinCost()
-
             if new == LocalPlayer() then
-                if cost > 0 then
-                    notification.AddLegacy("This machine takes " .. cost .. " Metastruct coin(s) at a time.", NOTIFY_HINT, 10)
-                end
-                notification.AddLegacy("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).", NOTIFY_HINT, 10)
+                self:OnLocalPlayerEntered()
             end
         end
     else
         self.Game:OnStopPlaying(old)
+
+        if old == LocalPlayer() then
+            self:OnLocalPlayerLeft()
+        end
+    end
+end
+
+function ENT:OnLocalPlayerEntered()
+    local cost = self:GetMSCoinCost()
+
+    if cost > 0 then
+        notification.AddLegacy("This machine takes " .. cost .. " Metastruct coin(s) at a time.", NOTIFY_HINT, 10)
+    end
+
+    notification.AddLegacy("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).", NOTIFY_HINT, 10)
+
+    if DisablePAC:GetBool() then
+        PACState = cvars.Bool("pac_enable", nil)
+        if PACState ~= nil then
+            LocalPlayer():ConCommand("pac_enable 0")
+        end
+    end
+
+    if DisableOutfitter:GetBool() then
+        OutfitterState = cvars.Bool("outfitter_enabled", nil)
+        if OutfitterState ~= nil then
+            LocalPlayer():ConCommand("outfitter_enabled 0")
+        end
+    end
+end
+
+function ENT:OnLocalPlayerLeft()
+    if DisablePAC:GetBool() and PACState ~= nil then
+        LocalPlayer():ConCommand("pac_enable " .. (PACState and "1" or "0"))
+    end
+
+    if DisableOutfitter:GetBool() and OutfitterState ~= nil then
+        LocalPlayer():ConCommand("outfitter_enabled " .. (OutfitterState and "1" or "0"))
     end
 end
 

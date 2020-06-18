@@ -37,6 +37,7 @@ function ENT:SpawnFunction(ply, tr)
     local ent = ents.Create(self.Class)
     ent:SetPos(tr.HitPos)
     ent:Spawn()
+    ent:SetAngles(Angle(0, (ply:GetPos() - tr.HitPos):Angle().y, 0))
     ent:Activate()
     
     ent.Owner = ply
