@@ -37,7 +37,7 @@
     Objects passed to IsColliding should look like:
     {
         pos = Vector(),
-        ang = Vector(),
+        ang = Angle(),
         collision = {
             type = COLLISION.COLLISION_TYPE_BOX, -- COLLISION_TYPE_BOX, COLLISION_TYPE_CIRCLE, COLLISION_TYPE_POLY
             width = 5, -- if COLLISION_TYPE_BOX
