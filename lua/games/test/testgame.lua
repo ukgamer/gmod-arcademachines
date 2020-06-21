@@ -29,12 +29,16 @@
     Helper libraries:
 
     IMAGE:LoadFromURL(url, name, noCache = false)
+    Access your image with IMAGE.Images[name] - check the status is STATUS_LOADED before trying to use material
 
     Loading sounds from URL:
     MACHINE:LoadSound(url, name, callback)
-    Callback is passed the IGModAudioChannel
+    Callback, if defined, is passed the IGModAudioChannel
+    To access your sound use MACHINE.LoadedSounds[name]
     
+    Collision checking:
     COLLISION:IsColliding(objA, objB)
+
     Supported collision checks:
     BOX - BOX (no rotation, for rotation use POLY - POLY)
     CIRCLE - CIRCLE
