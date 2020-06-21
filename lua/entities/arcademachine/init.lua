@@ -127,6 +127,8 @@ function ENT:Use(activator, caller)
         self:SetPlayer(activator)
         self:GetPlayer():EnterVehicle(self:GetSeat())
         self.CanLeaveVehicle = false
+        self:GetPlayer().ArcadeWasAllowedWeaponsInVehicle = self:GetPlayer():GetAllowWeaponsInVehicle()
+        self:GetPlayer():SetAllowWeaponsInVehicle(false)
 
         if not self.BlockerInitialized then
             self:GetBlocker():PhysicsInitBox(Vector(-16, -16, 0), Vector(16, 16, 72))
@@ -156,6 +158,7 @@ net.Receive("arcademachine_leave", function(len, ply)
 
     veh.ArcadeMachine.CanLeaveVehicle = true
     ply:ExitVehicle()
+    ply:SetAllowWeaponsInVehicle(ply.ArcadeWasAllowedWeaponsInVehicle)
 end)
 
 hook.Add("PlayerLeaveVehicle", "arcademachine_leavevehicle", function(ply, veh)
