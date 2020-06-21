@@ -318,7 +318,8 @@ function ENT:SetGame(game)
                 SCREEN_HEIGHT = ScreenHeight,
                 MARQUEE_WIDTH = MarqueeWidth,
                 MARQUEE_HEIGHT = MarqueeHeight,
-                COLLISION = include("lib/collision.lua")
+                COLLISION = include("lib/collision.lua"),
+                IMAGE = include("lib/image.lua")
             }
         )
         if self.Game.Init then

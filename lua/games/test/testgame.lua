@@ -4,6 +4,7 @@
     You can assign the function to a global variable (e.g. TESTGAME) and
     call machine:SetGame(TESTGAME) on the client to test your game
 
+    ---------------------------------------------
     Things that MUST be implemented:
     Name
     Update()
@@ -24,8 +25,14 @@
     SCREEN_HEIGHT
     MARQUEE_WIDTH
     MARQUEE_HEIGHT
-
+    ---------------------------------------------
     Helper libraries:
+
+    IMAGE:LoadFromURL(url, name, noCache = false)
+
+    Loading sounds from URL:
+    MACHINE:LoadSound(url, name, callback)
+    Callback is passed the IGModAudioChannel
     
     COLLISION:IsColliding(objA, objB)
     Supported collision checks:
