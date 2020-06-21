@@ -46,7 +46,7 @@ function ENT:Initialize()
         256, -- Not the same as the drawable area
         RT_SIZE_DEFAULT,
         MATERIAL_RT_DEPTH_NONE,
-        1,
+        16,
         CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
