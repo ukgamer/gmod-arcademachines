@@ -291,7 +291,7 @@ end
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
 
-    local gameFunc = (isfunction(path) and path or CompileFile("games/" .. path .. ".lua"))
+    local gameFunc = (isfunction(path) and path or CompileFile("arcademachine_games/" .. path .. ".lua"))
     setfenv(gameFunc, gameMeta)
     return gameFunc()
 end
