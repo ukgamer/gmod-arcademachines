@@ -18,12 +18,12 @@ resource.AddSingleFile("materials/models/ms_acabinet/ms_acabinet_outerglass.vmt"
 resource.AddFile("materials/models/ms_acabinet/ms_acabinet_screen.vmt")
 
 local function AddCSGameFiles()
-    local ext = "games/"
+    local ext = "arcademachine_games/"
     for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
         AddCSLuaFile(ext .. file)
     end
 
-    ext = "lib/"
+    ext = "arcademachine_lib/"
     for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
         AddCSLuaFile(ext .. file)
     end
