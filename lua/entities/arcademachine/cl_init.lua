@@ -202,10 +202,14 @@ function ENT:OnLocalPlayerEntered()
     local cost = self:GetMSCoinCost()
 
     if cost > 0 then
-        notification.AddLegacy("This machine takes " .. cost .. " Metastruct coin(s) at a time.", NOTIFY_HINT, 10)
+        local msg = "This machine takes " .. cost .. " Metastruct coin(s) at a time."
+        LocalPlayer():ChatPrint(msg)
+        notification.AddLegacy(msg, NOTIFY_HINT, 10)
     end
 
-    notification.AddLegacy("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).", NOTIFY_HINT, 10)
+    local msg = "Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!)."
+    LocalPlayer():ChatPrint(msg)
+    notification.AddLegacy(msg, NOTIFY_HINT, 10)
 
     if DisablePAC:GetBool() then
         PACState = cvars.Bool("pac_enable", nil)
