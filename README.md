@@ -42,7 +42,7 @@ which should be the same between all instances of a game are not reloaded unnecc
 
 `SetGame` also takes an optional second boolean parameter to forcefully reload all libraries for development purposes.
 
-#### Image library
+#### Images
 
 Used for loading images dynamically from the web as usable `Material`s.
 
@@ -50,17 +50,32 @@ Used for loading images dynamically from the web as usable `Material`s.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 
-Access your image with `IMAGE.Images[name]` - check the status is `STATUS_LOADED` before trying to use the material.
+Access your image with `IMAGE.Images[name]`, which will look like
 
-#### Sound library
+```lua
+{
+    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    mat = Material -- if not yet loaded then error material is used
+}
+```
 
-`MACHINE:LoadSound(url, name, callback)`
+#### Sounds
+
+`SOUND:LoadFromURL(url, name, callback)`
 
 `callback`, if defined, is passed the created `IGModAudioChannel`. This can be used for example to enable looping.
 
-To access your sound use `MACHINE.LoadedSounds[name]`
+To access your sound use `SOUND.Sounds[name]`, which will look like
 
-#### Collision library
+```lua
+{
+    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "BASS_SOMEERROR", -- if status == STATUS_ERROR
+    sound = IGModAudioChannel -- if status == STATUS_LOADED
+}
+```
+
+#### Collisions
 
 A simple collision library using a mixture of methods including SAT (Separating Axis Theorem) for polygons.
 
@@ -83,7 +98,7 @@ Only convex polygons are supported.
 
 Objects passed to `IsColliding` must look like:
 
-```
+```lua
 {
     pos = Vector(),
     ang = Angle(),

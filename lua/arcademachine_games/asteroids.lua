@@ -1,4 +1,4 @@
--- TESTGAME = function()
+TESTGAME = function()
 local GAME = {}
 
 GAME.Name = "Asteroids"
@@ -115,18 +115,18 @@ local highBeep = false
 local nextBeepAt = 0
 
 function GAME:Init()
-    IMAGE:LoadFromURL("https://share.zombie.computer/misc/arcade/asteroids/marquee.jpg", "marquee")
+    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee")
 
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/fire.wav", "fire")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/bangSmall.wav", "bangsmall")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/bangMedium.wav", "bangmedium")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/bangLarge.wav", "banglarge")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/extraShip.wav", "extraShip")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/thrust.wav", "thrust", function(snd)
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/fire.ogg", "fire")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangSmall.ogg", "bangsmall")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangMedium.ogg", "bangmedium")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangLarge.ogg", "banglarge")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/extraShip.ogg", "extraShip")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/thrust.ogg", "thrust", function(snd)
         snd:EnableLooping(true)
     end)
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/beat1.wav", "beat1")
-    MACHINE:LoadSound("https://share.zombie.computer/misc/arcade/asteroids/beat2.wav", "beat2")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat1.ogg", "beat1")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat2.ogg", "beat2")
 
     self:SpawnAsteroids()
 end
@@ -229,9 +229,9 @@ function GAME:BreakAsteroid(key, obj)
 
     local snd = "bang" .. obj.type.name
 
-    if IsValid(MACHINE.LoadedSounds[snd]) then
-        MACHINE.LoadedSounds[snd]:SetTime(0)
-        MACHINE.LoadedSounds[snd]:Play()
+    if IsValid(SOUND.Sounds[snd].sound) then
+        SOUND.Sounds[snd].sound:SetTime(0)
+        SOUND.Sounds[snd].sound:Play()
     end
 
     if obj.type.name == "large" then
@@ -249,9 +249,9 @@ function GAME:BreakAsteroid(key, obj)
         lives = lives + 1
         extraLifeScore = 0
 
-        if IsValid(MACHINE.LoadedSounds.extraShip) then
-            MACHINE.LoadedSounds.extraShip:SetTime(0)
-            MACHINE.LoadedSounds.extraShip:Play()
+        if IsValid(SOUND.Sounds.extraShip.sound) then
+            SOUND.Sounds.extraShip.sound:SetTime(0)
+            SOUND.Sounds.extraShip.sound:Play()
         end
     end
 
@@ -321,9 +321,9 @@ function GAME:Update()
     if gameState == GAME_STATE_PLAYING then
         if now >= nextBeepAt then
             local snd = highBeep and "beat2" or "beat1"
-            if IsValid(MACHINE.LoadedSounds[snd]) then
-                MACHINE.LoadedSounds[snd]:SetTime(0)
-                MACHINE.LoadedSounds[snd]:Play()
+            if IsValid(SOUND.Sounds[snd].sound) then
+                SOUND.Sounds[snd].sound:SetTime(0)
+                SOUND.Sounds[snd].sound:Play()
             end
 
             local t = fastBeep and 0.3 or 0.8
@@ -343,20 +343,20 @@ function GAME:Update()
         if thePlayer:KeyDown(IN_FORWARD) then
             objects.player.vel:Add(objects.player.ang:Forward() * 10 * FrameTime())
             
-            if IsValid(MACHINE.LoadedSounds.thrust) then
-                MACHINE.LoadedSounds.thrust:Play()
+            if IsValid(SOUND.Sounds.thrust.sound) then
+                SOUND.Sounds.thrust.sound:Play()
             end
         else
-            if IsValid(MACHINE.LoadedSounds.thrust) then
-                MACHINE.LoadedSounds.thrust:Pause()
+            if IsValid(SOUND.Sounds.thrust.sound) then
+                SOUND.Sounds.thrust.sound:Pause()
             end
         end
 
         if thePlayer:KeyDown(IN_JUMP) then
             if now >= nextFire and #objects.bullets < 4 then
-                if IsValid(MACHINE.LoadedSounds.fire) then
-                    MACHINE.LoadedSounds.fire:SetTime(0)
-                    MACHINE.LoadedSounds.fire:Play()
+                if IsValid(SOUND.Sounds.fire.sound) then
+                    SOUND.Sounds.fire.sound:SetTime(0)
+                    SOUND.Sounds.fire.sound:Play()
                 end
 
                 local pos = Vector()
@@ -389,12 +389,12 @@ function GAME:Update()
 
         for ak, av in ipairs(objects.asteroids) do
             if COLLISION:IsColliding(av, objects.player) then
-                if IsValid(MACHINE.LoadedSounds.bangsmall) then
-                    MACHINE.LoadedSounds.bangsmall:Play()
+                if IsValid(SOUND.Sounds.bangsmall.sound) then
+                    SOUND.Sounds.bangsmall.sound:Play()
                 end
 
-                if IsValid(MACHINE.LoadedSounds.thrust) then
-                    MACHINE.LoadedSounds.thrust:Pause()
+                if IsValid(SOUND.Sounds.thrust.sound) then
+                    SOUND.Sounds.thrust.sound:Pause()
                 end
                 objects.player = nil
 
@@ -544,4 +544,4 @@ function GAME:OnCoinsLost(ply, old, new)
 end
 
 return GAME
---end
+end

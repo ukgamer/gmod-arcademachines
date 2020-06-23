@@ -82,9 +82,7 @@ function ENT:OnRemove()
         self.Game:Destroy()
     end
 
-    for k, v in pairs(self.LoadedSounds) do
-        v:Stop()
-    end
+    self:StopSounds()
 end
 
 function ENT:Think()
@@ -149,7 +147,9 @@ function ENT:Think()
         end
 
         for _, v in pairs(self.LoadedSounds) do
-            v:SetPos(self.Entity:GetPos())
+            if IsValid(v) then
+                v:SetPos(self.Entity:GetPos())
+            end
         end
 
         self.Game:Update()
@@ -297,9 +297,19 @@ end
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
 
-    local gameFunc = (isfunction(path) and path or CompileFile("arcademachine_games/" .. path .. ".lua"))
+    local gameFunc = (isfunction(path) and path or CompileFile(path))
     setfenv(gameFunc, gameMeta)
     return gameFunc()
+end
+
+function ENT:StopSounds()
+    for k, v in pairs(self.LoadedSounds) do
+        if IsValid(v) then
+            v:Stop()
+        end
+    end
+
+    table.Empty(self.LoadedSounds)
 end
 
 function ENT:SetGame(game, forceLibLoad)
@@ -310,10 +320,7 @@ function ENT:SetGame(game, forceLibLoad)
         self.Game = nil
     end
 
-    for k, v in pairs(self.LoadedSounds) do
-        v:Stop()
-    end
-    table.Empty(self.LoadedSounds)
+    self:StopSounds()
 
     if game and game ~= "" then
         local upvalues = {
@@ -337,7 +344,11 @@ function ENT:SetGame(game, forceLibLoad)
             upvalues.IMAGE = LoadedLibs[game].IMAGE
         end
 
-        self.Game = WrappedInclusion(game, upvalues)
+        -- Allow each instance to have its own copy of sound library in case they want to
+        -- play the same sound at different times
+        upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self })
+
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
         if self.Game.Init then
             self.Game:Init()
         end
@@ -353,21 +364,6 @@ function ENT:TakeCoins(amount)
     net.Start("arcademachine_takecoins")
         net.WriteInt(amount, 16)
     net.SendToServer()
-end
-
-function ENT:LoadSound(url, key, callback)
-    if IsValid(self.LoadedSounds[key]) then return end
-    sound.PlayURL(url, "3d noplay noblock", function(snd, err, errstr)
-        if not IsValid(snd) then
-            Error("Failed to load sound " .. key .. ": ", errstr)
-            return
-        end
-
-        snd:SetPos(self.Entity:GetPos())
-        self.LoadedSounds[key] = snd
-
-        if callback then callback(snd) end
-    end)
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
