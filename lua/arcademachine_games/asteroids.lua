@@ -1,4 +1,4 @@
-TESTGAME = function()
+--TESTGAME = function()
 local GAME = {}
 
 GAME.Name = "Asteroids"
@@ -544,4 +544,4 @@ function GAME:OnCoinsLost(ply, old, new)
 end
 
 return GAME
-end
+--end
