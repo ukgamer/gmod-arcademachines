@@ -18,6 +18,8 @@ local OutfitterState = nil
 
 ENT.Initialized = false
 
+local LoadedLibs = {}
+
 function ENT:Initialize()
     self.Initialized = true
 
@@ -300,7 +302,7 @@ local function WrappedInclusion(path, upvalues)
     return gameFunc()
 end
 
-function ENT:SetGame(game)
+function ENT:SetGame(game, forceLibLoad)
     if self.Game then
         if self.Game.Destroy then
             self.Game:Destroy()
@@ -314,18 +316,28 @@ function ENT:SetGame(game)
     table.Empty(self.LoadedSounds)
 
     if game and game ~= "" then
-        self.Game = WrappedInclusion(
-            game,
-            {
-                MACHINE = self,
-                SCREEN_WIDTH = ScreenWidth,
-                SCREEN_HEIGHT = ScreenHeight,
-                MARQUEE_WIDTH = MarqueeWidth,
-                MARQUEE_HEIGHT = MarqueeHeight,
+        local upvalues = {
+            MACHINE = self,
+            SCREEN_WIDTH = ScreenWidth,
+            SCREEN_HEIGHT = ScreenHeight,
+            MARQUEE_WIDTH = MarqueeWidth,
+            MARQUEE_HEIGHT = MarqueeHeight
+        }
+
+        if LoadedLibs[game] and not forceLibLoad then
+            upvalues.COLLISION = LoadedLibs[game].COLLISION
+            upvalues.IMAGE = LoadedLibs[game].IMAGE
+        else
+            LoadedLibs[game] = {
                 COLLISION = include("arcademachine_lib/collision.lua"),
                 IMAGE = include("arcademachine_lib/image.lua")
             }
-        )
+
+            upvalues.COLLISION = LoadedLibs[game].COLLISION
+            upvalues.IMAGE = LoadedLibs[game].IMAGE
+        end
+
+        self.Game = WrappedInclusion(game, upvalues)
         if self.Game.Init then
             self.Game:Init()
         end
