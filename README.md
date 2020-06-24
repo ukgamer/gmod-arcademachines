@@ -39,13 +39,13 @@ Your game must implement the following methods:
 
 The machine has its own internal coin count. You can query this count with `MACHINE:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
 
-When the player inserts a coin, if the server implments the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player whenever they enter the machine.
+When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player whenever they enter the machine.
 
 Your `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
 
 Similarly, when a coin is "used" the method `OnCoinsLost` will be called with the same arguments.
 
-You can take a given number of coins from the machine using `MACHINE:TakeCoins(amount)`. Be aware that because this sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsInserted` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsInserted`.
+You can take a given number of coins from the machine using `MACHINE:TakeCoins(amount)`. Be aware that because this sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
 
 ### Helper libraries
 
