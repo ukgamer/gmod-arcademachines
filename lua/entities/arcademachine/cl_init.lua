@@ -3,6 +3,7 @@ include("shared.lua")
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
+local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
 
 local ScreenWidth = 512
 local ScreenHeight = 512
@@ -11,7 +12,7 @@ local MarqueeHeight = 80
 
 local PressedScore = false
 local PressedUse = false
-local HoldUseUntil = 0
+local PressedUseAt = 0
 
 local PACState = nil
 local OutfitterState = nil
@@ -180,11 +181,11 @@ end
 
 -- Isn't called when player becomes nil...
 function ENT:OnPlayerChange(name, old, new)
-    if not self.Game then return end
-    
     if IsValid(new) then
         if old ~= new then
-            self.Game:OnStartPlaying(new)
+            if self.Game then
+                self.Game:OnStartPlaying(new)
+            end
             self.LastPlayer = new
 
             if new == LocalPlayer() then
@@ -192,7 +193,9 @@ function ENT:OnPlayerChange(name, old, new)
             end
         end
     else
-        self.Game:OnStopPlaying(old)
+        if self.Game then
+            self.Game:OnStopPlaying(old)
+        end
 
         if old == LocalPlayer() then
             self:OnLocalPlayerLeft()
@@ -209,22 +212,67 @@ function ENT:OnLocalPlayerEntered()
         notification.AddLegacy(msg, NOTIFY_HINT, 10)
     end
 
-    local msg = "Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!)."
-    LocalPlayer():ChatPrint(msg)
-    notification.AddLegacy(msg, NOTIFY_HINT, 10)
+    PACState = cvars.Bool("pac_enable", nil)
+    OutfitterState = cvars.Bool("outfitter_enabled", nil)
 
-    if DisablePAC:GetBool() then
-        PACState = cvars.Bool("pac_enable", nil)
-        if PACState ~= nil then
-            LocalPlayer():ConCommand("pac_enable 0")
+    if ShowIntro:GetBool() then
+        local frame = vgui.Create("DFrame")
+
+        frame:SetSize(ScrW() * 0.2, ScrH() * 0.15)
+        frame:Center()
+        frame:SetTitle("Arcade Machines")
+        frame:SetDraggable(false)
+        frame:ShowCloseButton(false)
+        frame:DockPadding(10, 30, 10, 10)
+        frame:MakePopup()
+
+        local scroll = vgui.Create("DScrollPanel", frame)
+        scroll:Dock(FILL)
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetText("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
+
+        if DisablePAC:GetBool() and PACState ~= nil then
+            local label = vgui.Create("DLabel", scroll)
+            label:Dock(TOP)
+            label:SetWrap(true)
+            label:SetAutoStretchVertical(true)
+            label:DockMargin(0, 0, 0, 15)
+            label:SetText("WARNING: PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
+        end
+
+        if DisableOutfitter:GetBool() and OutfitterState ~= nil then
+            local label = vgui.Create("DLabel", scroll)
+            label:Dock(TOP)
+            label:SetWrap(true)
+            label:SetAutoStretchVertical(true)
+            label:DockMargin(0, 0, 0, 15)
+            label:SetText("WARNING: Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
+        end
+
+        local button = vgui.Create("DButton", frame)
+        button:SetText("OK, don't show me this again")
+        button:Dock(BOTTOM)
+        button:SetEnabled(false)
+        timer.Simple(5, function()
+            button:SetEnabled(true)
+        end)
+        button.DoClick = function()
+            ShowIntro:SetBool(false)
+            frame:Remove()
         end
     end
 
-    if DisableOutfitter:GetBool() then
-        OutfitterState = cvars.Bool("outfitter_enabled", nil)
-        if OutfitterState ~= nil then
-            LocalPlayer():ConCommand("outfitter_enabled 0")
-        end
+    if DisablePAC:GetBool() and PACState ~= nil then
+        LocalPlayer():ConCommand("pac_enable 0")
+    end
+
+    if DisableOutfitter:GetBool() and OutfitterState ~= nil then
+        LocalPlayer():ConCommand("outfitter_enabled 0")
     end
 end
 
@@ -393,11 +441,17 @@ end)
 hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
     local veh = LocalPlayer():GetVehicle()
     
-    if not IsValid(veh) then return end
+    if not IsValid(veh) then
+        PressedUse = false
+        return
+    end
 
     local machine = veh.ArcadeMachine
 
-    if not IsValid(machine) then return end
+    if not IsValid(machine) then
+        PressedUse = false
+        return
+    end
 
     local fov = FOV:GetInt()
 
@@ -411,8 +465,8 @@ hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
     if bit.band(cmd:GetButtons(), IN_USE) ~= 0 then
         if not PressedUse then
             PressedUse = true
-            HoldUseUntil = RealTime() + 0.8
-        elseif RealTime() >= HoldUseUntil then
+            PressedUseAt = RealTime()
+        elseif RealTime() >= PressedUseAt + 0.8 then
             net.Start("arcademachine_leave")
             net.SendToServer()
             PressedUse = false
@@ -432,4 +486,21 @@ hook.Add("ScoreboardShow", "arcademachine_scoreboard", function()
     if not IsValid(machine) then return end
 
     return false
+end)
+
+local notificationColor = Color(255, 255, 255)
+hook.Add("HUDPaint", "arcademachine_hud", function()
+    local veh = LocalPlayer():GetVehicle()
+    
+    if not IsValid(veh) then return end
+
+    local machine = veh.ArcadeMachine
+
+    if not IsValid(machine) then return end
+
+    if PressedUse then
+        notificationColor.a = 50 + math.abs(math.sin(RealTime() * 10) * 205)
+
+        draw.DrawText("Keep holding USE to exit the machine!", "DermaLarge", ScrW() * 0.5, ScrH() * 0.3, notificationColor, TEXT_ALIGN_CENTER)
+    end
 end)
