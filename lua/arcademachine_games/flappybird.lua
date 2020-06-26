@@ -1,6 +1,6 @@
 ﻿--
 -- Flappy Bird for the arcade machine system!
--- Rips assets/sounds (TODO) from FlapPyBird (thanks sourabhv).
+-- Rips assets/sounds from FlapPyBird (thanks sourabhv).
 --
 -- This file is the "rewrite", excluding
 -- useless variables and overall "should be a bit
@@ -8,9 +8,11 @@
 --
 -- TODO:
 --   Use collision library
---   Sounds (sucky)
+--   Dont use URLImage (until the image library returns width and height)
 --   Flappy falling when dead
 --
+
+
 -- we cache sprites globally so if the machine is updated
 -- it can access the pipe sprite for marquee
 flappy_sprites = flappy_sprites or {}
@@ -48,6 +50,7 @@ GAME.LastFlap = nil
 GAME.Started = false
 GAME.CanStart = nil
 GAME.CurrentPlayer = nil
+-- Default settings for the game to be cool
 GAME.backgrounds = {0, 288, 288 * 2}
 GAME.pipes = {{800, math.random(225, 450)}, {1000, math.random(225, 450)}, {1200, math.random(225, 450)}}
 GAME.scored = {false, false, false}
@@ -63,7 +66,7 @@ local function GetSound(snd)
 end
 
 -- some helper functions
---- TODO: Remove lazyURLImage, maybe make an URLImage library?
+--- TODO: Stop relying lazyURLImage, maybe make an URLImage library?
 function GAME:QueueDownloadSprite(png)
 	flappy_sprites[#flappy_sprites + 1] = {png, surface.LazyURLImage(baseURL .. png)}
 end
@@ -105,10 +108,11 @@ function GAME:FlappyIsCollidingWithPipe()
 	if bg and birdsprite then
 		local i = (self:GetClosestPipe())
 		if not i then return false end
+
 		local tw, th = birdsprite.w * 1.25, birdsprite.h * 1.25
 		local tw2, th2 = birdsprite.w, birdsprite.h
 		local bg_pos_x, bg_pos_y = self.pipes[i][1], self.pipes[i][2]
-		local f_pos_x, f_pos_y = SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 2 - th / 2 + self.FlappyY
+		local f_pos_x, f_pos_y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - th / 2 + self.FlappyY
 
 		local pipe_bounds =
 		{
@@ -133,9 +137,9 @@ function GAME:FlappyIsCollidingWithPipe()
 			-- top left
 			Vector2D (f_pos_x - tw2 / 2, f_pos_y - th / 2),
 			-- top right
-			Vector2D (f_pos_x + tw2	 / 2, f_pos_y - th / 2),
+			Vector2D (f_pos_x + tw2 / 2, f_pos_y - th / 2),
 			-- bottom left
-			Vector2D (f_pos_x - tw2	 / 2, f_pos_y + th / 2),
+			Vector2D (f_pos_x - tw2 / 2, f_pos_y + th / 2),
 			-- bottom right
 			Vector2D (f_pos_x + tw2 / 2, f_pos_y + th / 2),
 		}
@@ -176,6 +180,7 @@ function GAME:Start()
 	-- I don't know how this gets called with
 	-- less than one coins, but it works.
 	if MACHINE:GetCoins() < 1 then return end
+
 	self:Reset()
 	self.CanStart = 0
 	self.Score = 0
@@ -186,6 +191,7 @@ function GAME:Start()
 	self.pipes = {{800, math.random(225, 450)}, {1000, math.random(225, 450)}, {1200, math.random(225, 450)}}
 	self.scored = {false, false, false}
 	self.Attracting = true
+	
 	-- Need new sound
 	MACHINE:EmitSound("/vo/npc/barney/ba_letsdoit.wav", 50)
 end
@@ -322,7 +328,7 @@ function GAME:Update()
 				self.FlappyVel = self.UpwardsGravity
 				self.FlappyState = 0
 			end
-			-- game ended, we need to start
+		-- game ended, we need to start
 		elseif self.GameEnded and not self.Dead and not self.Started then
 			if SysTime() > self.CanStart and ((self.LastSpace or 0) < 2) then
 				self:Start()
@@ -332,8 +338,8 @@ function GAME:Update()
 
 				return
 			end
+		-- we died or game ended somehow
 		elseif (self.GameEnded or self.Dead) and self.Started then
-			-- we died or game ended somehow
 			self:Reset()
 			self.Started = false
 			self.Dead = false
@@ -348,7 +354,6 @@ function GAME:Update()
 
 	-- stop the game if there is no coins
 	if MACHINE:GetCoins() <= 0 then
-		--self:Reset()
 		self:Reset()
 		self.GameEnded = true
 
@@ -394,16 +399,11 @@ function GAME:Update()
 		if closest_dist > sprite.w and not self.scored[closest_pipe] then
 			self.scored[closest_pipe] = true
 			self.Score = self.Score + 1
-			--self.CurrentPlayer:ChatPrint("Score: " .. self.Score)
 		end
-		--epoe.api.print(closest_pipe,closest_dist)
-		--epoe.api.print(table.ToString(sprite))
 	end
 
-	-- update background position
-	-- update pipe position
+	-- update background and pipe position
 	local pipesprite = flappy_sprites["pipe_green"]
-
 	if pipesprite then
 		for i = 1, #self.pipes do
 			local bg_pos_x = self.pipes[i][1]
@@ -423,14 +423,16 @@ end
 function GAME:DrawMarquee()
 	local pipe = flappy_sprites["pipe_green"]
 	if not pipe then return end
+
 	local mw = MARQUEE_WIDTH
 	local mh = MARQUEE_HEIGHT
 	local numPipes = 12
 	local divsize = pipe.w / (mw / numPipes)
+
 	surface.SetDrawColor(60, 255, 60, 255)
 	surface.DrawRect(0, 0, mw, mh)
-	local e = 0
 
+	local e = 0
 	for i = 1, numPipes do
 		local a = math.random(1, mh / 4)
 		surface.SetMaterial(pipe.img)
@@ -441,13 +443,13 @@ function GAME:DrawMarquee()
 	end
 
 	draw.NoTexture()
-	--surface.SetDrawColor(0, 0, 255, 255)
-	--surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+
 	surface.SetFont("DermaLarge")
 	local tw, th = surface.GetTextSize(self.Name)
 	surface.SetTextColor(0, 0, 0, 255)
 	surface.SetTextPos((mw / 2) - (tw / 2) + 2, (mh / 2) - (th / 2) + 2)
 	surface.DrawText(self.Name)
+
 	surface.SetTextColor(255, 255, 255, 255)
 	surface.SetTextPos((mw / 2) - (tw / 2), (mh / 2) - (th / 2))
 	surface.DrawText(self.Name)
@@ -458,11 +460,13 @@ function GAME:Draw()
 	local h = SCREEN_HEIGHT
 	local draw_score = true
 
-	local function eugh()
+	-- i just had this function here for ease, it returns
+	-- inside this function and not the whole draw function
+	local function DoMainDrawFunc()
 		if not self:IsBeingPlayed() then return end
+
 		-- draw pipes
 		local pipe = flappy_sprites["pipe_green"]
-
 		if pipe then
 			for i = 1, #self.pipes do
 				local bg_pos_x = self.pipes[i][1]
@@ -487,7 +491,7 @@ function GAME:Draw()
 		-- drwas bird
 		if birdsprite and not (self.GameEnded or self.Dead) then
 			local tw, th = birdsprite.w * 1.25, birdsprite.h * 1.25
-			local x = SCREEN_WIDTH / 2 - tw / 2
+			local x = SCREEN_WIDTH / 2 
 			local y = SCREEN_HEIGHT / 2 - th / 2 + self.FlappyY
 
 			if self.Debug then
@@ -561,14 +565,11 @@ function GAME:Draw()
 	end
 
 	-- todo: attract screen
-	--if not isPlaying then
 	if not self.DownloadedSprites then
 		surface.SetDrawColor(HSVToColor(RealTime() * 50 % 360, 1, 0.5))
 		surface.DrawRect(0, 0, w, h)
-		--return
 	end
 
-	--end
 	-- draw backgrounds
 	local bg = flappy_sprites["background_day"]
 
@@ -585,7 +586,8 @@ function GAME:Draw()
 		draw_score = false
 	end
 
-	eugh()
+	-- we call the main draw function here so we dont screw with everything
+	DoMainDrawFunc()
 
 	-- insert coin / start text
 	if self.GameEnded or self.Dead and SysTime() > self.CanStart then
