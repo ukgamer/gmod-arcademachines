@@ -93,8 +93,10 @@ function ENT:Think()
     end
 
     -- Workaround network var notify not triggering for null entity
-    if self.Game and self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
-        self.Game:OnStopPlaying(self.LastPlayer)
+    if self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
+        if self.Game then
+            self.Game:OnStopPlaying(self.LastPlayer)
+        end
         
         if self.LastPlayer == LocalPlayer() then
             self:OnLocalPlayerLeft()
@@ -490,14 +492,6 @@ end)
 
 local notificationColor = Color(255, 255, 255)
 hook.Add("HUDPaint", "arcademachine_hud", function()
-    local veh = LocalPlayer():GetVehicle()
-    
-    if not IsValid(veh) then return end
-
-    local machine = veh.ArcadeMachine
-
-    if not IsValid(machine) then return end
-
     if PressedUse then
         notificationColor.a = 50 + math.abs(math.sin(RealTime() * 10) * 205)
 
