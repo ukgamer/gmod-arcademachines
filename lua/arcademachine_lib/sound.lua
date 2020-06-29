@@ -7,7 +7,7 @@ local SOUND = {
 }
 
 function SOUND:LoadFromURL(url, key, callback)
-    if self.Sounds[key] and IsValid(self.Sounds[key].sound) then return end
+    if self.Sounds[key] then return end
 
     self.Sounds[key] = {
         status = self.STATUS_QUEUED
