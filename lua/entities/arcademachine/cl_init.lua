@@ -21,6 +21,17 @@ ENT.Initialized = false
 
 local LoadedLibs = {}
 
+local QueuedSounds = {}
+local NextQueueAt = 0
+
+local function WrappedInclusion(path, upvalues)
+    local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
+
+    local gameFunc = (isfunction(path) and path or CompileFile(path))
+    setfenv(gameFunc, gameMeta)
+    return gameFunc()
+end
+
 function ENT:Initialize()
     self.Initialized = true
 
@@ -31,7 +42,7 @@ function ENT:Initialize()
         RT_SIZE_DEFAULT,
         MATERIAL_RT_DEPTH_NONE,
         1,
-        CREATERENDERTARGETFLAGS_AUTOMIPMAP,
+        CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
     self.ScreenMaterial = CreateMaterial(
@@ -344,14 +355,6 @@ function ENT:OnGameChange(name, old, new)
     self:SetGame(new)
 end
 
-local function WrappedInclusion(path, upvalues)
-    local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
-
-    local gameFunc = (isfunction(path) and path or CompileFile(path))
-    setfenv(gameFunc, gameMeta)
-    return gameFunc()
-end
-
 function ENT:StopSounds()
     for k, v in pairs(self.LoadedSounds) do
         if IsValid(v) then
@@ -395,8 +398,8 @@ function ENT:SetGame(game, forceLibLoad)
         end
 
         -- Allow each instance to have its own copy of sound library in case they want to
-        -- play the same sound at different times
-        upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self })
+        -- play the same sound at the same time (needs to emit from the machine)
+        upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
 
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
         if self.Game.Init then
@@ -497,4 +500,15 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 
         draw.DrawText("Keep holding USE to exit the machine!", "DermaLarge", ScrW() * 0.5, ScrH() * 0.3, notificationColor, TEXT_ALIGN_CENTER)
     end
+end)
+
+hook.Add("Think", "arcademachine_queue", function()
+    if RealTime() < NextQueueAt then return end
+
+    if #QueuedSounds > 0 then
+        QueuedSounds[1].context:LoadQueued(QueuedSounds[1])
+        table.remove(QueuedSounds, 1)
+    end
+
+    NextQueueAt = RealTime() + 0.1
 end)
