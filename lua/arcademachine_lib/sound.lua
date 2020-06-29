@@ -22,9 +22,19 @@ function SOUND:LoadFromURL(url, key, callback)
 end
 
 function SOUND:LoadQueued(tbl)
+    -- Could happen if the machine was removed while the queue was processing
+    if not IsValid(MACHINE) then
+        return
+    end
+
     self.Sounds[tbl.key].status = self.STATUS_LOADING
 
     sound.PlayURL(tbl.url, "3d noplay noblock", function(snd, err, errstr)
+        -- Could happen if the machine was removed while the queue was processing
+        if not IsValid(MACHINE) then
+            return
+        end
+
         if not IsValid(snd) then
             self.Sounds[tbl.key].status = self.STATUS_ERROR
             self.Sounds[tbl.key].err = errstr
