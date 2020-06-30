@@ -7,17 +7,26 @@
 -- faster."
 --
 -- TODO:
---   Use collision library
---   Dont use URLImage (until the image library returns width and height)
---   Flappy falling when dead
+--   Fix: Lag spikes kill your run
+--   Add personal best score
+--   Fonts
 --
 
-
+--
+--- I don't know why this is here and I don't understand
+--- my own comment.
 -- we cache sprites globally so if the machine is updated
 -- it can access the pipe sprite for marquee
-flappy_sprites = flappy_sprites or {}
---FB = function()
+--
+--- I'll at least localize it...
+--
+local flappy_sprites = {}
+
+--- developing
+-- FB = function()
 local gap = 280
+local startpos = 800
+local pipe_interval = 200
 local baseURL = "https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/"
 local baseURL_snd = (baseURL:gsub("sprites", "audio")) -- LMAO
 
@@ -27,7 +36,6 @@ local lookup_flap = {
 	[2] = "down"
 }
 
---
 local GAME = {}
 GAME.Name = "Flappy Bird"
 -- Vars, init stuff here
@@ -52,8 +60,120 @@ GAME.CanStart = nil
 GAME.CurrentPlayer = nil
 -- Default settings for the game to be cool
 GAME.backgrounds = {0, 288, 288 * 2}
-GAME.pipes = {{800, math.random(225, 450)}, {1000, math.random(225, 450)}, {1200, math.random(225, 450)}}
 GAME.scored = {false, false, false}
+
+-- I was mad when making this.
+local HardCodedSpriteShit = 
+{
+	["4"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["pipe_green"] = {
+		["h"] = 320,
+		["w"] = 52,
+	},
+	["1"] = {
+		["h"] = 36,
+		["w"] = 16,
+	},
+	["5"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["9"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["6"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["yellowbird_upflap"] = {
+		["h"] = 24,
+		["w"] = 34,
+	},
+	["8"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["background_day"] = {
+		["h"] = 512,
+		["w"] = 288,
+	},
+	["3"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["7"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["2"] = {
+		["h"] = 36,
+		["w"] = 24,
+	},
+	["yellowbird_downflap"] = {
+		["h"] = 24,
+		["w"] = 34,
+	},
+	["yellowbird_midflap"] = {
+		["h"] = 24,
+		["w"] = 34,
+	},
+	["0"] = {
+		["h"] = 36,
+		["w"] = 24,
+	}
+}
+
+local biggy = HardCodedSpriteShit.yellowbird_midflap.w
+local biggh = HardCodedSpriteShit.yellowbird_midflap.h
+GAME.TheFlappy = 
+{
+	pos = Vector(SCREEN_HEIGHT / 2 - biggy / 2, SCREEN_HEIGHT / 8 - biggh / 2),
+	collision = {
+		type = COLLISION.types.BOX, -- see types above
+		width = biggy, -- if COLLISION_TYPE_BOX
+		height = biggh, -- if COLLISION_TYPE_BOX
+	}
+}
+
+GAME.pipes = {}
+local function GenPipe(x)
+	local y = math.random(0, 250) - 250
+	return
+	{
+		{
+			pos = Vector (x, y),
+			ang = Angle(),
+			collision = {
+				type = COLLISION.types.BOX,
+				width = HardCodedSpriteShit.pipe_green.w,
+				height = HardCodedSpriteShit.pipe_green.h
+			}
+		},
+		{
+			pos = Vector (x, y + HardCodedSpriteShit.pipe_green.h + gap / 2),
+			ang = Angle(),
+			collision = {
+				type = COLLISION.types.BOX,
+				width = HardCodedSpriteShit.pipe_green.w,
+				height = HardCodedSpriteShit.pipe_green.h
+			}
+		},
+		
+	}
+end
+local function ResetPipes(_game)
+	_game.pipes = {
+		GenPipe(startpos),
+		GenPipe(startpos + pipe_interval),
+		GenPipe(startpos + pipe_interval * 2)
+	}
+end
+
+ResetPipes(GAME)
 
 local DEFAULT_STATION
 sound.PlayFile("sound/ui/hint.wav", "noblock", function(snd)
@@ -62,31 +182,32 @@ sound.PlayFile("sound/ui/hint.wav", "noblock", function(snd)
 end)
 
 local function GetSound(snd)
-	return not SOUND.Sounds[snd] and DEFAULT_STATION or SOUND.Sounds[snd].sound
+	snd = SOUND.Sounds[snd]
+
+	if snd and snd.status == 2 then
+		return snd.sound
+	end
+
+	return DEFAULT_STATION
 end
+
 
 -- some helper functions
---- TODO: Stop relying lazyURLImage, maybe make an URLImage library?
 function GAME:QueueDownloadSprite(png)
-	flappy_sprites[#flappy_sprites + 1] = {png, surface.LazyURLImage(baseURL .. png)}
-end
-
--- why do i do this to myself
-local function Vector2D(x, y)
-	return Vector(x, y, 0)
+	flappy_sprites[#flappy_sprites + 1] = {png}
 end
 
 -- gets closest pipe to the flappy
 function GAME:GetClosestPipe()
-	local bg = flappy_sprites["pipe_green"]
-	local flap = string.format("yellowbird_%sflap", lookup_flap[self.FlappyState])
-	local birdsprite = flappy_sprites[flap]
-	if not bg or not birdsprite then return nil, nil end
 	local closest_diff, closest_pipe = 100000, nil
+
+	if not self.pipes or next(self.pipes) == nil or #self.pipes < 1 then
+		return closest_pipe, closest_diff
+	end
 
 	for i = 1, #self.pipes do
 		local pipe = self.pipes[i]
-		local realdiff = SCREEN_WIDTH / 2 - pipe[1] - birdsprite.w / 2
+		local realdiff = SCREEN_WIDTH / 2 - pipe[1].pos.x - HardCodedSpriteShit.yellowbird_midflap.w / 2
 		local diff = math.abs(realdiff)
 
 		if diff < 150 and diff < closest_diff then
@@ -99,72 +220,51 @@ function GAME:GetClosestPipe()
 end
 
 -- if flappy is colliding with the pipe
--- todo: collision library
 function GAME:FlappyIsCollidingWithPipe()
-	local flap = string.format("yellowbird_%sflap", lookup_flap[self.FlappyState])
-	local bg = flappy_sprites["pipe_green"]
-	local birdsprite = flappy_sprites[flap]
+	local i = (self:GetClosestPipe())
+	if not i then
+		return false
+	end
 
-	if bg and birdsprite then
-		local i = (self:GetClosestPipe())
-		if not i then return false end
+	local pipe = self.pipes[i]
+	local up, down = pipe[1], pipe[2]
+	local FAT = 230
 
-		local tw, th = birdsprite.w * 1.25, birdsprite.h * 1.25
-		local tw2, th2 = birdsprite.w, birdsprite.h
-		local bg_pos_x, bg_pos_y = self.pipes[i][1], self.pipes[i][2]
-		local f_pos_x, f_pos_y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - th / 2 + self.FlappyY
+	local colliding_up = false
+	local colliding_down = false
 
-		local pipe_bounds =
-		{
-			-- bottom
-			{
-				-- top left
-				Vector2D (bg_pos_x, bg_pos_y),
-				-- bottom right
-				Vector2D (bg_pos_x + bg.w, bg_pos_y + bg.h),
-			},
-			-- top
-			{
-				-- top left
-				Vector2D (bg_pos_x, bg_pos_y - gap/2),
-				-- bottom right
-				Vector2D (bg_pos_x + bg.w, bg_pos_y - gap/2 - bg.h),
-			}
-		}
+	--
+	-- On god this code is ugly, and I would rather
+	-- not write something like this ever again.
+	--
+	-- At least it's much better than checking if a vector
+	-- is within a box 8 times.
+	--
+	if up then
+		up.pos.y = up.pos.y - FAT
+		if COLLISION:BoxCollision(self.TheFlappy, up) and not colliding_up then
+			colliding_up = true
+		end
+		up.pos.y = up.pos.y + FAT
+	end
 
-		local flappy_bounds =
-		{
-			-- top left
-			Vector2D (f_pos_x - tw2 / 2, f_pos_y - th / 2),
-			-- top right
-			Vector2D (f_pos_x + tw2 / 2, f_pos_y - th / 2),
-			-- bottom left
-			Vector2D (f_pos_x - tw2 / 2, f_pos_y + th / 2),
-			-- bottom right
-			Vector2D (f_pos_x + tw2 / 2, f_pos_y + th / 2),
-		}
+	if down then
+		down.pos.y = down.pos.y - FAT
+		if COLLISION:BoxCollision(self.TheFlappy, down) and not colliding_down then
+			colliding_down = true
+		end
+		down.pos.y = down.pos.y + FAT
+	end
 
-		local bl_touch_bpipe = flappy_bounds[3]:WithinAABox(pipe_bounds[1][1], pipe_bounds[1][2])
-		local br_touch_bpipe = flappy_bounds[4]:WithinAABox(pipe_bounds[1][1], pipe_bounds[1][2])
-		local tl_touch_bpipe = flappy_bounds[1]:WithinAABox(pipe_bounds[1][1], pipe_bounds[1][2])
-		local tr_touch_bpipe = flappy_bounds[2]:WithinAABox(pipe_bounds[1][1], pipe_bounds[1][2])
-
-		if tl_touch_bpipe or tr_touch_bpipe or bl_touch_bpipe or br_touch_bpipe then return true end
-		-- upper pipe
-		local bl_touch_tpipe = flappy_bounds[3]:WithinAABox(pipe_bounds[2][1], pipe_bounds[2][2])
-		local br_touch_tpipe = flappy_bounds[4]:WithinAABox(pipe_bounds[2][1], pipe_bounds[2][2])
-		local tl_touch_tpipe = flappy_bounds[1]:WithinAABox(pipe_bounds[2][1], pipe_bounds[2][2])
-		local tr_touch_tpipe = flappy_bounds[2]:WithinAABox(pipe_bounds[2][1], pipe_bounds[2][2])
-
-		if tl_touch_tpipe or tr_touch_tpipe or bl_touch_tpipe or br_touch_tpipe then return true end
+	if colliding_up or colliding_down then
+		return true
 	end
 
 	return false
 end
 
--- Move chatprint to notifications?
+-- TODO: Move chatprint to notifications?
 function GAME:Die()
-	--LocalPlayer():ChatPrint("Died")
 	self.Dead = true
 	GetSound("hit"):Play()
 
@@ -188,7 +288,7 @@ function GAME:Start()
 	self.Dead = false
 	self.GameEnded = false
 	self.backgrounds = {0, 288, 288 * 2}
-	self.pipes = {{800, math.random(225, 450)}, {1000, math.random(225, 450)}, {1200, math.random(225, 450)}}
+	ResetPipes(self)
 	self.scored = {false, false, false}
 	self.Attracting = true
 	
@@ -198,9 +298,9 @@ end
 
 function GAME:Reset()
 	self.FlappyState = 0
-	self.FlappyAngle = 45
-	self.FlappyW = SCREEN_WIDTH / 2
-	self.FlappyY = SCREEN_HEIGHT / 8
+	-- bruhment
+	-- self.FlappyAngle = 45
+	self.TheFlappy.pos =  Vector(SCREEN_HEIGHT / 2 - biggy / 2, SCREEN_HEIGHT / 8 - biggh / 2)
 	self.FlappyVel = 0
 	self.LastSpace = nil
 	self.LastFlap = nil
@@ -210,8 +310,7 @@ end
 
 -- game logic
 function GAME:Init()
-	-- download sprites and sounds
-	-- todo: use image library
+	-- download sprites, sprite data and sounds
 	self:QueueDownloadSprite("yellowbird-upflap.png")
 	self:QueueDownloadSprite("yellowbird-midflap.png")
 	self:QueueDownloadSprite("yellowbird-downflap.png")
@@ -222,17 +321,15 @@ function GAME:Init()
 		self:QueueDownloadSprite(i .. ".png")
 	end
 
-	self:QueueDownloadSprite('message.png')
-
-	--message.png
 	local function ld(snd, cb)
 		SOUND:LoadFromURL(baseURL_snd .. snd, (snd:gsub("%.ogg", "")), cb or function() end)
 	end
 
-	ld"swoosh.ogg"
-	ld"point.ogg"
-	ld"hit.ogg"
-	ld"die.ogg"
+	ld("swoosh.ogg", function(snd) snd:SetVolume(0.65) end)
+	ld("point.ogg", function(snd) snd:SetVolume(0.65) end)
+	ld("hit.ogg")
+	ld("die.ogg")
+
 	self.CanStart = 0
 	self.Attracting = true
 end
@@ -263,42 +360,45 @@ function GAME:IsBeingPlayed()
 	return IsValid(self.CurrentPlayer) and MACHINE:GetCoins() > 0
 end
 
+local processing = false
 function GAME:Update()
-	local bgsprite = flappy_sprites["background_day"]
+	local bgsprite = IMAGE.Images["background_day"]
 
-	if bgsprite and self.Attracting then
+	if bgsprite and bgsprite.status == 1 and self.Attracting then
 		for i = 1, #self.backgrounds do
 			local bg_pos_x = self.backgrounds[i]
+			local _bg = HardCodedSpriteShit.background_day
 			self.backgrounds[i] = self.backgrounds[i] - FrameTime() * 75
 
-			if self.backgrounds[i] < -bgsprite.w then
-				self.backgrounds[i] = self.backgrounds[i] + bgsprite.w * 3
+			if self.backgrounds[i] < -_bg.w then
+				self.backgrounds[i] = self.backgrounds[i] + _bg.w * 3
 			end
 		end
 	end
 
 	-- sprite download routine
-	-- todo: this is obsolete
 	if not self.DownloadedSprites and not self.DownloadingSprites then
 		self.DownloadingSprites = true
-		self.AmountSprites = #flappy_sprites
+		self.AmountSprites = table.Count(flappy_sprites)
 	end
 
 	if self.DownloadingSprites then
 		local sprite = flappy_sprites[self.SpriteIndex]
-		local w, h, img = sprite[2]()
+		local coolName = sprite[1]:gsub("-", "_"):gsub("%.png", "")
 
-		if w or h or img then
-			local coolName = sprite[1]:gsub("-", "_"):gsub("%.png", "")
-
-			flappy_sprites[coolName] = {
-				w = w,
-				h = h,
-				img = img
-			}
-
-			flappy_sprites[self.SpriteIndex] = nil
-			self.SpriteIndex = self.SpriteIndex + 1
+		if not processing then
+			IMAGE:LoadFromURL(baseURL .. sprite[1], coolName)
+			processing = true
+		else
+			local _i = IMAGE.Images[coolName]
+			if _i and next(_i) ~= nil and _i.status == 1 then
+				processing = false
+				flappy_sprites[self.SpriteIndex] = nil
+				self.SpriteIndex = self.SpriteIndex + 1
+				if _i.status == 2 then
+					error("processing " .. sprite[1] .. " failed")
+				end
+			end
 		end
 
 		if self.SpriteIndex > self.AmountSprites then
@@ -308,7 +408,7 @@ function GAME:Update()
 		end
 	end
 
-	if not self:IsBeingPlayed() then return end
+	if not self:IsBeingPlayed() or not self.DownloadedSprites then return end
 
 	-- pressing space, starting game or making bird flap
 	if input.IsKeyDown(KEY_SPACE) then
@@ -361,10 +461,8 @@ function GAME:Update()
 	end
 
 	-- check, flappy is on floor or colliding with nearest pipe
-	local flap = string.format("yellowbird_%sflap", lookup_flap[self.FlappyState])
-	local sprite = flappy_sprites[flap]
-
-	if (self.FlappyY > SCREEN_HEIGHT / 2) or self:FlappyIsCollidingWithPipe() then
+	local FLAPPY = self.TheFlappy
+	if (FLAPPY.pos.y > SCREEN_HEIGHT / 2) or self:FlappyIsCollidingWithPipe() then
 		self.GameEnded = true
 		self:Die()
 
@@ -373,7 +471,7 @@ function GAME:Update()
 
 	-- modify flappy velocity and y value
 	self.FlappyVel = self.FlappyVel + self.Gravity * FrameTime()
-	self.FlappyY = self.FlappyY - (self.FlappyVel * FrameTime())
+	FLAPPY.pos.y = FLAPPY.pos.y - (self.FlappyVel * FrameTime())
 
 	-- controls flappy animation
 	if not self.LastFlap then
@@ -396,23 +494,31 @@ function GAME:Update()
 	local closest_pipe, closest_dist = self:GetClosestPipe()
 
 	if closest_pipe and closest_dist < 100000 then
-		if closest_dist > sprite.w and not self.scored[closest_pipe] then
+		if closest_dist > FLAPPY.collision.width and not self.scored[closest_pipe] then
 			self.scored[closest_pipe] = true
 			self.Score = self.Score + 1
+			
+			local point = GetSound("point")
+			point:SetTime(0)
+			point:Play()
 		end
 	end
 
-	-- update background and pipe position
-	local pipesprite = flappy_sprites["pipe_green"]
-	if pipesprite then
+	--update pipe position
+	if self.pipes and #self.pipes > 0 then
 		for i = 1, #self.pipes do
-			local bg_pos_x = self.pipes[i][1]
-			local bg_pos_y = self.pipes[i][2]
-			self.pipes[i][1] = self.pipes[i][1] - FrameTime() * 100
+			local pipe_obj = self.pipes[i]
+			local up, down = pipe_obj[1], pipe_obj[2]
 
-			if self.pipes[i][1] < -pipesprite.w then
-				self.pipes[i][1] = self.pipes[i][1] + 200 * 3
-				self.pipes[i][2] = math.random(225, 450)
+			up.pos.x = up.pos.x - FrameTime() * 100
+			down.pos.x = down.pos.x - FrameTime() * 100
+
+			-- We only need to check the position of one pipe
+			-- as we know the pipes are above each other
+			if up.pos.x < -up.collision.width then
+				up.pos.x = up.pos.x + pipe_interval * 3
+				down.pos.x = down.pos.x + pipe_interval * 3
+
 				self.scored[i] = false
 			end
 		end
@@ -421,13 +527,16 @@ end
 
 -- pipe marquee
 function GAME:DrawMarquee()
-	local pipe = flappy_sprites["pipe_green"]
-	if not pipe then return end
+	if not self.DownloadedSprites then return end
+	local pipe = IMAGE.Images["pipe_green"]
+	if pipe.status ~= 1 then return end
+
+	local pipe_data = HardCodedSpriteShit.pipe_green
 
 	local mw = MARQUEE_WIDTH
 	local mh = MARQUEE_HEIGHT
 	local numPipes = 12
-	local divsize = pipe.w / (mw / numPipes)
+	local divsize = pipe_data.w / (mw / numPipes)
 
 	surface.SetDrawColor(60, 255, 60, 255)
 	surface.DrawRect(0, 0, mw, mh)
@@ -435,11 +544,11 @@ function GAME:DrawMarquee()
 	local e = 0
 	for i = 1, numPipes do
 		local a = math.random(1, mh / 4)
-		surface.SetMaterial(pipe.img)
+		surface.SetMaterial(pipe.mat)
 		surface.SetDrawColor(255, 255, 255)
-		surface.DrawTexturedRect(e, mh / 2 + a, pipe.w / divsize, pipe.h / divsize)
-		surface.DrawTexturedRectRotated(e + ((pipe.w / divsize) / 2), mh / 2 + a - (55 * divsize / 2), pipe.w / divsize, pipe.h / divsize, math.deg(math.rad(180)))
-		e = e + pipe.w / divsize
+		surface.DrawTexturedRect(e, mh / 2 + a, pipe_data.w / divsize, pipe_data.h / divsize)
+		surface.DrawTexturedRectRotated(e + ((pipe_data.w / divsize) / 2), mh / 2 + a - (55 * divsize / 2), pipe_data.w / divsize, pipe_data.h / divsize, math.deg(math.rad(180)))
+		e = e + pipe_data.w / divsize
 	end
 
 	draw.NoTexture()
@@ -466,33 +575,30 @@ function GAME:Draw()
 		if not self:IsBeingPlayed() then return end
 
 		-- draw pipes
-		local pipe = flappy_sprites["pipe_green"]
-		if pipe then
+		local pipe = IMAGE.Images["pipe_green"]
+		if pipe and pipe.status == 1 and self.pipes and #self.pipes > 0 then
 			for i = 1, #self.pipes do
-				local bg_pos_x = self.pipes[i][1]
-				local bg_pos_y = self.pipes[i][2]
-				surface.SetMaterial(pipe.img)
+				local pipe_obj = self.pipes[i]
+				local low, up = pipe_obj[1], pipe_obj[2]
+				
 				surface.SetDrawColor(255, 255, 255)
-				surface.DrawTexturedRect(bg_pos_x, bg_pos_y, pipe.w, pipe.h)
-				surface.DrawTexturedRectRotated(bg_pos_x + pipe.w / 2, bg_pos_y - 300, pipe.w, pipe.h, math.deg(math.rad(180)))
+				surface.SetMaterial(pipe.mat)
 
-				if self.Debug then
-					draw.NoTexture()
-					surface.SetDrawColor(255, 0, 0)
-					surface.DrawRect(bg_pos_x - 5, bg_pos_y - 5, 10, 10)
-					surface.DrawRect(bg_pos_x - 5, bg_pos_y - gap / 2 - 5, 10, 10)
-				end
+				surface.DrawTexturedRect(up.pos.x, up.pos.y, up.collision.width, up.collision.height)
+				surface.DrawTexturedRectRotated(up.pos.x + up.collision.width / 2, up.pos.y - (gap + 20), up.collision.width, up.collision.height, math.deg(math.rad(180)))
 			end
 		end
 
 		local flap = string.format("yellowbird_%sflap", lookup_flap[self.FlappyState])
-		local birdsprite = flappy_sprites[flap]
+		local birdsprite = IMAGE.Images[flap]
 
+		--- I'm leaving this in here :)
 		-- drwas bird
-		if birdsprite and not (self.GameEnded or self.Dead) then
-			local tw, th = birdsprite.w * 1.25, birdsprite.h * 1.25
+		if birdsprite and birdsprite.status == 1 and not (self.GameEnded or self.Dead) then
+			local bird = self.TheFlappy
+			local tw, th = bird.collision.width * 1.25, bird.collision.height * 1.25
 			local x = SCREEN_WIDTH / 2 
-			local y = SCREEN_HEIGHT / 2 - th / 2 + self.FlappyY
+			local y = SCREEN_HEIGHT / 2 - th / 2 + bird.pos.y
 
 			if self.Debug then
 				draw.NoTexture()
@@ -500,7 +606,7 @@ function GAME:Draw()
 				surface.DrawRect(x - tw / 2, y - th / 2, tw, th)
 			end
 
-			surface.SetMaterial(birdsprite.img)
+			surface.SetMaterial(birdsprite.mat)
 			surface.SetDrawColor(255, 255, 255)
 			surface.DrawTexturedRectRotated(x, y, tw, th, 0)
 
@@ -511,9 +617,8 @@ function GAME:Draw()
 			end
 		end
 
-		-- is there sprites being downloaded
+		-- is there sprites being downloaded?
 		local sprite = flappy_sprites[self.SpriteIndex]
-
 		if sprite and self.DownloadingSprites then
 			local text = "Downloading Sprite " .. self.SpriteIndex .. " (" .. sprite[1] .. "/" .. self.AmountSprites .. ")..."
 			text = string.upper(text)
@@ -540,7 +645,7 @@ function GAME:Draw()
 			local total_height
 
 			for i = 1, #digits do
-				local digit = flappy_sprites[digits[i]]
+				local digit = HardCodedSpriteShit[digits[i]]
 
 				if not total_height then
 					single_width = digit.w
@@ -555,30 +660,30 @@ function GAME:Draw()
 			local ws = mid
 
 			for i = 1, #digits do
-				local digit = flappy_sprites[digits[i]]
-				surface.SetMaterial(digit.img)
+				local digit = IMAGE.Images[digits[i]]
+				surface.SetMaterial(digit.mat)
 				surface.SetDrawColor(255, 255, 255, 255)
-				surface.DrawTexturedRect(ws, height, digit.w, digit.h)
-				ws = ws + digit.w
+				surface.DrawTexturedRect(ws, height, single_width, total_height)
+				ws = ws + single_width
 			end
 		end
 	end
 
-	-- todo: attract screen
 	if not self.DownloadedSprites then
 		surface.SetDrawColor(HSVToColor(RealTime() * 50 % 360, 1, 0.5))
 		surface.DrawRect(0, 0, w, h)
 	end
 
 	-- draw backgrounds
-	local bg = flappy_sprites["background_day"]
-
-	if bg then
+	local bg = IMAGE.Images["background_day"]
+	if bg and bg.status == 1 then
 		for i = 1, #self.backgrounds do
 			local bg_pos_x = self.backgrounds[i]
-			surface.SetMaterial(bg.img)
+			local _bgw = HardCodedSpriteShit.background_day.w
+			local _bgh = HardCodedSpriteShit.background_day.h
+			surface.SetMaterial(bg.mat)
 			surface.SetDrawColor(255, 255, 255)
-			surface.DrawTexturedRect(bg_pos_x, 0, bg.w, bg.h)
+			surface.DrawTexturedRect(bg_pos_x, 0, _bgw, _bgh)
 		end
 	end
 
@@ -618,26 +723,22 @@ function GAME:Draw()
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-	--print("OnCoinsInserted")
 	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
 
-	--print(MACHINE:GetCoins())
 	if (new == 1) then
-		--self.CurrentPlayer:ChatPrint("Fat")
 		self:Reset()
 		self.backgrounds = {0, 288, 288 * 2}
-		self.pipes = {{800, math.random(225, 450)}, {1000, math.random(225, 450)}, {1200, math.random(225, 450)}}
+		ResetPipes(self)
 		self.scored = {false, false, false}
 		self.Dead = false
 	end
 end
 
 function GAME:OnCoinsLost(ply, old, new)
-	--print("OnCoinsLost")
 	if new < 1 then
 		self:Reset()
 		self.GameEnded = true
 	end
 end
---return GAME
---end
+-- return GAME
+-- end
