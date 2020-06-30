@@ -79,9 +79,11 @@ Access your image with `IMAGE.Images[name]`, which will look like
 
 To access your sound use `SOUND.Sounds[name]`, which will look like
 
+Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in Init. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+
 ```lua
 {
-    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    status = (0 = STATUS_QUEUED, 1 = STATUS_LOADING, 2 = STATUS_LOADED, 3 = STATUS_ERROR),
     err = "BASS_SOMEERROR", -- if status == STATUS_ERROR
     sound = IGModAudioChannel -- if status == STATUS_LOADED
 }
@@ -115,7 +117,7 @@ Objects passed to `IsColliding` must look like:
     pos = Vector(),
     ang = Angle(),
     collision = {
-        type = COLLISION.COLLISION_TYPE_BOX, -- see types above
+        type = COLLISION.types.COLLISION_TYPE_BOX, -- see types above
         width = 5, -- if COLLISION_TYPE_BOX
         height = 5, -- if COLLISION_TYPE_BOX
         radius = 5, -- if COLLISION_TYPE_CIRCLE
