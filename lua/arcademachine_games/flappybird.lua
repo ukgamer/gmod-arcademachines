@@ -184,7 +184,7 @@ end)
 local function GetSound(snd)
 	snd = SOUND.Sounds[snd]
 
-	if snd and snd.status == 2 then
+	if snd and snd.status == SOUND.STATUS_LOADED then
 		return snd.sound
 	end
 
@@ -364,7 +364,7 @@ local processing = false
 function GAME:Update()
 	local bgsprite = IMAGE.Images["background_day"]
 
-	if bgsprite and bgsprite.status == 1 and self.Attracting then
+	if bgsprite and bgsprite.status == IMAGE.STATUS_LOADED and self.Attracting then
 		for i = 1, #self.backgrounds do
 			local bg_pos_x = self.backgrounds[i]
 			local _bg = HardCodedSpriteShit.background_day
@@ -391,7 +391,7 @@ function GAME:Update()
 			processing = true
 		else
 			local _i = IMAGE.Images[coolName]
-			if _i and next(_i) ~= nil and _i.status == 1 then
+			if _i and next(_i) ~= nil and _i.status == IMAGE.STATUS_LOADED then
 				processing = false
 				flappy_sprites[self.SpriteIndex] = nil
 				self.SpriteIndex = self.SpriteIndex + 1
@@ -529,7 +529,7 @@ end
 function GAME:DrawMarquee()
 	if not self.DownloadedSprites then return end
 	local pipe = IMAGE.Images["pipe_green"]
-	if pipe.status ~= 1 then return end
+	if pipe.status ~= IMAGE.STATUS_LOADED then return end
 
 	local pipe_data = HardCodedSpriteShit.pipe_green
 
@@ -576,7 +576,7 @@ function GAME:Draw()
 
 		-- draw pipes
 		local pipe = IMAGE.Images["pipe_green"]
-		if pipe and pipe.status == 1 and self.pipes and #self.pipes > 0 then
+		if pipe and pipe.status == IMAGE.STATUS_LOADED and self.pipes and #self.pipes > 0 then
 			for i = 1, #self.pipes do
 				local pipe_obj = self.pipes[i]
 				local low, up = pipe_obj[1], pipe_obj[2]
@@ -594,7 +594,7 @@ function GAME:Draw()
 
 		--- I'm leaving this in here :)
 		-- drwas bird
-		if birdsprite and birdsprite.status == 1 and not (self.GameEnded or self.Dead) then
+		if birdsprite and birdsprite.status == IMAGE.STATUS_LOADED and not (self.GameEnded or self.Dead) then
 			local bird = self.TheFlappy
 			local tw, th = bird.collision.width * 1.25, bird.collision.height * 1.25
 			local x = SCREEN_WIDTH / 2 
@@ -664,7 +664,7 @@ function GAME:Draw()
 
 	-- draw backgrounds
 	local bg = IMAGE.Images["background_day"]
-	if bg and bg.status == 1 then
+	if bg and bg.status == IMAGE.STATUS_LOADED then
 		for i = 1, #self.backgrounds do
 			local bg_pos_x = self.backgrounds[i]
 			local _bgw = HardCodedSpriteShit.background_day.w
