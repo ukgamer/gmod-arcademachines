@@ -728,5 +728,6 @@ function GAME:OnCoinsLost(ply, old, new)
 		self.GameEnded = true
 	end
 end
--- return GAME
+
+return GAME
 -- end
