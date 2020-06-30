@@ -27,8 +27,8 @@ local flappy_sprites = {}
 local gap = 280
 local startpos = 800
 local pipe_interval = 200
-local baseURL = "https://raw.githubusercontent.com/sourabhv/FlapPyBird/master/assets/sprites/"
-local baseURL_snd = (baseURL:gsub("sprites", "audio")) -- LMAO
+local baseURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/flappybird/images/"
+local baseURL_snd = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/flappybird/sounds/"
 
 local lookup_flap = {
 	[0] = "up",
@@ -600,21 +600,9 @@ function GAME:Draw()
 			local x = SCREEN_WIDTH / 2 
 			local y = SCREEN_HEIGHT / 2 - th / 2 + bird.pos.y
 
-			if self.Debug then
-				draw.NoTexture()
-				surface.SetDrawColor(255, 255, 0)
-				surface.DrawRect(x - tw / 2, y - th / 2, tw, th)
-			end
-
 			surface.SetMaterial(birdsprite.mat)
 			surface.SetDrawColor(255, 255, 255)
 			surface.DrawTexturedRectRotated(x, y, tw, th, 0)
-
-			if self.Debug then
-				draw.NoTexture()
-				surface.SetDrawColor(255, 0, 0)
-				surface.DrawRect(x - 5, y - 5, 10, 10)
-			end
 		end
 
 		-- is there sprites being downloaded?
