@@ -6,9 +6,6 @@ ENT.Category = "ukgamer"
 ENT.Spawnable = false
 ENT.AdminSpawnable = true
 
-ENT.CanConstruct = function() return false end
-ENT.CanTool = function() return false end
-
 ENT.Class = "arcademachine"
 ENT.MaxDist = 200
 
@@ -40,6 +37,14 @@ function ENT:SetupDataTables()
     end
 
     self:NetworkVarNotify("Seat", self.OnSeatCreated)
+end
+
+function ENT:CanConstruct()
+    return false
+end
+
+function ENT:CanTool()
+    return false
 end
 
 function ENT:CanProperty()
