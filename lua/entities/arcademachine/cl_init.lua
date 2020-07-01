@@ -508,7 +508,9 @@ end)
 hook.Add("Think", "arcademachine_queue", function()
     if RealTime() < NextQueueAt then return end
 
-    for k, v in pairs(QueuedSounds) do
+    local k, v = next(QueuedSounds)
+
+    if k then
         if #v > 0 then
             v[1].context:LoadQueued(v[1])
             table.remove(v, 1)
