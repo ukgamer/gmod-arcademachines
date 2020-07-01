@@ -363,6 +363,9 @@ function ENT:StopSounds()
     end
 
     table.Empty(self.LoadedSounds)
+    if QueuedSounds[self:EntIndex()] then
+        QueuedSounds[self:EntIndex()] = nil
+    end
 end
 
 function ENT:SetGame(game, forceLibLoad)
@@ -505,10 +508,14 @@ end)
 hook.Add("Think", "arcademachine_queue", function()
     if RealTime() < NextQueueAt then return end
 
-    if #QueuedSounds > 0 then
-        QueuedSounds[1].context:LoadQueued(QueuedSounds[1])
-        table.remove(QueuedSounds, 1)
+    for k, v in pairs(QueuedSounds) do
+        if #v > 0 then
+            v[1].context:LoadQueued(v[1])
+            table.remove(v, 1)
+        else
+            QueuedSounds[k] = nil
+        end
     end
 
-    NextQueueAt = RealTime() + 0.1
+    NextQueueAt = RealTime() + 0.05
 end)
