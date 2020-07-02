@@ -2,6 +2,10 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
+if SERVERID ~= nil then
+    include("ms_specific.lua")
+end
+
 resource.AddSingleFile("models/metastruct/ms_acabinet.mdl")
 resource.AddSingleFile("models/metastruct/ms_acabinet.phy")
 resource.AddSingleFile("models/metastruct/ms_acabinet.sw.vtx")
