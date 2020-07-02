@@ -74,9 +74,6 @@ function ENT:Initialize()
         }
     )
 
-    self.Entity:SetSubMaterial(4, "!ArcadeMachine_Screen_Material_" .. self:EntIndex())
-    self.Entity:SetSubMaterial(3, "!ArcadeMachine_Marquee_Material_" .. self:EntIndex())
-
     self.Active = self.Active or false
     self.Game = self.Game or nil
     self.LoadedSounds = {}
@@ -101,6 +98,16 @@ function ENT:Think()
     -- Work around init not being called on the client sometimes
     if not self.Initialized then
         self:Initialize()
+    end
+
+    -- To prevent using string table slots, don't set the submaterial on the server
+    -- Because this is overridden by the server, this means we have to check to see
+    -- if it needs setting again on the client
+    if self.Entity:GetSubMaterial(3) ~= "!ArcadeMachine_Marquee_Material_" .. self:EntIndex() then
+        self.Entity:SetSubMaterial(3, "!ArcadeMachine_Marquee_Material_" .. self:EntIndex())
+    end
+    if self.Entity:GetSubMaterial(4) ~= "!ArcadeMachine_Screen_Material_" .. self:EntIndex() then
+        self.Entity:SetSubMaterial(4, "!ArcadeMachine_Screen_Material_" .. self:EntIndex())
     end
 
     -- Workaround network var notify not triggering for null entity
