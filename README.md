@@ -131,7 +131,7 @@ Objects passed to `IsColliding` must look like:
 }
 ```
 
-### Thanks
+## Thanks
 
 * Robro - for the model
 * Sera - for help with environment wrapping stuff
