@@ -1,3 +1,12 @@
+--[[
+    Asteroids ripoff by ukgamer
+
+    Uses sounds from http://www.classicgaming.cc/classics/asteroids/sounds
+    Uses marquee image from https://www.wallpaperflare.com/arcade-cabinet-video-game-art-arcade-marquee-asteroids-wallpaper-yhexk
+
+    All trademarks are property of their respective owners
+]]
+
 --TESTGAME = function()
 local GAME = {}
 

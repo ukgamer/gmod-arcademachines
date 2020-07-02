@@ -79,7 +79,7 @@ Access your image with `IMAGE.Images[name]`, which will look like
 
 To access your sound use `SOUND.Sounds[name]`, which will look like
 
-Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in Init. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
 
 ```lua
 {
@@ -130,3 +130,12 @@ Objects passed to `IsColliding` must look like:
     }
 }
 ```
+
+### Thanks
+
+* Robro - for the model
+* Sera - for help with environment wrapping stuff
+* Python1320 - for help with clientside material override workaround
+* Twistalicky - various ideas/suggestions
+* All the people who have made/are making games for the machine e.g. twentysix, Cynthia
+* Anyone else I forgot
