@@ -100,16 +100,6 @@ function ENT:Think()
         self:Initialize()
     end
 
-    -- To prevent using string table slots, don't set the submaterial on the server
-    -- Because this is overridden by the server, this means we have to check to see
-    -- if it needs setting again on the client
-    if self.Entity:GetSubMaterial(3) ~= "!ArcadeMachine_Marquee_Material_" .. self:EntIndex() then
-        self.Entity:SetSubMaterial(3, "!ArcadeMachine_Marquee_Material_" .. self:EntIndex())
-    end
-    if self.Entity:GetSubMaterial(4) ~= "!ArcadeMachine_Screen_Material_" .. self:EntIndex() then
-        self.Entity:SetSubMaterial(4, "!ArcadeMachine_Screen_Material_" .. self:EntIndex())
-    end
-
     -- Workaround network var notify not triggering for null entity
     if self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
         if self.Game then
@@ -186,7 +176,12 @@ function ENT:OnLeftRange()
 end
 
 function ENT:Draw()
+    -- To prevent using string table slots, don't set the submaterial on the server
+    -- and just override it here
+    render.MaterialOverrideByIndex(3, self.MarqueeMaterial)
+    render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     self.Entity:DrawModel()
+    render.MaterialOverrideByIndex()
 
     if not self.Active or not self.Game then
         return
