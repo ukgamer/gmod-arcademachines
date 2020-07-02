@@ -117,17 +117,6 @@ local nextBeepAt = 0
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee")
 
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/fire.ogg", "fire")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangSmall.ogg", "bangsmall")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangMedium.ogg", "bangmedium")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangLarge.ogg", "banglarge")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/extraShip.ogg", "extraShip")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/thrust.ogg", "thrust", function(snd)
-        snd:EnableLooping(true)
-    end)
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat1.ogg", "beat1")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat2.ogg", "beat2")
-
     self:SpawnAsteroids()
 end
 
@@ -512,6 +501,17 @@ end
 function GAME:OnStartPlaying(ply)
     if ply == LocalPlayer() then
         thePlayer = ply
+
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/fire.ogg", "fire")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangSmall.ogg", "bangsmall")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangMedium.ogg", "bangmedium")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/bangLarge.ogg", "banglarge")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/extraShip.ogg", "extraShip")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/thrust.ogg", "thrust", function(snd)
+            snd:EnableLooping(true)
+        end)
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat1.ogg", "beat1")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat2.ogg", "beat2")
     end
 end
 
