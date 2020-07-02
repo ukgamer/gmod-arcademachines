@@ -531,7 +531,7 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
+    MACHINE:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
 
     if ply ~= LocalPlayer() then return end
 

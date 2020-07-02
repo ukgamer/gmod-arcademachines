@@ -14,8 +14,8 @@ local PressedScore = false
 local PressedUse = false
 local PressedUseAt = 0
 
-local PACState = nil
-local OutfitterState = nil
+local PACWasDisabled = false
+local OutfitterWasDisabled = false
 
 ENT.Initialized = false
 
@@ -227,9 +227,6 @@ function ENT:OnLocalPlayerEntered()
         notification.AddLegacy(msg, NOTIFY_HINT, 10)
     end
 
-    PACState = cvars.Bool("pac_enable", nil)
-    OutfitterState = cvars.Bool("outfitter_enabled", nil)
-
     if ShowIntro:GetBool() then
         local frame = vgui.Create("DFrame")
 
@@ -251,7 +248,7 @@ function ENT:OnLocalPlayerEntered()
         label:DockMargin(0, 0, 0, 15)
         label:SetText("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
 
-        if DisablePAC:GetBool() and PACState ~= nil then
+        if DisablePAC:GetBool() and pac then
             local label = vgui.Create("DLabel", scroll)
             label:Dock(TOP)
             label:SetWrap(true)
@@ -260,7 +257,7 @@ function ENT:OnLocalPlayerEntered()
             label:SetText("WARNING: PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
         end
 
-        if DisableOutfitter:GetBool() and OutfitterState ~= nil then
+        if DisableOutfitter:GetBool() and outfitter then
             local label = vgui.Create("DLabel", scroll)
             label:Dock(TOP)
             label:SetWrap(true)
@@ -282,22 +279,30 @@ function ENT:OnLocalPlayerEntered()
         end
     end
 
-    if DisablePAC:GetBool() and PACState ~= nil then
-        LocalPlayer():ConCommand("pac_enable 0")
+    if DisablePAC:GetBool() and pac then
+        pac.Disable()
+        PACWasDisabled = true
+    else
+        PACWasDisabled = false
     end
 
-    if DisableOutfitter:GetBool() and OutfitterState ~= nil then
-        LocalPlayer():ConCommand("outfitter_enabled 0")
+    if DisableOutfitter:GetBool() and outfitter then
+        outfitter.SetHighPerf(true, true)
+        outfitter.DisableEverything()
+        OutfitterWasDisabled = true
+    else
+        OutfitterWasDisabled = false
     end
 end
 
 function ENT:OnLocalPlayerLeft()
-    if DisablePAC:GetBool() and PACState ~= nil then
-        LocalPlayer():ConCommand("pac_enable " .. (PACState and "1" or "0"))
+    if DisablePAC:GetBool() and PACWasDisabled then
+        pac.Enable()
     end
 
-    if DisableOutfitter:GetBool() and OutfitterState ~= nil then
-        LocalPlayer():ConCommand("outfitter_enabled " .. (OutfitterState and "1" or "0"))
+    if DisableOutfitter:GetBool() and OutfitterWasDisabled then
+        outfitter.SetHighPerf(false, true)
+        outfitter.EnableEverything()
     end
 end
 
