@@ -230,7 +230,7 @@ function ENT:OnLocalPlayerEntered()
     if ShowIntro:GetBool() then
         local frame = vgui.Create("DFrame")
 
-        frame:SetSize(ScrW() * 0.2, ScrH() * 0.15)
+        frame:SetSize(ScrW() * 0.25, ScrH() * 0.35)
         frame:Center()
         frame:SetTitle("Arcade Machines")
         frame:SetDraggable(false)
@@ -246,6 +246,15 @@ function ENT:OnLocalPlayerEntered()
         label:SetWrap(true)
         label:SetAutoStretchVertical(true)
         label:DockMargin(0, 0, 0, 15)
+        label:SetFont("ScoreboardDefaultTitle")
+        label:SetText("Instructions/Controls")
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("ScoreboardDefault")
         label:SetText("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
 
         if DisablePAC:GetBool() and pac then
@@ -254,7 +263,16 @@ function ENT:OnLocalPlayerEntered()
             label:SetWrap(true)
             label:SetAutoStretchVertical(true)
             label:DockMargin(0, 0, 0, 15)
-            label:SetText("WARNING: PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
+            label:SetFont("ScoreboardDefaultTitle")
+            label:SetText("WARNING: PAC Disabled")
+
+            local label = vgui.Create("DLabel", scroll)
+            label:Dock(TOP)
+            label:SetWrap(true)
+            label:SetAutoStretchVertical(true)
+            label:DockMargin(0, 0, 0, 15)
+            label:SetFont("ScoreboardDefault")
+            label:SetText("PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
         end
 
         if DisableOutfitter:GetBool() and outfitter then
@@ -263,7 +281,16 @@ function ENT:OnLocalPlayerEntered()
             label:SetWrap(true)
             label:SetAutoStretchVertical(true)
             label:DockMargin(0, 0, 0, 15)
-            label:SetText("WARNING: Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
+            label:SetFont("ScoreboardDefaultTitle")
+            label:SetText("WARNING: Outfitter Disabled")
+
+            local label = vgui.Create("DLabel", scroll)
+            label:Dock(TOP)
+            label:SetWrap(true)
+            label:SetAutoStretchVertical(true)
+            label:DockMargin(0, 0, 0, 15)
+            label:SetFont("ScoreboardDefault")
+            label:SetText("Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
         end
 
         local button = vgui.Create("DButton", frame)
