@@ -51,8 +51,6 @@ end
 
 function ENT:Initialize()
     self.Entity:SetModel("models/metastruct/ms_acabinet.mdl")
-    self.Entity:SetSubMaterial(4, "!ArcadeMachine_Screen_Material_" .. self:EntIndex())
-    self.Entity:SetSubMaterial(3, "!ArcadeMachine_Marquee_Material_" .. self:EntIndex())
     
     self:SetUseType(SIMPLE_USE)
 
