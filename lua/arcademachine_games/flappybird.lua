@@ -8,7 +8,7 @@
 --
 -- TODO:
 --   Fix: Lag spikes kill your run
---   Add personal best score
+--   Fix: Lag spikes can allow you to bypass the pipe, not giving score.
 --   Fonts
 --
 
@@ -51,6 +51,7 @@ GAME.FlappyVel = 0
 GAME.Gravity = -750
 GAME.UpwardsGravity = 300
 GAME.Score = nil
+GAME.DrawScore = false
 GAME.GameEnded = false
 GAME.Dead = false
 GAME.LastSpace = nil
@@ -191,7 +192,6 @@ local function GetSound(snd)
 	return DEFAULT_STATION
 end
 
-
 -- some helper functions
 function GAME:QueueDownloadSprite(png)
 	flappy_sprites[#flappy_sprites + 1] = {png}
@@ -264,8 +264,12 @@ function GAME:FlappyIsCollidingWithPipe()
 end
 
 -- TODO: Move chatprint to notifications?
+GAME.OldScore = tonumber(util.GetPData("FlappyBird", "BestScore", 0))
 function GAME:Die()
 	self.Dead = true
+	self.DrawScore = true
+	
+	util.SetPData("FlappyBird", "BestScore", self.OldScore)
 	GetSound("hit"):Play()
 
 	timer.Simple(0.15, function()
@@ -291,6 +295,7 @@ function GAME:Start()
 	ResetPipes(self)
 	self.scored = {false, false, false}
 	self.Attracting = true
+	self.DrawScore = true
 	
 	-- Need new sound
 	MACHINE:EmitSound("/vo/npc/barney/ba_letsdoit.wav", 50)
@@ -298,7 +303,6 @@ end
 
 function GAME:Reset()
 	self.FlappyState = 0
-	-- bruhment
 	-- self.FlappyAngle = 45
 	self.TheFlappy.pos =  Vector(SCREEN_HEIGHT / 2 - biggy / 2, SCREEN_HEIGHT / 8 - biggh / 2)
 	self.FlappyVel = 0
@@ -306,6 +310,8 @@ function GAME:Reset()
 	self.LastFlap = nil
 	self.CanStart = SysTime() + 1.5
 	self.Attracting = false
+	self.DrawScore = false
+	self.pipes = {}
 end
 
 -- game logic
@@ -440,10 +446,16 @@ function GAME:Update()
 			end
 		-- we died or game ended somehow
 		elseif (self.GameEnded or self.Dead) and self.Started then
-			self:Reset()
-			self.Started = false
-			self.Dead = false
-			self.CanStart = SysTime()
+			if SysTime() > self.CanStart and ((self.LastSpace or 0) < 2) then
+				self:Reset()
+				self.Started = false
+				self.Dead = false
+				self.CanStart = SysTime() + 1.5
+			else
+				self.LastSpace = nil
+
+				return
+			end
 		end
 	else
 		self.LastSpace = nil
@@ -465,6 +477,7 @@ function GAME:Update()
 	if (FLAPPY.pos.y > SCREEN_HEIGHT / 2) or self:FlappyIsCollidingWithPipe() then
 		self.GameEnded = true
 		self:Die()
+		self.CanStart = SysTime() + 1.5
 
 		return
 	end
@@ -501,6 +514,11 @@ function GAME:Update()
 			local point = GetSound("point")
 			point:SetTime(0)
 			point:Play()
+
+			
+			if self.Score > self.OldScore then
+				self.OldScore = self.Score
+			end
 		end
 	end
 
@@ -528,27 +546,32 @@ end
 -- pipe marquee
 function GAME:DrawMarquee()
 	if not self.DownloadedSprites then return end
-	local pipe = IMAGE.Images["pipe_green"]
+	local pipe = IMAGE.Images["background_day"]
 	if pipe.status ~= IMAGE.STATUS_LOADED then return end
 
-	local pipe_data = HardCodedSpriteShit.pipe_green
+	local pipe_data = HardCodedSpriteShit.background_day
 
 	local mw = MARQUEE_WIDTH
 	local mh = MARQUEE_HEIGHT
-	local numPipes = 12
-	local divsize = pipe_data.w / (mw / numPipes)
 
-	surface.SetDrawColor(60, 255, 60, 255)
-	surface.DrawRect(0, 0, mw, mh)
+	local num = 3
+	local multw = mw / pipe_data.w
+	local multh = mh / pipe_data.h
 
-	local e = 0
-	for i = 1, numPipes do
-		local a = math.random(1, mh / 4)
-		surface.SetMaterial(pipe.mat)
-		surface.SetDrawColor(255, 255, 255)
-		surface.DrawTexturedRect(e, mh / 2 + a, pipe_data.w / divsize, pipe_data.h / divsize)
-		surface.DrawTexturedRectRotated(e + ((pipe_data.w / divsize) / 2), mh / 2 + a - (55 * divsize / 2), pipe_data.w / divsize, pipe_data.h / divsize, math.deg(math.rad(180)))
-		e = e + pipe_data.w / divsize
+	local perw = pipe_data.w / (multw * num)
+	local perh = pipe_data.w / (multw * num)
+	
+	--print(mw,mh)
+	--PrintTable(pipe_data)
+
+
+	surface.SetMaterial(pipe.mat)
+	surface.SetDrawColor(255, 255, 255)
+
+	local xo = 0
+	for i = 1, num do
+		surface.DrawTexturedRect(xo, 0, perw, perh)
+		xo = xo + perw
 	end
 
 	draw.NoTexture()
@@ -567,7 +590,7 @@ end
 function GAME:Draw()
 	local w = SCREEN_WIDTH
 	local h = SCREEN_HEIGHT
-	local draw_score = true
+	--self.DrawScore = true
 
 	-- i just had this function here for ease, it returns
 	-- inside this function and not the whole draw function
@@ -622,11 +645,15 @@ function GAME:Draw()
 			local text = "YOU'RE DEAD"
 			local tw, th = surface.GetTextSize(text)
 			surface.SetTextColor(255, 0, 0, 255)
-			surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 4 - th / 2)
+			surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 8 - th / 2)
 			surface.DrawText(text)
 		end
 
-		if draw_score then
+		--if self.GameEnded and self.Dead and not self.Started then
+		--	self.DrawScore = true
+		--end
+
+		if self.DrawScore then
 			local digits = string.Explode('', tostring(self.Score or 0))
 			local total_width = 0
 			local single_width
@@ -643,8 +670,9 @@ function GAME:Draw()
 				total_width = total_width + digit.w
 			end
 
+			local _ = (self.GameEnded or self.Dead)
 			local mid = SCREEN_WIDTH / 2 - total_width / 2
-			local height = SCREEN_HEIGHT / 4 - total_height / 2
+			local height = (not _ and SCREEN_HEIGHT / 4 or SCREEN_HEIGHT / 2) - total_height / 2
 			local ws = mid
 
 			for i = 1, #digits do
@@ -675,9 +703,9 @@ function GAME:Draw()
 		end
 	end
 
-	if self.GameEnded or self.Dead and SysTime() > self.CanStart then
-		draw_score = false
-	end
+	--if self.GameEnded or self.Dead and SysTime() > self.CanStart then
+	--	self.DrawScore = false
+	--end
 
 	-- we call the main draw function here so we dont screw with everything
 	DoMainDrawFunc()
@@ -688,9 +716,16 @@ function GAME:Draw()
 
 		if MACHINE:GetCoins() >= 1 then
 			local text = "PRESS SPACE TO START"
+			local h
+			if self.GameEnded and not self.Dead  then
+				h = SCREEN_HEIGHT / 2 - th / 2
+			else
+				h = SCREEN_HEIGHT / 2 + SCREEN_HEIGHT / 4 - th / 2
+				text = "PRESS SPACE TO RESET"
+			end
 			local tw, th = surface.GetTextSize(text)
 			surface.SetTextColor(255, 255, 255, 255)
-			surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 2 - th / 2)
+			surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, h)
 			surface.DrawText(text)
 		else
 			self.Attracting = true
@@ -703,11 +738,21 @@ function GAME:Draw()
 	end
 
 	-- little coin label
-	surface.SetFont("DermaDefault")
-	local tw, th = surface.GetTextSize(MACHINE:GetCoins() .. " COIN(S)")
+	surface.SetFont("TargetID")
+	local t = MACHINE:GetCoins() .. " COIN(S)"
+	local tw, th = surface.GetTextSize(t)
 	surface.SetTextColor(255, 255, 255, 255)
-	surface.SetTextPos(10, h - (th * 2))
-	surface.DrawText(MACHINE:GetCoins() .. " COIN(S)")
+	surface.SetTextPos(10, h - th - 10)
+	surface.DrawText(t)
+
+	-- best score
+	local t = "BEST SCORE: " .. self.OldScore
+	local tw, th = surface.GetTextSize(t)
+	surface.SetTextColor(255, 255, 255, 255)
+	surface.SetTextPos(SCREEN_HEIGHT - tw - 10, 10)
+	surface.DrawText(t)
+
+	-- self.OldScore
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
@@ -726,6 +771,7 @@ function GAME:OnCoinsLost(ply, old, new)
 	if new < 1 then
 		self:Reset()
 		self.GameEnded = true
+		self.DrawScore = false
 	end
 end
 
