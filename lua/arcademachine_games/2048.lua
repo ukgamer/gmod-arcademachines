@@ -184,23 +184,25 @@ for i = 1, 11 do
     }
 end
 
-surface.CreateFont("2048_title", {
-    size = 80,
-    weight = 800,
-    font = "Roboto"
-})
+if not FONT:Exists("2048_title") then
+    surface.CreateFont("2048_title", {
+        size = 80,
+        weight = 800,
+        font = "Roboto"
+    })
 
-surface.CreateFont("2048_text", {
-    size = 36,
-    weight = 800,
-    font = "Roboto"
-})
+    surface.CreateFont("2048_text", {
+        size = 36,
+        weight = 800,
+        font = "Roboto"
+    })
 
-surface.CreateFont("2048_label", {
-    size = 24,
-    weight = 800,
-    font = "Roboto"
-})
+    surface.CreateFont("2048_label", {
+        size = 24,
+        weight = 800,
+        font = "Roboto"
+    })
+end
 
 local GAME = {}
 
