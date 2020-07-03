@@ -141,6 +141,7 @@ GAME.TheFlappy =
 }
 
 GAME.pipes = {}
+local INVIS_BOUNDARY = 10000
 local function GenPipe(x)
 	local y = math.random(0, 250) - 250
 	return
@@ -161,6 +162,15 @@ local function GenPipe(x)
 				type = COLLISION.types.BOX,
 				width = HardCodedSpriteShit.pipe_green.w,
 				height = HardCodedSpriteShit.pipe_green.h
+			}
+		},
+		{
+			pos = Vector (x, y - INVIS_BOUNDARY),
+			ang = Angle(),
+			collision = {
+				type = COLLISION.types.BOX,
+				width = HardCodedSpriteShit.pipe_green.w,
+				height = INVIS_BOUNDARY
 			}
 		},
 		
@@ -185,10 +195,10 @@ end)
 local function GetSound(snd)
 	snd = SOUND.Sounds[snd]
 
-	local ply = self.CurrentPlayer or LocalPlayer()
+	local ply = GAME.CurrentPlayer or LocalPlayer()
 
 	if snd and snd.status == SOUND.STATUS_LOADED then
-		snd.sound:SetPos(ply:GetPos() or Vector()
+		snd.sound:SetPos(ply:GetPos() or Vector())
 		return snd.sound
 	end
 
@@ -232,11 +242,11 @@ function GAME:FlappyIsCollidingWithPipe()
 
 	local pipe = self.pipes[i]
 	local up, down = pipe[1], pipe[2]
+	local invis = pipe[3]
 	local FAT = 230
 
 	local colliding_up = false
 	local colliding_down = false
-
 	--
 	-- On god this code is ugly, and I would rather
 	-- not write something like this ever again.
@@ -247,6 +257,9 @@ function GAME:FlappyIsCollidingWithPipe()
 	if up then
 		up.pos.y = up.pos.y - FAT
 		if COLLISION:BoxCollision(self.TheFlappy, up) and not colliding_up then
+			colliding_up = true
+		end
+		if COLLISION:BoxCollision(self.TheFlappy, invis) and not colliding_up then
 			colliding_up = true
 		end
 		up.pos.y = up.pos.y + FAT
@@ -530,16 +543,18 @@ function GAME:Update()
 	if self.pipes and #self.pipes > 0 then
 		for i = 1, #self.pipes do
 			local pipe_obj = self.pipes[i]
-			local up, down = pipe_obj[1], pipe_obj[2]
+			local up, down, invis = pipe_obj[1], pipe_obj[2], pipe_obj[3]
 
 			up.pos.x = up.pos.x - FrameTime() * 100
 			down.pos.x = down.pos.x - FrameTime() * 100
+			invis.pos.x = invis.pos.x - FrameTime() * 100
 
 			-- We only need to check the position of one pipe
 			-- as we know the pipes are above each other
 			if up.pos.x < -up.collision.width then
 				up.pos.x = up.pos.x + pipe_interval * 3
 				down.pos.x = down.pos.x + pipe_interval * 3
+				invis.pos.x = invis.pos.x - FrameTime() * 100
 
 				self.scored[i] = false
 			end
