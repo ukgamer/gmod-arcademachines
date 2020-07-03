@@ -54,6 +54,12 @@ which should be the same between all instances of a game are not reloaded unnecc
 
 `SetGame` also takes an optional second boolean parameter to forcefully reload all libraries for development purposes.
 
+#### Fonts
+
+`FONT:Exists(name)`
+
+Used to check if a font has already been created. Do not use `surface.CreateFont` without first checking if the font has already been created as it is expensive!
+
 #### Images
 
 Used for loading images dynamically from the web as usable `Material`s.

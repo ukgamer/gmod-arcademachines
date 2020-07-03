@@ -424,10 +424,12 @@ function ENT:SetGame(game, forceLibLoad)
         if LoadedLibs[game] and not forceLibLoad then
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
+            upvalues.FONT = LoadedLibs[game].FONT
         else
             LoadedLibs[game] = {
                 COLLISION = include("arcademachine_lib/collision.lua"),
-                IMAGE = include("arcademachine_lib/image.lua")
+                IMAGE = include("arcademachine_lib/image.lua"),
+                FONT = include("arcademachine_lib/font.lua")
             }
 
             upvalues.COLLISION = LoadedLibs[game].COLLISION
