@@ -185,10 +185,14 @@ end)
 local function GetSound(snd)
 	snd = SOUND.Sounds[snd]
 
+	local ply = self.CurrentPlayer or LocalPlayer()
+
 	if snd and snd.status == SOUND.STATUS_LOADED then
+		snd.sound:SetPos(ply:GetPos() or Vector()
 		return snd.sound
 	end
 
+	DEFAULT_STATION:SetPos(ply:GetPos() or Vector())
 	return DEFAULT_STATION
 end
 
