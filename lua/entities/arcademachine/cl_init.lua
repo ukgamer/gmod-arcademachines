@@ -8,7 +8,7 @@ local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
 local ScreenWidth = 512
 local ScreenHeight = 512
 local MarqueeWidth = 256
-local MarqueeHeight = 80
+local MarqueeHeight = 89
 
 local PressedScore = false
 local PressedUse = false
