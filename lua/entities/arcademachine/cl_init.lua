@@ -434,6 +434,7 @@ function ENT:SetGame(game, forceLibLoad)
 
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
+            upvalues.FONT = LoadedLibs[game].FONT
         end
 
         -- Allow each instance to have its own copy of sound library in case they want to
