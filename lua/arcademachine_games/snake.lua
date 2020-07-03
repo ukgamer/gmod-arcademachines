@@ -13,7 +13,7 @@
 -- There MIGHT be a bug where the snake just dies for no apparent reason during certain circumstances.
 
 --function Snake()
-    if not pcall( function() surface.SetFont( "Snake32" ) end ) then
+    if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -23,7 +23,7 @@
         } )
     end
 
-    if not pcall( function() surface.SetFont( "SnakeTitle" ) end ) then
+    if not FONT:Exists( "SnakeTitle" ) then
         surface.CreateFont( "SnakeTitle", {
             font = "Trebuchet MS",
             size = 40,
