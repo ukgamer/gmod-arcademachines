@@ -384,7 +384,7 @@
         if ply ~= LocalPlayer() or PLAYER == nil then return end
 
         MACHINE:EmitSound( "garrysmod/content_downloaded.wav" )
-        if old <= 0 and new >= 1 then
+        if new > 0 and self.State == STATE_AWAITING_COINS then
             self:Start()
         end
     end

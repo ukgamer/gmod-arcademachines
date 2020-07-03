@@ -1,4 +1,4 @@
--- return function() -- For testing
+--TESTGAME = function() -- For testing
 local GAME = {}
 
 GAME.Name = "Test Game"
@@ -128,7 +128,9 @@ function GAME:OnCoinsInserted(ply, old, new)
 
     if ply ~= LocalPlayer() then return end
 
-    if old == 0 and new > 0 then
+    -- If a fullupdate occurs then the game will be reset, so when the player inserts a coin again
+    -- old will not be 0 so we can't use that - instead check your if game state has reset to attract mode
+    if new > 0 and gameState == 0 then
         self:Start()
     end
 end
