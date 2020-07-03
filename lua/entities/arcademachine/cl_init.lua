@@ -445,6 +445,10 @@ function ENT:SetGame(game, forceLibLoad)
         if self.Game.Init then
             self.Game:Init()
         end
+
+        if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
+            self.Game:OnStartPlaying(self:GetPlayer())
+        end
     end
 
     self:UpdateMarquee()

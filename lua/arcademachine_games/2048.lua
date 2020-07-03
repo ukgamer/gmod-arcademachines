@@ -733,7 +733,7 @@ function GAME:OnCoinsInserted(ply, old, new)
 
     if ply ~= LocalPlayer() then return end
 
-    if old == 0 and new > 0 then
+    if new > 0 and gameState == 0 then
         self:Start()
     end
 end
