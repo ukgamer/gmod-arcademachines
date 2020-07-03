@@ -7,13 +7,16 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
--- Bugs / maybe worth noting:
+-- Maybe worth noting:
 -- Apples can spawn on top of each other ( Easy to fix, I'll maybe bother later on ).
 -- Speed boosts do not stack, maybe they should?
 -- There MIGHT be a bug where the snake just dies for no apparent reason during certain circumstances.
 
---function Snake()
-    if not FONT:Exists( "Snake32" ) then
+-- TODO ( Game breaking bugs, changes I plan on adding ):
+-- 
+
+function Snake()
+    --[[if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -32,7 +35,7 @@
             antialias = 1,
             additive = 1
         } )
-    end
+    end]]--
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -206,11 +209,32 @@
             end
         end
 
-        if SNAKE.x >= SCREEN_WIDTH - 15 or SNAKE.y >= SCREEN_HEIGHT - 15 then
+        if SNAKE.x >= SCREEN_WIDTH - 30 or SNAKE.y >= SCREEN_HEIGHT - 50 then
             SNAKE:Die()
-        elseif SNAKE.x <= 0 or SNAKE.y <= 0 then
+        elseif SNAKE.x <= 10 or SNAKE.y <= 50 then
             SNAKE:Die()
         end
+    end
+
+    -- Snake shouldn't run into itself anymore with this :V
+    function SNAKE:CanMoveOnAxis( Axis )
+        if #self.Tail >= 1 then
+            if Axis == "X" then
+                if self.MoveX ~= 0 then
+                    --timer.Simple( self.MoveInterval, function()
+                        return false
+                    --end )
+                end
+            elseif Axis == "Y" then
+                if self.MoveY ~= 0 then
+                    --timer.Simple( self.MoveInterval, function()
+                        return false
+                    --end )
+                end
+            end
+        end
+
+        return true
     end
 
     function SNAKE:Draw()
@@ -233,6 +257,8 @@
             if #self.OnScreen < self.MAX_APPLES then
                 local AppleX = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
                 local AppleY = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
+                local AppleX = math.max( math.min( SCREEN_WIDTH - 42, AppleX ), 20 )
+                local AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
 
                 local Type = APPLE_TYPE_NORMAL
 
@@ -273,8 +299,10 @@
 
         table.Empty( APPLES.OnScreen )
 
-        SNAKE.x = math.random( 20, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
-        SNAKE.y = math.random( 40, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
+        SNAKE.x = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
+        SNAKE.y = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
+        SNAKE.x = math.max( math.min( SCREEN_WIDTH - 42, SNAKE.x ), 20 )
+        SNAKE.y = math.max( math.min( SCREEN_HEIGHT - 52, SNAKE.y ), 50 )
 
         Score = 0
     end
@@ -288,22 +316,22 @@
         if self.State == STATE_PLAYING and IsValid( PLAYER ) and PLAYER == LocalPlayer() then
             APPLES:Spawner()
 
-            if PLAYER:KeyDown( IN_FORWARD ) then
-                SNAKE.MoveX = 0
-                SNAKE.MoveY = -10
-            elseif PLAYER:KeyDown( IN_BACK ) then
-                SNAKE.MoveX = 0
-                SNAKE.MoveY = 10
-            elseif PLAYER:KeyDown( IN_MOVERIGHT ) then
-                SNAKE.MoveY = 0
-                SNAKE.MoveX = 10
-            elseif PLAYER:KeyDown( IN_MOVELEFT ) then
-                SNAKE.MoveY = 0
-                SNAKE.MoveX = -10
-            end
-
             if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
                 if not SNAKE.Dead then
+                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                        SNAKE.MoveX = 0
+                        SNAKE.MoveY = -10
+                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                        SNAKE.MoveX = 0
+                        SNAKE.MoveY = 10
+                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                        SNAKE.MoveY = 0
+                        SNAKE.MoveX = 10
+                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                        SNAKE.MoveY = 0
+                        SNAKE.MoveX = -10
+                    end
+
                     SNAKE:CheckForApplesEaten()
                     SNAKE:Move()
                     SNAKE:CheckForDeath()
@@ -349,6 +377,10 @@
 
             APPLES:Draw()
             SNAKE:Draw()
+
+            -- Borders
+            surface.SetDrawColor( SNAKE.Col )
+            surface.DrawOutlinedRect( 20, 60, SCREEN_WIDTH - 42, SCREEN_HEIGHT - 102 )
         end
     end
 
@@ -414,4 +446,4 @@
     end
 
     return GAME
---end
+end
