@@ -13,22 +13,26 @@
 -- There MIGHT be a bug where the snake just dies for no apparent reason during certain circumstances.
 
 --function Snake()
-    surface.CreateFont( "Trebuchet32", {
-        font = "Trebuchet MS",
-        size = 32,
-        weight = 500,
-        antialias = 1,
-        additive = 1
-    } )
+    if not pcall( function() surface.SetFont( "Snake32" ) end ) then
+        surface.CreateFont( "Snake32", {
+            font = "Trebuchet MS",
+            size = 32,
+            weight = 500,
+            antialias = 1,
+            additive = 1
+        } )
+    end
 
-    surface.CreateFont( "TrebuchetTitle", {
-        font = "Trebuchet MS",
-        size = 40,
-        italic = true,
-        weight = 500,
-        antialias = 1,
-        additive = 1
-    } )
+    if not pcall( function() surface.SetFont( "SnakeTitle" ) end ) then
+        surface.CreateFont( "SnakeTitle", {
+            font = "Trebuchet MS",
+            size = 40,
+            italic = true,
+            weight = 500,
+            antialias = 1,
+            additive = 1
+        } )
+    end
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -151,12 +155,6 @@
         SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "music", function( snd )
             snd:EnableLooping( true )
         end )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg", "eatnormal" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg", "eatboost" )
-        -- Golden apples use a GMod sound when eaten.
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover" )
     end
 
     function SNAKE:Move()
@@ -320,7 +318,7 @@
         if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
             draw.SimpleText(
                 "INSERT COINS", 
-                "Trebuchet32", 
+                "Snake32", 
                 SCREEN_WIDTH / 2, 
                 SCREEN_HEIGHT - 100, 
                 Color( 255, 255, 255, ( CurTime() % 1 > 0.5 and 255 or 0 ) ),
@@ -343,7 +341,7 @@
             surface.DrawRect( SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10 )
             
         else
-            draw.SimpleText( "Score: " .. Score, "Trebuchet32", SCREEN_WIDTH / 2, 25, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER )
+            draw.SimpleText( "Score: " .. Score, "Snake32", SCREEN_WIDTH / 2, 25, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER )
 
             draw.SimpleText( SNAKE.GoldenApplesEaten .. "/10", "Trebuchet24", SCREEN_WIDTH - 75, 25, Color( 255, 255, 255 ) )
             surface.SetDrawColor( APPLE_TYPE_GOLDEN.Col )
@@ -358,6 +356,13 @@
         if ply == LocalPlayer() then
             PLAYER = ply
         else return end
+
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg", "eatnormal" )
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg", "eatboost" )
+        -- Golden apples use a GMod sound when eaten.
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached" )
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death" )
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover" )
 
         self.State = STATE_AWAITING_COINS
 
@@ -396,7 +401,7 @@
 
     function GAME:DrawMarquee()
         -- Title text
-        draw.SimpleText( "SNAKE", "TrebuchetTitle", 20, 25, Color( 255, 255, 255 ) )
+        draw.SimpleText( "SNAKE", "SnakeTitle", 20, 25, Color( 255, 255, 255 ) )
 
         -- Snake
         surface.SetDrawColor( Color( 25, 255, 25 ) )
