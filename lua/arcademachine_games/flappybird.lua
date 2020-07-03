@@ -247,6 +247,7 @@ function GAME:FlappyIsCollidingWithPipe()
 
 	local colliding_up = false
 	local colliding_down = false
+
 	--
 	-- On god this code is ugly, and I would rather
 	-- not write something like this ever again.
