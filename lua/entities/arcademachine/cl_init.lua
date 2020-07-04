@@ -2,7 +2,7 @@ include("shared.lua")
 
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
-local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
+--local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
 local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
 
 local ScreenWidth = 512
@@ -15,7 +15,7 @@ local PressedUse = false
 local PressedUseAt = 0
 
 local PACWasDisabled = false
-local OutfitterWasDisabled = false
+--local OutfitterWasDisabled = false
 
 ENT.Initialized = false
 
@@ -275,7 +275,7 @@ function ENT:OnLocalPlayerEntered()
             label:SetText("PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
         end
 
-        if DisableOutfitter:GetBool() and outfitter then
+        --[[if DisableOutfitter:GetBool() and outfitter then
             local label = vgui.Create("DLabel", scroll)
             label:Dock(TOP)
             label:SetWrap(true)
@@ -291,7 +291,7 @@ function ENT:OnLocalPlayerEntered()
             label:DockMargin(0, 0, 0, 15)
             label:SetFont("ScoreboardDefault")
             label:SetText("Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
-        end
+        end--]]
 
         local button = vgui.Create("DButton", frame)
         button:SetText("OK, don't show me this again")
@@ -313,13 +313,13 @@ function ENT:OnLocalPlayerEntered()
         PACWasDisabled = false
     end
 
-    if DisableOutfitter:GetBool() and outfitter then
+    --[[if DisableOutfitter:GetBool() and outfitter then
         outfitter.SetHighPerf(true, true)
         outfitter.DisableEverything()
         OutfitterWasDisabled = true
     else
         OutfitterWasDisabled = false
-    end
+    end--]]
 end
 
 function ENT:OnLocalPlayerLeft()
@@ -327,10 +327,10 @@ function ENT:OnLocalPlayerLeft()
         pac.Enable()
     end
 
-    if DisableOutfitter:GetBool() and OutfitterWasDisabled then
+    --[[if DisableOutfitter:GetBool() and OutfitterWasDisabled then
         outfitter.SetHighPerf(false, true)
         outfitter.EnableEverything()
-    end
+    end--]]
 end
 
 function ENT:UpdateMarquee()
