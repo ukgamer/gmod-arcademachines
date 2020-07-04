@@ -7,8 +7,8 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
-function Snake()
-    --[[if not FONT:Exists( "Snake32" ) then
+--function Snake()
+    if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -27,7 +27,7 @@ function Snake()
             antialias = 1,
             additive = 1
         } )
-    end]]--
+    end
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -457,4 +457,4 @@ function Snake()
     end
 
     return GAME
-end
+--end
