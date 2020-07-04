@@ -53,6 +53,7 @@
     local Score = 0
 
     local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
+    SNAKE.Dead = false
     SNAKE.DiedAt = math.huge
     SNAKE.MoveInterval = 0.1 -- Amount of seconds between each movement cycle.
     SNAKE.GoldenApplesEaten = 0
