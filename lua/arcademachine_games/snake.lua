@@ -7,8 +7,8 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
---function Snake()
-    if not FONT:Exists( "Snake32" ) then
+function Snake()
+    --[[if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -27,7 +27,7 @@
             antialias = 1,
             additive = 1
         } )
-    end
+    end]]--
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -52,11 +52,13 @@
 
     local Score = 0
 
-    local SNAKE = { x = 0, y = 0, Tail = {}, Dead = false, Col = Color( 25, 255, 25 ) }
+    local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
+    SNAKE.DiedAt = math.huge
     SNAKE.MoveInterval = 0.1 -- Amount of seconds between each movement cycle.
     SNAKE.GoldenApplesEaten = 0
     SNAKE.GoalReached = false
     SNAKE.Boosted = false
+    SNAKE.BoostedAt = math.huge
     SNAKE.LastMoved = RealTime()
     SNAKE.MoveX, SNAKE.MoveY = 0, 0
     SNAKE.OldX, SNAKE.OldY = 0, 0
@@ -128,15 +130,8 @@
         Score = Score + 150
 
         if not SNAKE.Boosted then
-            SNAKE.MoveInterval = 0.05
-
             SNAKE.Boosted = true
-
-            timer.Simple( 10, function()
-                SNAKE.MoveInterval = 0.1
-
-                SNAKE.Boosted = false
-            end )
+            SNAKE.BoostedAt = RealTime()
         end
 
         PlayLoaded( "eatboost" )
@@ -167,6 +162,16 @@
         self.LastMoved = RealTime()
     end
 
+    function SNAKE:HandleSpeed()
+
+        if self.Boosted then
+            self.MoveInterval = 0.05
+            return
+        end
+
+        self.MoveInterval = 0.1
+    end
+
     function SNAKE:Eat( Type )
         table.insert( SNAKE.Tail, { x = SNAKE.x, y = SNAKE.y } )
 
@@ -184,12 +189,9 @@
 
     function SNAKE:Die()
         self.Dead = true
+        self.DiedAt = RealTime()
         PlayLoaded( "death" )
         PlayLoaded( "gameover" )
-
-        timer.Simple( 7, function()
-            MACHINE:TakeCoins( 1 )
-        end )
     end
 
     function SNAKE:CheckForDeath()
@@ -222,7 +224,7 @@
             return
         end
 
-        if self.GoldenApplesEaten >= 10 then
+        if self.GoalReached then
             self.Col = Color( 255, 216, 0 )
             return
         end
@@ -346,7 +348,21 @@
                     SNAKE:CheckForApplesEaten()
                     SNAKE:Move()
                     SNAKE:CheckForDeath()
+                    SNAKE:HandleSpeed()
                     SNAKE:HandleApparel()
+                end
+            end
+
+            -- Simple timers can cause funky errors so I'll use these instead of them
+            if SNAKE.Boosted then
+                if SNAKE.BoostedAt + 10 <= RealTime() then
+                    SNAKE.Boosted = false
+                end
+            end
+
+            if SNAKE.Dead then
+                if SNAKE.DiedAt + 7 <= RealTime() then
+                    MACHINE:TakeCoins( 1 )
                 end
             end
         end
@@ -457,4 +473,4 @@
     end
 
     return GAME
---end
+end
