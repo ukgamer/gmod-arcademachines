@@ -7,8 +7,8 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
---function Snake()
-    if not FONT:Exists( "Snake32" ) then
+function Snake()
+    --[[if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -27,7 +27,7 @@
             antialias = 1,
             additive = 1
         } )
-    end
+    end]]--
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -158,7 +158,7 @@
             MACHINE:EmitSound( "garrysmod/ui_hover.wav" )
         end
 
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             local x, y = TailPart.x, TailPart.y
             TailPart.x, TailPart.y = self.OldX, self.OldY
             self.OldX, self.OldY = x, y
@@ -174,7 +174,7 @@
     end
 
     function SNAKE:CheckForApplesEaten()
-        for _, Apple in pairs( APPLES.OnScreen ) do
+        for _, Apple in ipairs( APPLES.OnScreen ) do
             if SNAKE.x == Apple.x and SNAKE.y == Apple.y then
                 table.RemoveByValue( APPLES.OnScreen, Apple )
                 SNAKE:Eat( Apple.Type )
@@ -193,7 +193,7 @@
     end
 
     function SNAKE:CheckForDeath()
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             if SNAKE.x == TailPart.x and SNAKE.y == TailPart.y then
                 SNAKE:Die()
             end
@@ -234,7 +234,7 @@
         surface.SetDrawColor( self.Col )
         surface.DrawRect( self.x, self.y, 10, 10 )
         
-        for _, TailPart in pairs( self.Tail ) do
+        for _, TailPart in ipairs( self.Tail ) do
             surface.DrawRect( TailPart.x, TailPart.y, 10, 10 )
         end
     end
@@ -246,7 +246,7 @@
             end
         end
 
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             if TailPart.x == x and TailPart.y == y then
                 return true
             end
@@ -287,7 +287,7 @@
 
     function APPLES:Draw()
         if GAME.State == STATE_PLAYING then
-            for _, Apple in pairs( self.OnScreen ) do
+            for _, Apple in ipairs( self.OnScreen ) do
                 surface.SetDrawColor( Apple.Type.Col )
                 surface.DrawRect( Apple.x, Apple.y, 10, 10 )
             end
@@ -457,4 +457,4 @@
     end
 
     return GAME
---end
+end
