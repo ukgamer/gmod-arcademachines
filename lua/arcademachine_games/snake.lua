@@ -424,7 +424,7 @@
     end
 
     function GAME:OnCoinsInserted( ply, old, new )
-        if ply ~= LocalPlayer() or PLAYER == nil then return end
+        if ply ~= LocalPlayer() then return end
 
         MACHINE:EmitSound( "garrysmod/content_downloaded.wav" )
         if new > 0 and self.State == STATE_AWAITING_COINS then
@@ -433,7 +433,7 @@
     end
 
     function GAME:OnCoinsLost( ply, old, new )
-        if ply ~= LocalPlayer() or PLAYER == nil then return end
+        if ply ~= LocalPlayer() then return end
 
         if new <= 0 then
             self:Stop()
