@@ -99,9 +99,9 @@
     AttractorSnake.LastFrameAdvance = RealTime()
 
     local APPLES = { MAX_APPLES = 4, OnScreen = {} }
-    local APPLE_TYPE_NORMAL = { 1, Col = Color( 255, 25, 25 ) }
-    local APPLE_TYPE_GOLDEN = { 2, Col = Color( 255, 223, 127) }
-    local APPLE_TYPE_BOOST = { 3, Col = Color( 50, 50, 255 ) }
+    local APPLE_TYPE_NORMAL = { Col = Color( 255, 25, 25 ) }
+    local APPLE_TYPE_GOLDEN = { Col = Color( 255, 223, 127) }
+    local APPLE_TYPE_BOOST = { Col = Color( 50, 50, 255 ) }
 
     function APPLE_TYPE_NORMAL.OnEaten()
         Score = Score + 100
@@ -158,7 +158,7 @@
             MACHINE:EmitSound( "garrysmod/ui_hover.wav" )
         end
 
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             local x, y = TailPart.x, TailPart.y
             TailPart.x, TailPart.y = self.OldX, self.OldY
             self.OldX, self.OldY = x, y
@@ -174,7 +174,7 @@
     end
 
     function SNAKE:CheckForApplesEaten()
-        for _, Apple in pairs( APPLES.OnScreen ) do
+        for _, Apple in ipairs( APPLES.OnScreen ) do
             if SNAKE.x == Apple.x and SNAKE.y == Apple.y then
                 table.RemoveByValue( APPLES.OnScreen, Apple )
                 SNAKE:Eat( Apple.Type )
@@ -193,7 +193,7 @@
     end
 
     function SNAKE:CheckForDeath()
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             if SNAKE.x == TailPart.x and SNAKE.y == TailPart.y then
                 SNAKE:Die()
             end
@@ -234,7 +234,7 @@
         surface.SetDrawColor( self.Col )
         surface.DrawRect( self.x, self.y, 10, 10 )
         
-        for _, TailPart in pairs( self.Tail ) do
+        for _, TailPart in ipairs( self.Tail ) do
             surface.DrawRect( TailPart.x, TailPart.y, 10, 10 )
         end
     end
@@ -246,7 +246,7 @@
             end
         end
 
-        for _, TailPart in pairs( SNAKE.Tail ) do
+        for _, TailPart in ipairs( SNAKE.Tail ) do
             if TailPart.x == x and TailPart.y == y then
                 return true
             end
@@ -287,7 +287,7 @@
 
     function APPLES:Draw()
         if GAME.State == STATE_PLAYING then
-            for _, Apple in pairs( self.OnScreen ) do
+            for _, Apple in ipairs( self.OnScreen ) do
                 surface.SetDrawColor( Apple.Type.Col )
                 surface.DrawRect( Apple.x, Apple.y, 10, 10 )
             end
@@ -424,7 +424,7 @@
     end
 
     function GAME:OnCoinsInserted( ply, old, new )
-        if ply ~= LocalPlayer() or PLAYER == nil then return end
+        if ply ~= LocalPlayer() then return end
 
         MACHINE:EmitSound( "garrysmod/content_downloaded.wav" )
         if new > 0 and self.State == STATE_AWAITING_COINS then
@@ -433,7 +433,7 @@
     end
 
     function GAME:OnCoinsLost( ply, old, new )
-        if ply ~= LocalPlayer() or PLAYER == nil then return end
+        if ply ~= LocalPlayer() then return end
 
         if new <= 0 then
             self:Stop()
