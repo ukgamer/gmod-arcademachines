@@ -304,9 +304,11 @@
         table.Empty( SNAKE.Tail )
         SNAKE.Col = Color( 25, 255, 25 )
         SNAKE.Dead = false
+        SNAKE.DiedAt = math.huge
         SNAKE.GoldenApplesEaten = 0
         SNAKE.GoalReached = false
         SNAKE.Boosted = false
+        SNAKE.BoostedAt = math.huge
         SNAKE.MoveInterval = 0.1
         SNAKE.MoveX = 0
         SNAKE.MoveY = 0
