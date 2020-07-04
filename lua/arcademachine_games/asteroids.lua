@@ -117,7 +117,8 @@ local types = {
 }
 local objects = {
     bullets = {},
-    asteroids = {}
+    asteroids = {},
+    explosions = {}
 }
 
 local highBeep = false
@@ -149,6 +150,7 @@ function GAME:Stop()
     end
 
     table.Empty(objects.bullets)
+    table.Empty(objects.explosions)
 
     score = 0
     extraLifeScore = 0
@@ -200,9 +202,22 @@ function GAME:GenerateVelocity()
     return Vector(velX, velY)
 end
 
+function GAME:SpawnExplosion(pos)
+    local p = Vector()
+    p:Set(pos)
+
+    table.insert(objects.explosions, {
+        pos = p,
+        dieTime = now + 1
+    })
+end
+
 function GAME:SpawnAsteroid(pos, type)
+    local p = Vector()
+    p:Set(pos)
+
     table.insert(objects.asteroids, {
-        pos = pos,
+        pos = p,
         ang = Angle(0, math.random(0, 90)),
         vel = self:GenerateVelocity(),
         type = type,
@@ -214,14 +229,13 @@ function GAME:SpawnAsteroid(pos, type)
 end
 
 function GAME:BreakAsteroid(key, obj)
+    self:SpawnExplosion(obj.pos)
+
     if obj.type.name ~= "small" then
         for i = 1, 2 do
-            local pos = Vector()
-            pos:Set(obj.pos)
-
             local type = obj.type.name == "large" and types[2] or types[1]
 
-            self:SpawnAsteroid(pos, type)
+            self:SpawnAsteroid(obj.pos, type)
         end
     end
 
@@ -382,11 +396,13 @@ function GAME:Update()
 
         self:WrapPos(objects.player.pos)
 
-        objects.player.vel.x = math.Approach(objects.player.vel.x, 0, 3 * FrameTime())
-        objects.player.vel.y = math.Approach(objects.player.vel.y, 0, 3 * FrameTime())
+        objects.player.vel.x = math.Approach(objects.player.vel.x, 0, 2 * FrameTime())
+        objects.player.vel.y = math.Approach(objects.player.vel.y, 0, 2 * FrameTime())
 
         for ak, av in ipairs(objects.asteroids) do
             if COLLISION:IsColliding(av, objects.player) then
+                self:SpawnExplosion(objects.player.pos)
+
                 if IsValid(SOUND.Sounds.bangsmall.sound) then
                     SOUND.Sounds.bangsmall.sound:Play()
                 end
@@ -418,6 +434,13 @@ function GAME:Update()
             self:BreakAsteroid(ak, av)
         end
     end
+
+    for k, v in ipairs(objects.explosions) do
+        if now >= v.dieTime then
+            table.remove(objects.explosions, k)
+            continue
+        end
+    end
 end
 
 function GAME:DrawMarquee()
@@ -442,7 +465,7 @@ function GAME:DrawPlayerTriangle(pos, ang, thrusting)
         surface.DrawLine(pos.x - 5, pos.y + 5, pos.x + 10, pos.y)
         surface.DrawLine(pos.x + 10, pos.y, pos.x - 5, pos.y - 5)
         surface.DrawLine(pos.x - 3, pos.y - 4, pos.x - 3, pos.y + 4) -- back of the ship
-        if thrusting then
+        if thrusting and now % 0.1 > 0.05 then
             surface.DrawLine(pos.x - 3, pos.y - 2, pos.x - 8, pos.y)
             surface.DrawLine(pos.x - 8, pos.y, pos.x - 3, pos.y + 2)
         end
@@ -470,6 +493,21 @@ function GAME:DrawObjects()
 
     for _, v in ipairs(objects.bullets) do
         surface.DrawCircle(v.pos.x, v.pos.y, v.size, 255, 255, 255)
+    end
+
+    for _, v in ipairs(objects.explosions) do
+        local timeLeft = (1 - (v.dieTime - now)) * 15
+
+        for i = 1, 10 do
+            surface.DrawCircle(
+                v.pos.x + (math.cos(math.rad(i * (360 / 10))) * timeLeft),
+                v.pos.y + (math.sin(math.rad(i * (360 / 10))) * timeLeft),
+                1,
+                255,
+                255,
+                255
+            )
+        end
     end
 
     if objects.player then
