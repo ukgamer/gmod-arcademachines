@@ -7,16 +7,13 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
--- Maybe worth noting:
+-- Bugs / maybe worth noting:
 -- Apples can spawn on top of each other ( Easy to fix, I'll maybe bother later on ).
 -- Speed boosts do not stack, maybe they should?
 -- There MIGHT be a bug where the snake just dies for no apparent reason during certain circumstances.
 
--- TODO ( Game breaking bugs, changes I plan on adding ):
--- 
-
-function Snake()
-    --[[if not FONT:Exists( "Snake32" ) then
+--function Snake()
+    if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
             size = 32,
@@ -35,7 +32,7 @@ function Snake()
             antialias = 1,
             additive = 1
         } )
-    end]]--
+    end
 
     local function PlayLoaded( loaded )
         if IsValid( SOUND.Sounds[loaded].sound ) then
@@ -416,7 +413,7 @@ function Snake()
         if ply ~= LocalPlayer() or PLAYER == nil then return end
 
         MACHINE:EmitSound( "garrysmod/content_downloaded.wav" )
-        if old <= 0 and new >= 1 then
+        if new > 0 and self.State == STATE_AWAITING_COINS then
             self:Start()
         end
     end
@@ -446,4 +443,4 @@ function Snake()
     end
 
     return GAME
-end
+--end
