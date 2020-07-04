@@ -184,23 +184,25 @@ for i = 1, 11 do
     }
 end
 
-surface.CreateFont("2048_title", {
-    size = 80,
-    weight = 800,
-    font = "Roboto"
-})
+if not FONT:Exists("2048_title") then
+    surface.CreateFont("2048_title", {
+        size = 80,
+        weight = 800,
+        font = "Roboto"
+    })
 
-surface.CreateFont("2048_text", {
-    size = 36,
-    weight = 800,
-    font = "Roboto"
-})
+    surface.CreateFont("2048_text", {
+        size = 36,
+        weight = 800,
+        font = "Roboto"
+    })
 
-surface.CreateFont("2048_label", {
-    size = 24,
-    weight = 800,
-    font = "Roboto"
-})
+    surface.CreateFont("2048_label", {
+        size = 24,
+        weight = 800,
+        font = "Roboto"
+    })
+end
 
 local GAME = {}
 
@@ -731,7 +733,7 @@ function GAME:OnCoinsInserted(ply, old, new)
 
     if ply ~= LocalPlayer() then return end
 
-    if old == 0 and new > 0 then
+    if new > 0 and gameState == 0 then
         self:Start()
     end
 end
