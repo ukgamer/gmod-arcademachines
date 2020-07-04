@@ -99,9 +99,9 @@
     AttractorSnake.LastFrameAdvance = RealTime()
 
     local APPLES = { MAX_APPLES = 4, OnScreen = {} }
-    local APPLE_TYPE_NORMAL = { 1, Col = Color( 255, 25, 25 ) }
-    local APPLE_TYPE_GOLDEN = { 2, Col = Color( 255, 223, 127) }
-    local APPLE_TYPE_BOOST = { 3, Col = Color( 50, 50, 255 ) }
+    local APPLE_TYPE_NORMAL = { Col = Color( 255, 25, 25 ) }
+    local APPLE_TYPE_GOLDEN = { Col = Color( 255, 223, 127) }
+    local APPLE_TYPE_BOOST = { Col = Color( 50, 50, 255 ) }
 
     function APPLE_TYPE_NORMAL.OnEaten()
         Score = Score + 100
