@@ -213,21 +213,10 @@
         end
     end
 
-    -- Snake shouldn't run into itself anymore with this :V
     function SNAKE:CanMoveOnAxis( Axis )
         if #self.Tail >= 1 then
-            if Axis == "X" then
-                if self.MoveX ~= 0 then
-                    --timer.Simple( self.MoveInterval, function()
-                        return false
-                    --end )
-                end
-            elseif Axis == "Y" then
-                if self.MoveY ~= 0 then
-                    --timer.Simple( self.MoveInterval, function()
-                        return false
-                    --end )
-                end
+            if Axis ~= 0 then
+                return false
             end
         end
 
@@ -315,16 +304,16 @@
 
             if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
                 if not SNAKE.Dead then
-                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
                         SNAKE.MoveX = 0
                         SNAKE.MoveY = -10
-                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
                         SNAKE.MoveX = 0
                         SNAKE.MoveY = 10
-                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
                         SNAKE.MoveY = 0
                         SNAKE.MoveX = 10
-                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
                         SNAKE.MoveY = 0
                         SNAKE.MoveX = -10
                     end
