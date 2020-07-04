@@ -7,11 +7,6 @@
 -- Some stuff here probably could be done in better ways.
 -- The game seems to work like a charm though
 
--- Bugs / maybe worth noting:
--- Apples can spawn on top of each other ( Easy to fix, I'll maybe bother later on ).
--- Speed boosts do not stack, maybe they should?
--- There MIGHT be a bug where the snake just dies for no apparent reason during certain circumstances.
-
 --function Snake()
     if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
@@ -134,13 +129,11 @@
 
         if not SNAKE.Boosted then
             SNAKE.MoveInterval = 0.05
-            SNAKE.Col = Color( 50, 50, 255 )
 
             SNAKE.Boosted = true
 
             timer.Simple( 10, function()
                 SNAKE.MoveInterval = 0.1
-                SNAKE.Col = Color( 25, 255, 25 )
 
                 SNAKE.Boosted = false
             end )
@@ -213,25 +206,28 @@
         end
     end
 
-    -- Snake shouldn't run into itself anymore with this :V
     function SNAKE:CanMoveOnAxis( Axis )
         if #self.Tail >= 1 then
-            if Axis == "X" then
-                if self.MoveX ~= 0 then
-                    --timer.Simple( self.MoveInterval, function()
-                        return false
-                    --end )
-                end
-            elseif Axis == "Y" then
-                if self.MoveY ~= 0 then
-                    --timer.Simple( self.MoveInterval, function()
-                        return false
-                    --end )
-                end
+            if Axis ~= 0 then
+                return false
             end
         end
 
         return true
+    end
+
+    function SNAKE:HandleApparel()
+        if self.Boosted then
+            self.Col = Color( 50, 50, 255 )
+            return
+        end
+
+        if self.GoldenApplesEaten >= 10 then
+            self.Col = Color( 255, 216, 0 )
+            return
+        end
+        
+        self.Col = Color( 25, 255, 25 )
     end
 
     function SNAKE:Draw()
@@ -241,12 +237,26 @@
         for _, TailPart in pairs( self.Tail ) do
             surface.DrawRect( TailPart.x, TailPart.y, 10, 10 )
         end
+    end
 
-        -- Doesn't even draw anything, but it's related to the snake's color so I'll throw it here. Bad practice? Maybe.
-        -- "SNAKE:HandleApparel()" could exist :D. Maybe later
-        if self.GoldenApplesEaten >= 10 and not self.Boosted then
-            self.Col = Color( 255, 216, 0 )
+    function APPLES:CheckForSpawnReserved( x, y )
+        for _, Apple in pairs( APPLES.OnScreen ) do
+            if Apple.x == x and Apple.y == y then
+                return true
+            end
         end
+
+        for _, TailPart in pairs( SNAKE.Tail ) do
+            if TailPart.x == x and TailPart.y == y then
+                return true
+            end
+        end
+
+        if SNAKE.x == x and SNAKE.y == y then
+            return true
+        end
+
+        return false
     end
 
     function APPLES:Spawner()
@@ -256,6 +266,10 @@
                 local AppleY = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
                 local AppleX = math.max( math.min( SCREEN_WIDTH - 42, AppleX ), 20 )
                 local AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
+
+                if self:CheckForSpawnReserved( AppleX, AppleY ) then
+                    return -- Just halt, spawner function will be ran again instantly.
+                end
 
                 local Type = APPLE_TYPE_NORMAL
 
@@ -315,16 +329,16 @@
 
             if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
                 if not SNAKE.Dead then
-                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
                         SNAKE.MoveX = 0
                         SNAKE.MoveY = -10
-                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( "Y" ) then
+                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
                         SNAKE.MoveX = 0
                         SNAKE.MoveY = 10
-                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
                         SNAKE.MoveY = 0
                         SNAKE.MoveX = 10
-                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( "X" ) then
+                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
                         SNAKE.MoveY = 0
                         SNAKE.MoveX = -10
                     end
@@ -332,6 +346,7 @@
                     SNAKE:CheckForApplesEaten()
                     SNAKE:Move()
                     SNAKE:CheckForDeath()
+                    SNAKE:HandleApparel()
                 end
             end
         end
@@ -364,7 +379,6 @@
 
             surface.SetDrawColor( 255, 25, 25 )
             surface.DrawRect( SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10 )
-            
         else
             draw.SimpleText( "Score: " .. Score, "Snake32", SCREEN_WIDTH / 2, 25, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER )
 
