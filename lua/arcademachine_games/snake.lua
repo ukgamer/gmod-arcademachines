@@ -489,9 +489,7 @@
 
         if new <= 0 then
             self:Stop()
-        end
-        
-        if new > 0 then
+        elseif new > 0 then
             self:Start()
         end
     end
