@@ -5,7 +5,7 @@
 -- Made by Jule
 
 -- Some stuff here probably could be done in better ways.
--- The game seems to work like a charm though
+-- The game works now though (should).
 
 --function Snake()
     if not FONT:Exists( "Snake32" ) then
@@ -52,13 +52,19 @@
 
     local Score = 0
 
-    local SNAKE = { x = 0, y = 0, Tail = {}, Dead = false, Col = Color( 25, 255, 25 ) }
+    local CoinsTaken = false
+
+    local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
+    SNAKE.Dead = false
+    SNAKE.DiedAt = math.huge
     SNAKE.MoveInterval = 0.1 -- Amount of seconds between each movement cycle.
     SNAKE.GoldenApplesEaten = 0
     SNAKE.GoalReached = false
     SNAKE.Boosted = false
+    SNAKE.BoostedAt = math.huge
     SNAKE.LastMoved = RealTime()
     SNAKE.MoveX, SNAKE.MoveY = 0, 0
+    SNAKE.QueuedMoves = {}
     SNAKE.OldX, SNAKE.OldY = 0, 0
 
     local AttractorSnake = { -- I wanted to give the attracting state's snake animation and this is what my tired ass came up with
@@ -128,15 +134,8 @@
         Score = Score + 150
 
         if not SNAKE.Boosted then
-            SNAKE.MoveInterval = 0.05
-
             SNAKE.Boosted = true
-
-            timer.Simple( 10, function()
-                SNAKE.MoveInterval = 0.1
-
-                SNAKE.Boosted = false
-            end )
+            SNAKE.BoostedAt = RealTime()
         end
 
         PlayLoaded( "eatboost" )
@@ -167,6 +166,15 @@
         self.LastMoved = RealTime()
     end
 
+    function SNAKE:HandleSpeed()
+        if self.Boosted then
+            self.MoveInterval = 0.05
+            return
+        end
+
+        self.MoveInterval = 0.1
+    end
+
     function SNAKE:Eat( Type )
         table.insert( SNAKE.Tail, { x = SNAKE.x, y = SNAKE.y } )
 
@@ -184,12 +192,9 @@
 
     function SNAKE:Die()
         self.Dead = true
+        self.DiedAt = RealTime()
         PlayLoaded( "death" )
         PlayLoaded( "gameover" )
-
-        timer.Simple( 7, function()
-            MACHINE:TakeCoins( 1 )
-        end )
     end
 
     function SNAKE:CheckForDeath()
@@ -216,13 +221,28 @@
         return true
     end
 
+    function SNAKE:EventTimers()
+        if not SNAKE.Dead then
+            if SNAKE.Boosted then
+                if SNAKE.BoostedAt + 10 <= RealTime() then
+                    SNAKE.Boosted = false
+                end
+            end
+        else
+            if SNAKE.DiedAt + 7 <= RealTime() and not CoinsTaken then
+                MACHINE:TakeCoins( 1 )
+                CoinsTaken = true -- :woozy_face:
+            end
+        end
+    end
+
     function SNAKE:HandleApparel()
         if self.Boosted then
             self.Col = Color( 50, 50, 255 )
             return
         end
 
-        if self.GoldenApplesEaten >= 10 then
+        if self.GoalReached then
             self.Col = Color( 255, 216, 0 )
             return
         end
@@ -301,12 +321,15 @@
         table.Empty( SNAKE.Tail )
         SNAKE.Col = Color( 25, 255, 25 )
         SNAKE.Dead = false
+        SNAKE.DiedAt = math.huge
         SNAKE.GoldenApplesEaten = 0
         SNAKE.GoalReached = false
         SNAKE.Boosted = false
+        SNAKE.BoostedAt = math.huge
         SNAKE.MoveInterval = 0.1
         SNAKE.MoveX = 0
         SNAKE.MoveY = 0
+        table.Empty( SNAKE.QueuedMoves )
 
         table.Empty( APPLES.OnScreen )
 
@@ -316,6 +339,7 @@
         SNAKE.y = math.max( math.min( SCREEN_HEIGHT - 52, SNAKE.y ), 50 )
 
         Score = 0
+        CoinsTaken = false
     end
 
     function GAME:Stop()
@@ -324,31 +348,59 @@
     end
 
     function GAME:Update()
-        if self.State == STATE_PLAYING and IsValid( PLAYER ) and PLAYER == LocalPlayer() then
-            APPLES:Spawner()
+        if self.State == STATE_PLAYING and PLAYER == LocalPlayer() then
+            if not SNAKE.Dead then
+                APPLES:Spawner()
 
-            if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
-                if not SNAKE.Dead then
-                    if PLAYER:KeyDown( IN_FORWARD ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
-                        SNAKE.MoveX = 0
-                        SNAKE.MoveY = -10
-                    elseif PLAYER:KeyDown( IN_BACK ) and SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
-                        SNAKE.MoveX = 0
-                        SNAKE.MoveY = 10
-                    elseif PLAYER:KeyDown( IN_MOVERIGHT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
-                        SNAKE.MoveY = 0
-                        SNAKE.MoveX = 10
-                    elseif PLAYER:KeyDown( IN_MOVELEFT ) and SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
-                        SNAKE.MoveY = 0
-                        SNAKE.MoveX = -10
+                -- In order to fix a few flaws in the game, I had to handle the input in a weird way.
+                -- This isn't perfect either, but the game should feel way more responsive now.
+                if SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
+                    if PLAYER:KeyPressed( IN_FORWARD ) then
+                        table.insert( SNAKE.QueuedMoves, function()
+                            SNAKE.MoveX = 0
+                            SNAKE.MoveY = -10
+                        end )
                     end
+                    
+                    if PLAYER:KeyPressed( IN_BACK ) then
+                        table.insert( SNAKE.QueuedMoves, function()
+                            SNAKE.MoveX = 0
+                            SNAKE.MoveY = 10
+                        end )
+                    end
+                end
+
+                if SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
+                    if PLAYER:KeyPressed( IN_MOVERIGHT ) then
+                        table.insert( SNAKE.QueuedMoves, function()
+                            SNAKE.MoveY = 0
+                            SNAKE.MoveX = 10
+                        end )
+                    end
+                    
+                    if PLAYER:KeyPressed( IN_MOVELEFT ) then
+                        table.insert( SNAKE.QueuedMoves, function()
+                            SNAKE.MoveY = 0
+                            SNAKE.MoveX = -10
+                        end )
+                    end
+                end
+
+                if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
+                    for _, Queued in ipairs( SNAKE.QueuedMoves ) do
+                        Queued()
+                    end
+                    table.Empty( SNAKE.QueuedMoves )
 
                     SNAKE:CheckForApplesEaten()
                     SNAKE:Move()
                     SNAKE:CheckForDeath()
+                    SNAKE:HandleSpeed()
                     SNAKE:HandleApparel()
                 end
             end
+
+            SNAKE:EventTimers()
         end
     end
 
