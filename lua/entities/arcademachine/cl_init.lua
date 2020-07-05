@@ -23,7 +23,7 @@ local LoadedLibs = {}
 local QueuedSounds = {}
 local NextQueueAt = 0
 
-local CurrentMachine = nil
+CurrentMachine = CurrentMachine or nil
 
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
@@ -33,6 +33,8 @@ local function WrappedInclusion(path, upvalues)
     return gameFunc()
 end
 
+ENT.MaxDist = 200
+ENT.HidePlayerDist = 30
 ENT.Initialized = false
 
 function ENT:Initialize()
@@ -117,19 +119,16 @@ function ENT:Think()
     end
 
     -- If we weren't nearby when the machine was spawned we won't get notified
-    -- when the seat/blocker was created so manually call
+    -- when the seat was created so manually call
     if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeMachine then
         self:OnSeatCreated("Seat", nil, self:GetSeat())
-    end
-    if IsValid(self:GetBlocker()) and not self:GetBlocker().RenderOverride then
-        self:OnBlockerCreated("Blocker", nil, self:GetBlocker())
     end
 
     if DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self then
         return
     end
 
-    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > self.MaxDist * self.MaxDist then
         if self.InRange then
             self.InRange = false
             self:OnLeftRange()
@@ -195,10 +194,6 @@ function ENT:Draw()
     end
 
     self:UpdateScreen()
-end
-
-function ENT:OnBlockerCreated(name, old, new)
-    new.RenderOverride = function() end
 end
 
 -- Isn't called when player becomes nil...
@@ -475,19 +470,15 @@ function ENT:TakeCoins(amount)
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
-    local veh = LocalPlayer():GetVehicle()
-    
-    if not IsValid(veh) then return end
+    if not IsValid(CurrentMachine) then
+        return
+    end
 
     local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
 
     if tp then return end
 
-    local machine = veh.ArcadeMachine
-
-    if not IsValid(machine) then return end
-
-    if machine:GetBodygroup(0) == 1 then
+    if CurrentMachine:GetBodygroup(0) == 1 then
         view.origin = veh:GetPos() + veh:GetRight() * -8 + veh:GetUp() * 72
     else
         view.origin = veh:GetPos() + veh:GetUp() * 64
@@ -499,16 +490,7 @@ hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
 end)
 
 hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
-    local veh = LocalPlayer():GetVehicle()
-    
-    if not IsValid(veh) then
-        PressedUse = false
-        return
-    end
-
-    local machine = veh.ArcadeMachine
-
-    if not IsValid(machine) then
+    if not IsValid(CurrentMachine) then
         PressedUse = false
         return
     end
@@ -537,13 +519,7 @@ hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
 end)
 
 hook.Add("ScoreboardShow", "arcademachine_scoreboard", function()
-    local veh = LocalPlayer():GetVehicle()
-    
-    if not IsValid(veh) then return end
-
-    local machine = veh.ArcadeMachine
-
-    if not IsValid(machine) then return end
+    if not IsValid(CurrentMachine) then return end
 
     return false
 end)
@@ -572,4 +548,16 @@ hook.Add("Think", "arcademachine_queue", function()
     end
 
     NextQueueAt = RealTime() + 0.05
+end)
+
+hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
+    if not IsValid(CurrentMachine) then return end
+
+    return ply:GetPos():DistToSqr(LocalPlayer():GetPos()) < CurrentMachine.HidePlayerDist * CurrentMachine.HidePlayerDist
+end)
+
+hook.Add("HUDDrawTargetID", "arcademachine_hideplayers", function()
+    if not IsValid(CurrentMachine) then return end
+
+    return false
 end)

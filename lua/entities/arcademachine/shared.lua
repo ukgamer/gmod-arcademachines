@@ -7,7 +7,6 @@ ENT.Spawnable = false
 ENT.AdminSpawnable = true
 
 ENT.Class = "arcademachine"
-ENT.MaxDist = 200
 
 function ENT:OnSeatCreated(name, old, new)
     if IsValid(new) and not new.HasUpdatedAnim then
@@ -24,7 +23,6 @@ end
 function ENT:SetupDataTables()
     self:NetworkVar("Entity", 0, "Seat")
     self:NetworkVar("Entity", 1, "Player")
-    self:NetworkVar("Entity", 2, "Blocker")
     self:NetworkVar("String", 0, "CurrentGame")
     self:NetworkVar("Int", 0, "Coins")
     self:NetworkVar("Int", 1, "MSCoinCost")
@@ -33,7 +31,6 @@ function ENT:SetupDataTables()
         self:NetworkVarNotify("Player", self.OnPlayerChange)
         self:NetworkVarNotify("CurrentGame", self.OnGameChange)
         self:NetworkVarNotify("Coins", self.OnCoinsChange)
-        self:NetworkVarNotify("Blocker", self.OnBlockerCreated)
     end
 
     self:NetworkVarNotify("Seat", self.OnSeatCreated)
