@@ -4,6 +4,7 @@ local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 --local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
 local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
+local DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
 
 local ScreenWidth = 512
 local ScreenHeight = 512
@@ -17,12 +18,12 @@ local PressedUseAt = 0
 local PACWasDisabled = false
 --local OutfitterWasDisabled = false
 
-ENT.Initialized = false
-
 local LoadedLibs = {}
 
 local QueuedSounds = {}
 local NextQueueAt = 0
+
+local CurrentMachine = nil
 
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
@@ -31,6 +32,8 @@ local function WrappedInclusion(path, upvalues)
     setfenv(gameFunc, gameMeta)
     return gameFunc()
 end
+
+ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
@@ -74,9 +77,9 @@ function ENT:Initialize()
         }
     )
 
-    self.Active = self.Active or false
+    self.InRange = self.InRange or false
     self.Game = self.Game or nil
-    self.LoadedSounds = {}
+    self.LoadedSounds = self.LoadedSounds or {}
 
     if self:GetCurrentGame() and not self.Game then
         self:SetGame(self:GetCurrentGame())
@@ -122,19 +125,23 @@ function ENT:Think()
         self:OnBlockerCreated("Blocker", nil, self:GetBlocker())
     end
 
-    if LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
-        if self.Active then
-            self.Active = false
+    if DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self then
+        return
+    end
+
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > (self.MaxDist * self.MaxDist) then
+        if self.InRange then
+            self.InRange = false
             self:OnLeftRange()
         end
     else
-        if not self.Active then
-            self.Active = true
+        if not self.InRange then
+            self.InRange = true
             self:OnEnteredRange()
         end
     end
 
-    if self.Active and self.Game then
+    if self.InRange and self.Game then
         if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
             local pressed = input.LookupBinding("+walk") and self:GetPlayer():KeyDown(IN_WALK) or input.IsKeyDown(KEY_LALT)
 
@@ -183,7 +190,7 @@ function ENT:Draw()
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if not self.Active or not self.Game then
+    if not self.InRange or not self.Game or (DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self) then
         return
     end
 
@@ -219,6 +226,8 @@ function ENT:OnPlayerChange(name, old, new)
 end
 
 function ENT:OnLocalPlayerEntered()
+    CurrentMachine = self
+
     local cost = self:GetMSCoinCost()
 
     if cost > 0 then
@@ -323,6 +332,8 @@ function ENT:OnLocalPlayerEntered()
 end
 
 function ENT:OnLocalPlayerLeft()
+    CurrentMachine = nil
+
     if DisablePAC:GetBool() and PACWasDisabled then
         pac.Enable()
     end
@@ -358,7 +369,7 @@ function ENT:UpdateScreen()
             surface.SetDrawColor(0, 0, 0, 255)
             surface.DrawRect(0, 0, ScreenWidth, ScreenHeight)
 
-            if self.Active then
+            if self.InRange then
                 if self.Game then
                     self.Game:Draw()
                 else
