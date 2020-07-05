@@ -61,6 +61,7 @@
     SNAKE.GoldenApplesEaten = 0
     SNAKE.GoalReached = false
     SNAKE.Boosted = false
+    SNAKE.TotalBoostTime = 0
     SNAKE.BoostedAt = math.huge
     SNAKE.LastMoved = RealTime()
     SNAKE.MoveX, SNAKE.MoveY = 0, 0
@@ -135,8 +136,11 @@
 
         if not SNAKE.Boosted then
             SNAKE.Boosted = true
+            SNAKE.TotalBoostTime = SNAKE.TotalBoostTime + 10
             SNAKE.BoostedAt = RealTime()
         end
+
+        SNAKE.TotalBoostTime = SNAKE.TotalBoostTime + 5
 
         PlayLoaded( "eatboost" )
     end
@@ -224,8 +228,9 @@
     function SNAKE:EventTimers()
         if not SNAKE.Dead then
             if SNAKE.Boosted then
-                if SNAKE.BoostedAt + 10 <= RealTime() then
+                if SNAKE.BoostedAt + SNAKE.TotalBoostTime <= RealTime() then
                     SNAKE.Boosted = false
+                    SNAKE.TotalBoostTime = 0
                 end
             end
         else
@@ -325,6 +330,7 @@
         SNAKE.GoldenApplesEaten = 0
         SNAKE.GoalReached = false
         SNAKE.Boosted = false
+        SNAKE.TotalBoostTime = 0
         SNAKE.BoostedAt = math.huge
         SNAKE.MoveInterval = 0.1
         SNAKE.MoveX = 0
