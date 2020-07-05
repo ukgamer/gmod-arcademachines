@@ -11,7 +11,7 @@ local ScreenHeight = 512
 local MarqueeWidth = 256
 local MarqueeHeight = 89
 
-local PressedScore = false
+local PressedWalk = false
 local PressedUse = false
 local PressedUseAt = 0
 
@@ -107,15 +107,7 @@ function ENT:Think()
 
     -- Workaround network var notify not triggering for null entity
     if self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
-        if self.Game then
-            self.Game:OnStopPlaying(self.LastPlayer)
-        end
-        
-        if self.LastPlayer == LocalPlayer() then
-            self:OnLocalPlayerLeft()
-        end
-
-        self.LastPlayer = nil
+        self:OnPlayerChange("Player", self.LastPlayer, self:GetPlayer())
     end
 
     -- If we weren't nearby when the machine was spawned we won't get notified
@@ -145,8 +137,8 @@ function ENT:Think()
             local pressed = input.LookupBinding("+walk") and self:GetPlayer():KeyDown(IN_WALK) or input.IsKeyDown(KEY_LALT)
 
             if pressed then
-                if not PressedScore then
-                    PressedScore = true
+                if not PressedWalk then
+                    PressedWalk = true
 
                     local cost = self:GetMSCoinCost()
 
@@ -159,7 +151,7 @@ function ENT:Think()
                     net.SendToServer()
                 end
             else
-                PressedScore = false
+                PressedWalk = false
             end
         end
 
@@ -200,9 +192,14 @@ end
 function ENT:OnPlayerChange(name, old, new)
     if IsValid(new) then
         if old ~= new then
+            if old and self.Game then
+                self.Game:OnStopPlaying(old)
+            end
+
             if self.Game then
                 self.Game:OnStartPlaying(new)
             end
+            
             self.LastPlayer = new
 
             if new == LocalPlayer() then
@@ -213,6 +210,8 @@ function ENT:OnPlayerChange(name, old, new)
         if self.Game then
             self.Game:OnStopPlaying(old)
         end
+
+        self.LastPlayer = nil
 
         if old == LocalPlayer() then
             self:OnLocalPlayerLeft()
