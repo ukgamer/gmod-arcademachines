@@ -4,7 +4,8 @@ ENT.PrintName = "Arcade Machine"
 ENT.Author = "ukgamer"
 ENT.Category = "ukgamer"
 ENT.Spawnable = false
-ENT.AdminSpawnable = true
+ENT.DisableDuplicator = true
+ENT.Instructions = "Spawn only if you are working on a game. Must have a game set before it can be used. Refer to developer documentation."
 
 ENT.Class = "arcademachine"
 
