@@ -83,30 +83,14 @@ function ENT:Initialize()
     seat:SetNotSolid(true)
     self:DeleteOnRemove(seat)
 
-    -- Blocker
-    local blocker = ents.Create("prop_physics")
-    blocker:SetModel("models/hunter/blocks/cube025x025x025.mdl")
-    blocker:SetParent(self)
-    blocker:SetLocalPos(Vector(30, 0, -7))
-    blocker:SetLocalAngles(Angle(0, 90, 0))
-    blocker:SetRenderMode(RENDERMODE_NONE)
-    blocker:SetMoveType(MOVETYPE_NONE)
-    blocker:DrawShadow(false)
-    blocker:Spawn()
-    blocker:SetNotSolid(true)
-    self:DeleteOnRemove(blocker)
-    self.BlockerInitialized = false
-
     if _R.Player.TakeCoins then
         self:SetMSCoinCost(100)
     end
 
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
-        self:SetBlocker(blocker)
         self:SetOwner(nil)
         seat:SetOwner(self:GetOwner())
-        blocker:SetOwner(self:GetOwner())
     end)
 
     self.CanLeaveVehicle = false
@@ -116,7 +100,6 @@ function ENT:Think()
     if not IsValid(self:GetPlayer()) or self:GetSeat():GetDriver() ~= self:GetPlayer() then
         self:SetPlayer(nil)
         self:SetCoins(0)
-        self:GetBlocker():SetNotSolid(true)
     end
 
     self:NextThink(CurTime() + 0.1)
@@ -132,12 +115,6 @@ function ENT:Use(activator, caller)
         self.CanLeaveVehicle = false
         self:GetPlayer().ArcadeWasAllowedWeaponsInVehicle = self:GetPlayer():GetAllowWeaponsInVehicle()
         self:GetPlayer():SetAllowWeaponsInVehicle(false)
-
-        if not self.BlockerInitialized then
-            self:GetBlocker():PhysicsInitBox(Vector(-16, -16, 0), Vector(16, 16, 72))
-            self.BlockerInitialized = true
-        end
-        self:GetBlocker():SetNotSolid(false)
     end
 end
 
@@ -165,9 +142,7 @@ net.Receive("arcademachine_leave", function(len, ply)
 end)
 
 hook.Add("PlayerLeaveVehicle", "arcademachine_leavevehicle", function(ply, veh)
-    if not IsValid(veh.ArcadeMachine) or not IsValid(veh.ArcadeMachine:GetBlocker()) then return end
-
-    veh.ArcadeMachine:GetBlocker():SetNotSolid(true)
+    if not IsValid(veh.ArcadeMachine) then return end
 
     ply:SetPos(veh:GetPos() + veh:GetForward() * -10 + veh:GetUp() * 10)
     ply:SetEyeAngles((veh.ArcadeMachine:GetPos() - ply:EyePos()):Angle())
