@@ -34,7 +34,6 @@ local function WrappedInclusion(path, upvalues)
 end
 
 ENT.MaxDist = 200
-ENT.HidePlayerDist = 30
 ENT.Initialized = false
 
 function ENT:Initialize()
@@ -552,7 +551,9 @@ end)
 hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
     if not IsValid(CurrentMachine) then return end
 
-    return ply:GetPos():DistToSqr(LocalPlayer():GetPos()) < CurrentMachine.HidePlayerDist * CurrentMachine.HidePlayerDist
+    local min, max = LocalPlayer():WorldSpaceAABB()
+
+    return ply:GetPos():WithinAABox(min, max)
 end)
 
 hook.Add("HUDDrawTargetID", "arcademachine_hideplayers", function()
