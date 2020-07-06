@@ -107,7 +107,7 @@ local function ShowInfoPanel(machine)
         label:SetText("WARNING: PAC will be temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
     end
 
-    if machine.Game.Description then
+    if machine.Game and machine.Game.Description then
         local label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
         label:SetWrap(true)
