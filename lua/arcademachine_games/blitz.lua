@@ -153,14 +153,14 @@ local gameState = 0
          plane = {
             x = -10,
             y = 80,
-            speed = 8
+            speed = 400
         }
     
          bomb = {
             x = 0,
             y = 0,
             alive = 0,
-            speed = 12
+            speed = 400
         }
 
         for i = 1,3 do
@@ -170,7 +170,7 @@ local gameState = 0
             }
         end
 
-        for i = 1, 12 do
+        for i = 1, 15 do
             bomb_explode_particles[i] = {
                 x = 0,
                 y = 0,
@@ -213,7 +213,7 @@ local gameState = 0
 
     local function CheckPlaneCollision()
         for i = 1 , #building_parts do
-            if CheckCollision(plane.x+72,plane.y,building_parts[i].x,building_parts[i].y,building_parts[i].w+20,building_parts[i].h+20) then
+            if CheckCollision(plane.x+72,plane.y+20,building_parts[i].x,building_parts[i].y,building_parts[i].w+20,building_parts[i].h+20) then
                 Gameover()
             end
         end
@@ -222,7 +222,7 @@ local gameState = 0
     local function UpdatePlane()
         CheckPlaneCollision()
 
-        plane.x = plane.x + (plane.speed+level)
+        plane.x = plane.x + (plane.speed+(level*10)) * FrameTime()
 
         if plane.x > SCREEN_WIDTH then
             plane.y = plane.y + 40
@@ -274,9 +274,9 @@ local gameState = 0
     local function ExplodeParticles()
         bomb_explode_time = bomb_explode_time - 1
         for i = 1, #bomb_explode_particles do
-            bomb_explode_particles[i].downvel = bomb_explode_particles[i].downvel + 0.03
-            bomb_explode_particles[i].x = bomb_explode_particles[i].x + bomb_explode_particles[i].x_change
-            bomb_explode_particles[i].y = bomb_explode_particles[i].y + bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel
+            bomb_explode_particles[i].downvel = bomb_explode_particles[i].downvel + 1.03
+            bomb_explode_particles[i].x = bomb_explode_particles[i].x + (bomb_explode_particles[i].x_change)*FrameTime()
+            bomb_explode_particles[i].y = bomb_explode_particles[i].y + (bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel) * FrameTime()
         end
     end
 
@@ -292,8 +292,8 @@ local gameState = 0
         for i = 1, #bomb_explode_particles do
             bomb_explode_particles[i].x = bomb.x
             bomb_explode_particles[i].y = bomb.y
-            bomb_explode_particles[i].x_change = math.sin(math.random(360)) * 2
-            bomb_explode_particles[i].y_change = math.cos(math.random(360)) * 2
+            bomb_explode_particles[i].x_change = (math.sin(math.random(360)) * 152)
+            bomb_explode_particles[i].y_change = (math.cos(math.random(360)) * 152)
             bomb_explode_particles[i].downvel = 0
         end
         bomb_explode_time = 30
@@ -309,8 +309,8 @@ local gameState = 0
     local function UpdateBomb()
 		if bomb.alive == 1 then
             
-            bomb.y = bomb.y + (bomb.speed +(level/10))
-            bomb.x = bomb.x + 2
+            bomb.y = bomb.y + (bomb.speed +(level*10)) * FrameTime()
+            bomb.x = bomb.x + (100 * FrameTime())
             
             if bomb.y > SCREEN_HEIGHT - 40 then
                 BombExplode()
@@ -356,6 +356,10 @@ local gameState = 0
             SetColor(70,0,0)
             DrawRect(bomb_trail[i].x,bomb_trail[i].y,9,9)
         end
+    end
+
+    local function DrawBombAmmo()
+
     end
 
     local function UpdateBuildingParts()
@@ -426,24 +430,26 @@ local gameState = 0
     local function ResetClouds()
         for i = 1,7 do
             clouds[i] = {
-                x = math.random(400)+20,
-                y = math.random(320)+60
+                x = math.random(400)+0,
+                y = math.random(320)+80
             }
         end
     end
 
     local function DrawClouds()
         for i = 1,4 do
-            for j = 1,4 do
-                SetColor(155,155,155)
-                DrawRect( clouds[i].x+(10*j), clouds[i].y,60+math.random(4)-4,34+math.random(4)-4)
-            end
+            SetColor(155,155,155)
+            DrawRect( clouds[i].x, clouds[i].y,80,44)
+          --  for j = 1,4 do
+          --      SetColor(155,155,155)
+          --      DrawRect( clouds[i].x+(10*j), clouds[i].y,60+math.random(4)-4,34+math.random(4)-4)
+          --  end
         end
     end
 
     local function UpdateClouds()
         for i = 1,4 do
-            clouds[i].x = clouds[i].x + 1
+            clouds[i].x = clouds[i].x + (20 * FrameTime())
             if clouds[i].x > SCREEN_WIDTH then clouds[i].x = -60 end
         end
     end
@@ -522,31 +528,12 @@ function GAME:Update()
 
     if state == -1 then
 
-        if thePlayer:KeyDown(IN_BACK) then
-            if menu_move_time == 0 then
-                Menu_Down()
-            end
-        end
-
-        if thePlayer:KeyDown(IN_FORWARD) then
-            if menu_move_time == 0 then
-                Menu_Up()
-            end
-        end
-
-        if thePlayer:KeyDown(IN_JUMP) then
-            state = 1
-        end
-
-        if menu_move_time > 0 then
-            menu_move_time = menu_move_time - 1
-        end
-
     elseif state == 0 then -- in game
-        if game_tick > 0 then game_tick = game_tick - 1 end
 
-        if game_tick == 0 then
-            game_tick = 4
+        if game_tick > 0 then game_tick = game_tick - (100*FrameTime()) end
+
+        if game_tick <= 0 then
+            game_tick = 5
 
             if thePlayer:KeyDown(IN_JUMP) then
                 if bomb.alive == 0 then
