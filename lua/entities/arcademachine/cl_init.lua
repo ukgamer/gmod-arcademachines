@@ -10,8 +10,8 @@ local MaxDist = 200
 
 local ScreenWidth = 512
 local ScreenHeight = 512
-local MarqueeWidth = 256
-local MarqueeHeight = 89
+local MarqueeWidth = 512
+local MarqueeHeight = 179
 
 local PressedWalk = false
 local PressedUse = false
@@ -25,7 +25,23 @@ local LoadedLibs = {}
 local QueuedSounds = {}
 local NextQueueAt = 0
 
-CurrentMachine = CurrentMachine or nil
+local BG = {
+    BG_GENERIC_JOYSTICK = 0,
+    BG_GENERIC_TRACKBALL = 1,
+    BG_GENERIC_RECESSED_JOYSTICK = 2,
+    BG_GENERIC_RECESSED_TRACKBALL = 3,
+    BG_DRIVING = 4
+}
+
+local Bodygroups = {
+    [BG.BG_GENERIC_JOYSTICK] = { 0, 0 },
+    [BG.BG_GENERIC_TRACKBALL] = { 0, 2 },
+    [BG.BG_GENERIC_RECESSED_JOYSTICK] = { 1, 0 },
+    [BG.BG_GENERIC_RECESSED_TRACKBALL] = { 1, 2 },
+    [BG.BG_DRIVING] = { 2, 3 }
+}
+
+AMCurrentMachine = AMCurrentMachine or nil
 
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
@@ -35,35 +51,35 @@ local function WrappedInclusion(path, upvalues)
     return gameFunc()
 end
 
-local InfoPanel = nil
+AMInfoPanel = AMInfoPanel or nil
 local LookingAt = nil
 local function ShowInfoPanel(machine)
     LookingAt = machine
 
     local bg = Color(0, 0, 0, 200)
 
-    InfoPanel = vgui.Create("DFrame")
+    AMInfoPanel = vgui.Create("DFrame")
     
-    InfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.25)
-    InfoPanel:SetMinimumSize(350, 350)
-    InfoPanel:SetPos(0, ScrH() * 0.5 - (InfoPanel:GetTall() * 0.5))
-    InfoPanel:SetTitle("")
-    InfoPanel:SetDraggable(false)
-    InfoPanel:ShowCloseButton(false)
-    InfoPanel:DockPadding(10, 10, 10, 20)
-    InfoPanel.Paint = function(self, w, h)
+    AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.25)
+    AMInfoPanel:SetMinimumSize(350, 350)
+    AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
+    AMInfoPanel:SetTitle("")
+    AMInfoPanel:SetDraggable(false)
+    AMInfoPanel:ShowCloseButton(false)
+    AMInfoPanel:DockPadding(10, 10, 10, 20)
+    AMInfoPanel.Paint = function(self, w, h)
         draw.RoundedBoxEx(20, 0, 0, w, h, bg, false, true, false, true)
 
         local text = "Open chat and mouse over to scroll (default Y)"
 
-        surface.SetTextColor(255, 255, 255, 255)
+        surface.SetTextColor(200, 200, 200, 255)
         surface.SetFont("DermaDefaultBold")
         local tw, th = surface.GetTextSize(text)
         surface.SetTextPos(w * 0.5 - (tw * 0.5), h - th - 5)
         surface.DrawText(text)
     end
 
-    local scroll = vgui.Create("DScrollPanel", InfoPanel)
+    local scroll = vgui.Create("DScrollPanel", AMInfoPanel)
     scroll:Dock(FILL)
     local sbar = scroll:GetVBar()
     sbar.Paint = function(self, w, h) end
@@ -79,6 +95,18 @@ local function ShowInfoPanel(machine)
         label:DockMargin(0, 0, 0, 15)
         label:SetFont("DermaLarge")
         label:SetText(machine.Game.Name)
+    end
+
+    local cost = machine:GetMSCoinCost()
+
+    if cost > 0 then
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("DermaDefault")
+        label:SetText("This machine costs " .. cost .. " coin(s) to play.")
     end
 
     local label = vgui.Create("DLabel", scroll)
@@ -207,7 +235,7 @@ function ENT:Think()
         self:OnSeatCreated("Seat", nil, self:GetSeat())
     end
 
-    if DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self then
+    if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
         return
     end
 
@@ -265,14 +293,16 @@ function ENT:OnLeftRange()
 end
 
 function ENT:Draw()
+    local marqueeIndex = self.Entity:GetBodygroup(0)
+
     -- To prevent using string table slots, don't set the submaterial on the server
     -- and just override it here
-    render.MaterialOverrideByIndex(3, self.MarqueeMaterial)
+    render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if not self.InRange or not self.Game or (DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self) then
+    if not self.InRange or not self.Game or (DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self) then
         return
     end
 
@@ -311,15 +341,7 @@ function ENT:OnPlayerChange(name, old, new)
 end
 
 function ENT:OnLocalPlayerEntered()
-    CurrentMachine = self
-
-    local cost = self:GetMSCoinCost()
-
-    if cost > 0 then
-        local msg = "This machine takes " .. cost .. " Metastruct coin(s) at a time."
-        LocalPlayer():ChatPrint(msg)
-        notification.AddLegacy(msg, NOTIFY_HINT, 10)
-    end
+    AMCurrentMachine = self
 
     if DisablePAC:GetBool() and pac then
         pac.Disable()
@@ -338,7 +360,7 @@ function ENT:OnLocalPlayerEntered()
 end
 
 function ENT:OnLocalPlayerLeft()
-    CurrentMachine = nil
+    AMCurrentMachine = nil
 
     if DisablePAC:GetBool() and PACWasDisabled then
         pac.Enable()
@@ -438,6 +460,10 @@ function ENT:SetGame(game, forceLibLoad)
             MARQUEE_HEIGHT = MarqueeHeight
         }
 
+        for k, v in pairs(BG) do
+            upvalues[k] = v
+        end
+
         if LoadedLibs[game] and not forceLibLoad then
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
@@ -466,6 +492,11 @@ function ENT:SetGame(game, forceLibLoad)
         if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
             self.Game:OnStartPlaying(self:GetPlayer())
         end
+
+        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+        end
     end
 
     self:UpdateMarquee()
@@ -481,7 +512,7 @@ function ENT:TakeCoins(amount)
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
-    if not IsValid(CurrentMachine) then
+    if not IsValid(AMCurrentMachine) then
         return
     end
 
@@ -489,7 +520,7 @@ hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
 
     if tp then return end
 
-    if CurrentMachine:GetBodygroup(0) == 1 then
+    if AMCurrentMachine:GetBodygroup(0) == 1 then
         view.origin = veh:GetPos() + veh:GetRight() * -8 + veh:GetUp() * 72
     else
         view.origin = veh:GetPos() + veh:GetUp() * 64
@@ -501,7 +532,7 @@ hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
 end)
 
 hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
-    if not IsValid(CurrentMachine) then
+    if not IsValid(AMCurrentMachine) then
         PressedUse = false
         return
     end
@@ -530,7 +561,7 @@ hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
 end)
 
 hook.Add("ScoreboardShow", "arcademachine_scoreboard", function()
-    if not IsValid(CurrentMachine) then return end
+    if not IsValid(AMCurrentMachine) then return end
 
     return false
 end)
@@ -545,7 +576,7 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 end)
 
 hook.Add("Think", "arcademachine_think", function()
-    if not IsValid(CurrentMachine) then
+    if not IsValid(AMCurrentMachine) then
         local tr = util.TraceLine(util.GetPlayerTrace(LocalPlayer(), EyeAngles():Forward()))
 
         if
@@ -553,22 +584,22 @@ hook.Add("Think", "arcademachine_think", function()
             tr.Entity:GetClass() == "arcademachine" and
             tr.Entity:GetPos():DistToSqr(LocalPlayer():GetPos()) < LookDist * LookDist
         then
-            if LookingAt ~= tr.Entity and IsValid(InfoPanel) then
-                InfoPanel:Remove()
+            if LookingAt ~= tr.Entity and IsValid(AMInfoPanel) then
+                AMInfoPanel:Remove()
             end
 
-            if not IsValid(InfoPanel) then
+            if not IsValid(AMInfoPanel) then
                 ShowInfoPanel(tr.Entity)
             end
         else
-            if IsValid(InfoPanel) then
-                InfoPanel:Remove()
+            if IsValid(AMInfoPanel) then
+                AMInfoPanel:Remove()
             end
 
             LookingAt = nil
         end
-    elseif IsValid(InfoPanel) then
-        InfoPanel:Remove()
+    elseif IsValid(AMInfoPanel) then
+        AMInfoPanel:Remove()
 
         LookingAt = nil
     end
@@ -590,7 +621,7 @@ hook.Add("Think", "arcademachine_think", function()
 end)
 
 hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
-    if not IsValid(CurrentMachine) or ply == LocalPlayer() then return end
+    if not IsValid(AMCurrentMachine) or ply == LocalPlayer() then return end
 
     local min, max = LocalPlayer():WorldSpaceAABB()
 
@@ -598,7 +629,7 @@ hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
 end)
 
 hook.Add("HUDDrawTargetID", "arcademachine_hideplayers", function()
-    if not IsValid(CurrentMachine) then return end
+    if not IsValid(AMCurrentMachine) then return end
 
     return false
 end)

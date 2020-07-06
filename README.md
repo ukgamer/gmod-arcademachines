@@ -23,6 +23,14 @@ Your game must implement the following methods:
 
 Your game table can implement the `Description` property. This will be shown when the player looks at the machine before entering. You should tell the player how to play your game here.
 
+Your game table can implement the `Bodygroup` property. This will control the physical appearance of the cabinet. Available bodygroups are:
+
+* BG_GENERIC_JOYSTICK
+* BG_GENERIC_TRACKBALL
+* BG_GENERIC_RECESSED_JOYSTICK
+* BG_GENERIC_RECESSED_TRACKBALL
+* BG_DRIVING
+
 Your game can implement the following methods:
 
 * `Init()`
@@ -77,6 +85,7 @@ Access your image with `IMAGE.Images[name]`, which will look like
 ```lua
 {
     status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "Some error", -- if status == STATUS_ERROR
     mat = Material -- if not yet loaded then error material is used
 }
 ```
@@ -89,8 +98,6 @@ Access your image with `IMAGE.Images[name]`, which will look like
 
 To access your sound use `SOUND.Sounds[name]`, which will look like
 
-Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
-
 ```lua
 {
     status = (0 = STATUS_QUEUED, 1 = STATUS_LOADING, 2 = STATUS_LOADED, 3 = STATUS_ERROR),
@@ -98,6 +105,8 @@ Sounds that are loaded via `LoadFromURL` are queued in order to prevent performa
     sound = IGModAudioChannel -- if status == STATUS_LOADED
 }
 ```
+
+Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
 
 #### Collisions
 

@@ -1,8 +1,9 @@
 VertexLitGeneric
 {
-	$basetexture "models/ms_acabinet/ms_acabinet_artwork"
-	$bumpmap "models/ms_acabinet/ms_acabinet_artwork_normal"
+	$basetexture "models/ms_acabinet_v2/ms_acabinet_artwork"
+	$bumpmap "models/ms_acabinet_v2/ms_acabinet_artwork_normal"
 	$surfaceprop Metal
+	$nodecal "1"
 
 	$translucent 1
 	$additive 1
