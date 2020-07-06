@@ -544,7 +544,7 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
     end
 end)
 
-hook.Add("Think", "arcademachine_queue", function()
+hook.Add("Think", "arcademachine_think", function()
     if not IsValid(CurrentMachine) then
         local tr = util.TraceLine(util.GetPlayerTrace(LocalPlayer(), EyeAngles():Forward()))
 
@@ -590,7 +590,7 @@ hook.Add("Think", "arcademachine_queue", function()
 end)
 
 hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
-    if not IsValid(CurrentMachine) then return end
+    if not IsValid(CurrentMachine) or ply == LocalPlayer() then return end
 
     local min, max = LocalPlayer():WorldSpaceAABB()
 
