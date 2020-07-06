@@ -11,6 +11,7 @@
 local GAME = {}
 
 GAME.Name = "Asteroids"
+GAME.Description = "Blast the asteroids for points! Press W to move your ship forward, and A/D to turn. Press SPACE to fire. Be careful with your velocity!"
 
 local yawVector = Vector(0, 0, 1)
 
