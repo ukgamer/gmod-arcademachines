@@ -3,8 +3,10 @@ include("shared.lua")
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 --local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
-local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
 local DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
+
+local LookDist = 100
+local MaxDist = 200
 
 local ScreenWidth = 512
 local ScreenHeight = 512
@@ -33,7 +35,97 @@ local function WrappedInclusion(path, upvalues)
     return gameFunc()
 end
 
-ENT.MaxDist = 200
+local InfoPanel = nil
+local LookingAt = nil
+local function ShowInfoPanel(machine)
+    LookingAt = machine
+
+    local bg = Color(0, 0, 0, 200)
+
+    InfoPanel = vgui.Create("DFrame")
+    
+    InfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.25)
+    InfoPanel:SetMinimumSize(350, 350)
+    InfoPanel:SetPos(0, ScrH() * 0.5 - (InfoPanel:GetTall() * 0.5))
+    InfoPanel:SetTitle("")
+    InfoPanel:SetDraggable(false)
+    InfoPanel:ShowCloseButton(false)
+    InfoPanel:DockPadding(10, 10, 10, 20)
+    InfoPanel.Paint = function(self, w, h)
+        draw.RoundedBoxEx(20, 0, 0, w, h, bg, false, true, false, true)
+
+        local text = "Open chat and mouse over to scroll (default Y)"
+
+        surface.SetTextColor(255, 255, 255, 255)
+        surface.SetFont("DermaDefaultBold")
+        local tw, th = surface.GetTextSize(text)
+        surface.SetTextPos(w * 0.5 - (tw * 0.5), h - th - 5)
+        surface.DrawText(text)
+    end
+
+    local scroll = vgui.Create("DScrollPanel", InfoPanel)
+    scroll:Dock(FILL)
+    local sbar = scroll:GetVBar()
+    sbar.Paint = function(self, w, h) end
+    sbar.btnUp.Paint = function(self, w, h) end
+    sbar.btnDown.Paint = function(self, w, h) end
+    sbar.btnGrip.Paint = function(self, w, h) end
+
+    if machine.Game then
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("DermaLarge")
+        label:SetText(machine.Game.Name)
+    end
+
+    local label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 15)
+    label:SetFont("DermaDefaultBold")
+    label:SetText("Instructions/Controls")
+
+    local label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 15)
+    label:SetFont("DermaDefault")
+    label:SetText("Press your WALK key (default ALT) to insert coins. Use scroll wheel to zoom. Hold USE (default E) to exit (you will lose any ununsed coins!).")
+
+    if DisablePAC:GetBool() and pac then
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("DermaDefault")
+        label:SetText("WARNING: PAC will be temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
+    end
+
+    if machine.Game.Description then
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("Game Information")
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 15)
+        label:SetFont("DermaDefault")
+        label:SetText(machine.Game.Description)
+    end
+end
+
 ENT.Initialized = false
 
 function ENT:Initialize()
@@ -119,7 +211,7 @@ function ENT:Think()
         return
     end
 
-    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > self.MaxDist * self.MaxDist then
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > MaxDist * MaxDist then
         if self.InRange then
             self.InRange = false
             self:OnLeftRange()
@@ -227,85 +319,6 @@ function ENT:OnLocalPlayerEntered()
         local msg = "This machine takes " .. cost .. " Metastruct coin(s) at a time."
         LocalPlayer():ChatPrint(msg)
         notification.AddLegacy(msg, NOTIFY_HINT, 10)
-    end
-
-    if ShowIntro:GetBool() then
-        local frame = vgui.Create("DFrame")
-
-        frame:SetSize(ScrW() * 0.25, ScrH() * 0.35)
-        frame:Center()
-        frame:SetTitle("Arcade Machines")
-        frame:SetDraggable(false)
-        frame:ShowCloseButton(false)
-        frame:DockPadding(10, 30, 10, 10)
-        frame:MakePopup()
-
-        local scroll = vgui.Create("DScrollPanel", frame)
-        scroll:Dock(FILL)
-
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("ScoreboardDefaultTitle")
-        label:SetText("Instructions/Controls")
-
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("ScoreboardDefault")
-        label:SetText("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
-
-        if DisablePAC:GetBool() and pac then
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefaultTitle")
-            label:SetText("WARNING: PAC Disabled")
-
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefault")
-            label:SetText("PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
-        end
-
-        --[[if DisableOutfitter:GetBool() and outfitter then
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefaultTitle")
-            label:SetText("WARNING: Outfitter Disabled")
-
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefault")
-            label:SetText("Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
-        end--]]
-
-        local button = vgui.Create("DButton", frame)
-        button:SetText("OK, don't show me this again")
-        button:Dock(BOTTOM)
-        button:SetEnabled(false)
-        timer.Simple(5, function()
-            button:SetEnabled(true)
-        end)
-        button.DoClick = function()
-            ShowIntro:SetBool(false)
-            frame:Remove()
-        end
     end
 
     if DisablePAC:GetBool() and pac then
@@ -532,6 +545,34 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 end)
 
 hook.Add("Think", "arcademachine_queue", function()
+    if not IsValid(CurrentMachine) then
+        local tr = util.TraceLine(util.GetPlayerTrace(LocalPlayer(), EyeAngles():Forward()))
+
+        if
+            IsValid(tr.Entity) and
+            tr.Entity:GetClass() == "arcademachine" and
+            tr.Entity:GetPos():DistToSqr(LocalPlayer():GetPos()) < LookDist * LookDist
+        then
+            if LookingAt ~= tr.Entity and IsValid(InfoPanel) then
+                InfoPanel:Remove()
+            end
+
+            if not IsValid(InfoPanel) then
+                ShowInfoPanel(tr.Entity)
+            end
+        else
+            if IsValid(InfoPanel) then
+                InfoPanel:Remove()
+            end
+
+            LookingAt = nil
+        end
+    elseif IsValid(InfoPanel) then
+        InfoPanel:Remove()
+
+        LookingAt = nil
+    end
+
     if RealTime() < NextQueueAt then return end
 
     local k, v = next(QueuedSounds)

@@ -19,14 +19,18 @@ Your game must implement the following methods:
 * `OnStartPlaying(ply)`
 * `OnStopPlaying(ply)`
 
-### Optional methods
+### Optional methods/properties
+
+Your game table can implement the `Description` property. This will be shown when the player looks at the machine before entering. You should tell the player how to play your game here.
+
+Your game can implement the following methods:
 
 * `Init()`
 * `Destroy()`
 * `DrawMarquee()`
 * `OnCoinsInserted(ply, old, new)`
 * `OnCoinsLost(ply, old, new)`
-    
+
 ### Available globals
 
 * `MACHINE`
