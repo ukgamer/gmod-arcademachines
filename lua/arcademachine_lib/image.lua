@@ -72,7 +72,7 @@ function IMAGE:LoadFromURL(url, name, noCache)
         end,
         function(err)
             self.Images[name].status = self.STATUS_ERROR
-            Error("Failed to load image:" .. err)
+            self.Images[name].err = err
         end
     )
 end
