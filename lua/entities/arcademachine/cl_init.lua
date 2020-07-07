@@ -25,43 +25,74 @@ local LoadedLibs = {}
 local QueuedSounds = {}
 local NextQueueAt = 0
 
-local BG = {
-    BG_GENERIC_JOYSTICK = 0,
-    BG_GENERIC_TRACKBALL = 1,
-    BG_GENERIC_RECESSED_JOYSTICK = 2,
-    BG_GENERIC_RECESSED_TRACKBALL = 3,
-    BG_DRIVING = 4
-}
+AMSettingsPanel = AMSettingsPanel or nil
+local function ShowSettingsPanel()
+    if not IsValid(AMSettingsPanel) then
+        AMSettingsPanel = vgui.Create("DFrame")
+        AMSettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.15)
+        AMSettingsPanel:SetMinimumSize(200, 200)
+        AMSettingsPanel:SetTitle("Arcade Machine Settings")
+        AMSettingsPanel:DockPadding(10, 30, 10, 10)
+    
+        local scroll = vgui.Create("DScrollPanel", AMSettingsPanel)
+        scroll:Dock(FILL)
 
-local Bodygroups = {
-    [BG.BG_GENERIC_JOYSTICK] = { 0, 0 },
-    [BG.BG_GENERIC_TRACKBALL] = { 0, 2 },
-    [BG.BG_GENERIC_RECESSED_JOYSTICK] = { 1, 0 },
-    [BG.BG_GENERIC_RECESSED_TRACKBALL] = { 1, 2 },
-    [BG.BG_DRIVING] = { 2, 3 }
-}
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 10)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("Performance")
 
-AMCurrentMachine = AMCurrentMachine or nil
+        if pac then
+            local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+            checkbox:Dock(TOP)
+            checkbox:DockMargin(0, 0, 0, 5)
+            checkbox:SetText("Disable PAC when in machine")
+            checkbox:SetConVar("arcademachine_disable_pac")
+            checkbox:SetValue(DisablePAC:GetBool())
+            checkbox:SizeToContents()
+        end
 
-local function WrappedInclusion(path, upvalues)
-    local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
+        local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+        checkbox:Dock(TOP)
+        checkbox:DockMargin(0, 0, 0, 5)
+        checkbox:SetText("Disable other machines when in machine")
+        checkbox:SetConVar("arcademachine_disable_others_when_active")
+        checkbox:SetValue(DisableOthers:GetBool())
+        checkbox:SizeToContents()
+    end
 
-    local gameFunc = (isfunction(path) and path or CompileFile(path))
-    setfenv(gameFunc, gameMeta)
-    return gameFunc()
+    AMSettingsPanel:Center()
+    AMSettingsPanel:MakePopup()
 end
+
+list.Set("DesktopWindows", "ArcadeMachines", {
+    title = "Arcade Machines",
+    icon = "icon64/arcademachine.png",
+    init = function(icon, window)
+        ShowSettingsPanel()
+    end
+})
 
 AMInfoPanel = AMInfoPanel or nil
 local LookingAt = nil
 local function ShowInfoPanel(machine)
+    if LookingAt == machine then return end
+
+    if LookingAt ~= machine and IsValid(AMInfoPanel) then
+        AMInfoPanel:Remove()
+    end
+
     LookingAt = machine
 
     local bg = Color(0, 0, 0, 200)
 
     AMInfoPanel = vgui.Create("DFrame")
     
-    AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.25)
-    AMInfoPanel:SetMinimumSize(350, 350)
+    AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
+    AMInfoPanel:SetMinimumSize(300, 300)
     AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
     AMInfoPanel:SetTitle("")
     AMInfoPanel:SetDraggable(false)
@@ -113,7 +144,7 @@ local function ShowInfoPanel(machine)
     label:Dock(TOP)
     label:SetWrap(true)
     label:SetAutoStretchVertical(true)
-    label:DockMargin(0, 0, 0, 15)
+    label:DockMargin(0, 0, 0, 10)
     label:SetFont("DermaDefaultBold")
     label:SetText("Instructions/Controls")
 
@@ -123,24 +154,14 @@ local function ShowInfoPanel(machine)
     label:SetAutoStretchVertical(true)
     label:DockMargin(0, 0, 0, 15)
     label:SetFont("DermaDefault")
-    label:SetText("Press your WALK key (default ALT) to insert coins. Use scroll wheel to zoom. Hold USE (default E) to exit (you will lose any ununsed coins!).")
-
-    if DisablePAC:GetBool() and pac then
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("DermaDefault")
-        label:SetText("WARNING: PAC will be temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
-    end
+    label:SetText("Press your WALK key (default ALT) to insert coins. Use scroll wheel to zoom. Hold USE (default E) to exit (you will lose any ununsed coins!). Settings can be found in the context menu (default C).")
 
     if machine.Game and machine.Game.Description then
         local label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
         label:SetWrap(true)
         label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
+        label:DockMargin(0, 0, 0, 10)
         label:SetFont("DermaDefaultBold")
         label:SetText("Game Information")
 
@@ -152,6 +173,32 @@ local function ShowInfoPanel(machine)
         label:SetFont("DermaDefault")
         label:SetText(machine.Game.Description)
     end
+end
+
+local BG = {
+    BG_GENERIC_JOYSTICK = 0,
+    BG_GENERIC_TRACKBALL = 1,
+    BG_GENERIC_RECESSED_JOYSTICK = 2,
+    BG_GENERIC_RECESSED_TRACKBALL = 3,
+    BG_DRIVING = 4
+}
+
+local Bodygroups = {
+    [BG.BG_GENERIC_JOYSTICK] = { 0, 0 },
+    [BG.BG_GENERIC_TRACKBALL] = { 0, 2 },
+    [BG.BG_GENERIC_RECESSED_JOYSTICK] = { 1, 0 },
+    [BG.BG_GENERIC_RECESSED_TRACKBALL] = { 1, 2 },
+    [BG.BG_DRIVING] = { 2, 3 }
+}
+
+AMCurrentMachine = AMCurrentMachine or nil
+
+local function WrappedInclusion(path, upvalues)
+    local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
+
+    local gameFunc = (isfunction(path) and path or CompileFile(path))
+    setfenv(gameFunc, gameMeta)
+    return gameFunc()
 end
 
 ENT.Initialized = false
@@ -568,6 +615,13 @@ end)
 
 local notificationColor = Color(255, 255, 255)
 hook.Add("HUDPaint", "arcademachine_hud", function()
+    -- Paint manually so the panel hides when the camera is out
+    if IsValid(AMInfoPanel) then
+        AMInfoPanel:SetPaintedManually(false)
+        AMInfoPanel:PaintManual()
+        AMInfoPanel:SetPaintedManually(true)
+    end
+
     if PressedUse then
         notificationColor.a = 50 + math.abs(math.sin(RealTime() * 10) * 205)
 
@@ -584,23 +638,17 @@ hook.Add("Think", "arcademachine_think", function()
             tr.Entity:GetClass() == "arcademachine" and
             tr.Entity:GetPos():DistToSqr(LocalPlayer():GetPos()) < LookDist * LookDist
         then
-            if LookingAt ~= tr.Entity and IsValid(AMInfoPanel) then
-                AMInfoPanel:Remove()
-            end
-
-            if not IsValid(AMInfoPanel) then
-                ShowInfoPanel(tr.Entity)
-            end
+            ShowInfoPanel(tr.Entity)
         else
             if IsValid(AMInfoPanel) then
                 AMInfoPanel:Remove()
             end
-
             LookingAt = nil
         end
-    elseif IsValid(AMInfoPanel) then
-        AMInfoPanel:Remove()
-
+    else
+        if IsValid(AMInfoPanel) then
+            AMInfoPanel:Remove()
+        end
         LookingAt = nil
     end
 
@@ -629,6 +677,12 @@ hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
 end)
 
 hook.Add("HUDDrawTargetID", "arcademachine_hideplayers", function()
+    if not IsValid(AMCurrentMachine) then return end
+
+    return false
+end)
+
+hook.Add("ContextMenuOpen", "arcademachine_nocontextmenu", function()
     if not IsValid(AMCurrentMachine) then return end
 
     return false
