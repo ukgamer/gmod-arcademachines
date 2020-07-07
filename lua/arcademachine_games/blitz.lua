@@ -552,7 +552,7 @@ function GAME:Update()
   --      if game_tick <= 0 then
   --          game_tick = 5
 
-        if lastUpdate + 0.035 < RealTime() then
+        if lastUpdate + 0.025 < RealTime() then
             lastUpdate = RealTime()
 
             if thePlayer:KeyDown(IN_JUMP) then
