@@ -53,6 +53,7 @@ local gameState = 0
     local level_start = 1
     local level = 1
     local points = 0
+    local lastUpdate = RealTime()
 
 	local button = {
 		w = 0,
@@ -153,14 +154,16 @@ local gameState = 0
          plane = {
             x = -10,
             y = 80,
-            speed = 400
+            speed = 8
         }
     
          bomb = {
-            x = 0,
-            y = 0,
+            x = -10,
+            y = -10,
+            w = 10,
+            h = 10,
             alive = 0,
-            speed = 400
+            speed = 12
         }
 
         for i = 1,3 do
@@ -222,7 +225,7 @@ local gameState = 0
     local function UpdatePlane()
         CheckPlaneCollision()
 
-        plane.x = plane.x + (plane.speed+(level*10)) * FrameTime()
+        plane.x = plane.x + (plane.speed+(level/2))
 
         if plane.x > SCREEN_WIDTH then
             plane.y = plane.y + 40
@@ -262,7 +265,7 @@ local gameState = 0
 
     local function DrawBomb()
 		SetColor(195,0,0)
-		DrawRect(bomb.x,bomb.y,10,10)
+		DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
     end
 
     local function DropBomb()
@@ -274,9 +277,9 @@ local gameState = 0
     local function ExplodeParticles()
         bomb_explode_time = bomb_explode_time - 1
         for i = 1, #bomb_explode_particles do
-            bomb_explode_particles[i].downvel = bomb_explode_particles[i].downvel + 1.03
-            bomb_explode_particles[i].x = bomb_explode_particles[i].x + (bomb_explode_particles[i].x_change)*FrameTime()
-            bomb_explode_particles[i].y = bomb_explode_particles[i].y + (bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel) * FrameTime()
+            bomb_explode_particles[i].downvel = bomb_explode_particles[i].downvel + 0.03
+            bomb_explode_particles[i].x = bomb_explode_particles[i].x + (bomb_explode_particles[i].x_change)
+            bomb_explode_particles[i].y = bomb_explode_particles[i].y + (bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel)
         end
     end
 
@@ -292,8 +295,8 @@ local gameState = 0
         for i = 1, #bomb_explode_particles do
             bomb_explode_particles[i].x = bomb.x
             bomb_explode_particles[i].y = bomb.y
-            bomb_explode_particles[i].x_change = (math.sin(math.random(360)) * 152)
-            bomb_explode_particles[i].y_change = (math.cos(math.random(360)) * 152)
+            bomb_explode_particles[i].x_change = (math.sin(math.random(360)) * 2)
+            bomb_explode_particles[i].y_change = (math.cos(math.random(360)) * 2)
             bomb_explode_particles[i].downvel = 0
         end
         bomb_explode_time = 30
@@ -309,15 +312,15 @@ local gameState = 0
     local function UpdateBomb()
 		if bomb.alive == 1 then
             
-            bomb.y = bomb.y + (bomb.speed +(level*10)) * FrameTime()
-            bomb.x = bomb.x + (100 * FrameTime())
+            bomb.y = bomb.y + (bomb.speed +(level/8))
+            bomb.x = bomb.x + 2
             
             if bomb.y > SCREEN_HEIGHT - 40 then
                 BombExplode()
             end
 
             for i = 1 , #building_parts do
-                if CheckCollision(bomb.x,bomb.y,building_parts[i].x,building_parts[i].y,building_parts[i].w+20,building_parts[i].h+20) then
+                if CheckCollision(bomb.x+(bomb.w/2),bomb.y+(bomb.h/2),building_parts[i].x,building_parts[i].y,building_parts[i].w+40,building_parts[i].h+40) then
                     for j = 1 , #building_parts do
                         if building_parts[j].index == building_parts[i].index then
                             building_parts[j].collapsing = 1
@@ -401,7 +404,19 @@ local gameState = 0
         end
         building_spot[random_x] = 1
 
-		local random_part_num = math.random(5)+2
+        local offset_part_num = 5
+
+        if level < 11 then
+            offset_part_num = 5
+        elseif level < 23 then
+            offset_part_num = 4
+        elseif level < 28 then
+            offset_part_num = 3
+        else
+            offset_part_num = 2
+        end
+
+		local random_part_num = math.random(4+offset_part_num)+2
 		local part_temp_y = SCREEN_HEIGHT - 30
         for i = 1 , random_part_num do
             local part = {}
@@ -420,7 +435,7 @@ local gameState = 0
 
     local function GenerateBuildingParts()
 
-        local building_count = math.random(4)+1
+        local building_count = math.random(5)+1
         for i = 1, building_count do
             GenerateBuildingPart(i)
         end
@@ -449,7 +464,7 @@ local gameState = 0
 
     local function UpdateClouds()
         for i = 1,4 do
-            clouds[i].x = clouds[i].x + (20 * FrameTime())
+            clouds[i].x = clouds[i].x + 1
             if clouds[i].x > SCREEN_WIDTH then clouds[i].x = -60 end
         end
     end
@@ -512,6 +527,8 @@ function GAME:Stop()
     gameState = 0
 end
 
+
+
 function GAME:Update()
     now = RealTime()
 
@@ -530,10 +547,13 @@ function GAME:Update()
 
     elseif state == 0 then -- in game
 
-        if game_tick > 0 then game_tick = game_tick - (100*FrameTime()) end
+  --      if game_tick > 0 then game_tick = game_tick - (100*FrameTime()) end
 
-        if game_tick <= 0 then
-            game_tick = 5
+  --      if game_tick <= 0 then
+  --          game_tick = 5
+
+        if lastUpdate + 0.035 < RealTime() then
+            lastUpdate = RealTime()
 
             if thePlayer:KeyDown(IN_JUMP) then
                 if bomb.alive == 0 then
@@ -580,9 +600,9 @@ end
 surface.CreateFont("CustomFont0022",  
 { font = "Consolas",  
 extended = false,  
-size = 21,  weight = 200,  
+size = 60,  weight = 200,  
 blursize = 0,  
-scanlines = 0,  
+scanlines = 4,  
 antialias = false,  
 underline = false,  
 italic = false,  
@@ -597,7 +617,7 @@ outline = false
 surface.CreateFont("CustomFont0023",  
 { font = "Consolas",  
 extended = false,  
-size = 15,  weight = 200,  
+size = 17,  weight = 200,  
 blursize = 0,  
 scanlines = 0,  
 antialias = false,  
@@ -628,23 +648,59 @@ function GAME:DrawMarquee()
 
     surface.SetFont("CustomFont0023")
     surface.SetTextColor(0, 195, 0, 255)
-    surface.SetTextPos(41+(MARQUEE_WIDTH / 2) - (tw / 2), -4+(MARQUEE_HEIGHT / 2) - (th / 2))
+    surface.SetTextPos(126+(MARQUEE_WIDTH / 2) - (tw / 2), -4+(MARQUEE_HEIGHT / 2) - (th / 2))
     surface.DrawText("C64")
     
 
     SetColor(110,110,110)
-    DrawRect(206,5,20,50)
+    DrawRect(MARQUEE_WIDTH - 106,90,20,50)
 
     SetColor(150,150,150)
-    DrawRect(206-2,5,20,50)
+    DrawRect(MARQUEE_WIDTH - 106-2,90,20,50)
 
     SetColor(110,110,110)
-    DrawRect(180,25,20,30)
+    DrawRect(MARQUEE_WIDTH - 80,110,20,30)
 
     SetColor(150,150,150)
-    DrawRect(180-2,25,20,30)
+    DrawRect(MARQUEE_WIDTH - 80-2,110,20,30)
 
+
+    SetColor(100,0,0)
+    DrawRect(MARQUEE_WIDTH - 186-2+18,54,6,6)
+    SetColor(100,0,0)
+    DrawRect(MARQUEE_WIDTH - 180-2+18,60,8,8)
+    SetColor(200,0,0)
+    DrawRect(MARQUEE_WIDTH - 175-2-1+18,70-1,10,10)
     
+
+    local plane_offx = 210
+    local plane_offy = 20
+
+        --plane base
+        SetColor(220,220,220)
+        DrawRect(MARQUEE_WIDTH - plane_offx, plane_offy, 80, 20)
+
+        --plane base front
+        SetColor(220,220,220)
+        DrawRect(MARQUEE_WIDTH - plane_offx+72, plane_offy+3, 15, 15)
+ 
+        --wing
+        SetColor(120,120,120)
+        DrawRect(MARQUEE_WIDTH - plane_offx+20, plane_offy+8, 40, 7)
+
+        --wing tail 1
+        SetColor(220,220,220)
+        DrawRect(MARQUEE_WIDTH - plane_offx, plane_offy-9, 20, 10)
+
+        --wing tail 2
+        SetColor(220,220,220)
+        DrawRect(MARQUEE_WIDTH - plane_offx+10, plane_offy-4, 20, 10)
+           
+        --glass
+        SetColor(0,115,55)
+        DrawRect(MARQUEE_WIDTH - plane_offx+62, plane_offy+2, 20, 7)
+
+
 end
 
 
