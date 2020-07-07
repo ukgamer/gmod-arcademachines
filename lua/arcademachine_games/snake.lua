@@ -21,7 +21,7 @@
     if not FONT:Exists( "SnakeTitle" ) then
         surface.CreateFont( "SnakeTitle", {
             font = "Trebuchet MS",
-            size = 40,
+            size = 70,
             italic = true,
             weight = 500,
             antialias = 1,
@@ -43,6 +43,7 @@
     end
 
     local GAME = { Name = "Snake", State = nil }
+    GAME.Description = "Use WASD to control the snake.\nMade by Jule :D"
 
     local PLAYER = nil
 
@@ -68,8 +69,8 @@
     SNAKE.QueuedMoves = {}
     SNAKE.OldX, SNAKE.OldY = 0, 0
 
-    local AttractorSnake = { -- I wanted to give the attracting state's snake animation and this is what my tired ass came up with
-        ["FRAME.1"] = {      -- It works : D, the frames are handled in GAME:Draw()
+    local AttractorSnake = {
+        ["FRAME.1"] = {
             {
                 x = SCREEN_WIDTH / 2 - 45,
                 y = SCREEN_HEIGHT / 2,
@@ -78,7 +79,7 @@
                 h = 10
             }
         },
-        ["FRAME.2"] = { -- Each child table represents a separate object that's drawn.
+        ["FRAME.2"] = {
             {
                 x = SCREEN_WIDTH / 2 - 45,
                 y = SCREEN_HEIGHT / 2,
@@ -502,16 +503,16 @@
 
     function GAME:DrawMarquee()
         -- Title text
-        draw.SimpleText( "SNAKE", "SnakeTitle", 20, 25, Color( 255, 255, 255 ) )
+        draw.SimpleText( "SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, Color( 255, 255, 255 ) )
 
         -- Snake
         surface.SetDrawColor( Color( 25, 255, 25 ) )
-        surface.DrawRect( 125, 25, 100, 10 )
-        surface.DrawRect( 225, 25, 10, 30 )
+        surface.DrawRect( MARQUEE_WIDTH / 2 + 20, 40, 120, 20 )
+        surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 40, 20, 40 )
 
         -- Apple
         surface.SetDrawColor( Color( 255, 50, 50 ) )
-        surface.DrawRect( 225, 65, 10, 10 )
+        surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 100, 20, 20 )
     end
 
     return GAME
