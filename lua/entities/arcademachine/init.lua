@@ -6,6 +6,8 @@ if SERVERID ~= nil then
     include("ms_specific.lua")
 end
 
+resource.AddSingleFile("materials/icon64/arcademachine.png")
+
 resource.AddSingleFile("models/metastruct/ms_acabinet_v2.mdl")
 resource.AddSingleFile("models/metastruct/ms_acabinet_v2.phy")
 resource.AddSingleFile("models/metastruct/ms_acabinet_v2.sw.vtx")
@@ -38,7 +40,6 @@ local function AddCSGameFiles()
         AddCSLuaFile(ext .. file)
     end
 end
-concommand.Add("arcademachine_addcsgamefiles", AddCSGameFiles)
 AddCSGameFiles()
 
 function ENT:SpawnFunction(ply, tr)
