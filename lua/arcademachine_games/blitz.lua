@@ -54,6 +54,7 @@ local gameState = 0
     local level = 1
     local points = 0
     local lastUpdate = RealTime()
+    local can_continue_time = 15
 
 	local button = {
 		w = 0,
@@ -154,7 +155,7 @@ local gameState = 0
          plane = {
             x = -10,
             y = 80,
-            speed = 8
+            speed = 6
         }
     
          bomb = {
@@ -203,6 +204,7 @@ local gameState = 0
 
     local function Gameover()
         state = 1
+        can_continue_time = RealTime()
         MACHINE:EmitSound("ambient/explosions/exp3.wav", 100)
     end
 
@@ -227,9 +229,9 @@ local gameState = 0
 
         plane.x = plane.x + (plane.speed+(level/2))
 
-        if plane.x > SCREEN_WIDTH then
-            plane.y = plane.y + 40
-            plane.x = -60
+        if plane.x > SCREEN_WIDTH+20 then
+            plane.y = plane.y + 30
+            plane.x = -85
             if plane.y > (SCREEN_HEIGHT - 20) then
                 Gameover()
             end
@@ -589,7 +591,9 @@ function GAME:Update()
     elseif state == 1 then
         if thePlayer:KeyDown(IN_JUMP) then
             if MACHINE:GetCoins() > 0 then
-                GameReset()
+                if can_continue_time + 2 < RealTime() then
+                    GameReset()
+                end
             end
             MACHINE:TakeCoins(1)
             state = 0
@@ -765,6 +769,14 @@ function GAME:Draw()
         DrawText ( ( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -300,"POINTS: "..points, 255,255,255  )
         tw, th = surface.GetTextSize("LEVEL: "..level)
         DrawText ( ( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2)-250,"LEVEL: "..level, 255,255,255  )
+
+        if can_continue_time + 2 < RealTime() then
+            surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
+            tw, th = surface.GetTextSize("PRESS SPACE TO RESTART")
+            surface.SetTextPos(( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -80)
+            surface.DrawText("PRESS SPACE TO RESTART")
+    
+        end
 
         --Coins
         surface.SetFont("DermaDefault")
