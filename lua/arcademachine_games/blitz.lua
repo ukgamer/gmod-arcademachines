@@ -42,9 +42,43 @@ local now = RealTime()
 local gameOverAt = 0
 local gameState = 0 
 
--- 0 = Attract mode
--- 1 = Playing 
--- 2 = Waiting for coins update
+if not FONT:Exists("CustomFont0022") then
+    surface.CreateFont("CustomFont0022",  
+        { font = "Consolas",  
+        extended = false,  
+        size = 68,  weight = 200,  
+        blursize = 0,  
+        scanlines = 7,  
+        antialias = false,  
+        underline = false,  
+        italic = false,  
+        strikeout = true,  
+        symbol = false,  
+        rotary = false,  
+        shadow = true,  
+        additive = false,  
+        outline = false 
+    })    
+end
+
+if not FONT:Exists("CustomFont0023") then
+    surface.CreateFont("CustomFont0023",  
+        { font = "Consolas",  
+        extended = false,  
+        size = 17,  weight = 200,  
+        blursize = 0,  
+        scanlines = 0,  
+        antialias = false,  
+        underline = false,  
+        italic = false,  
+        strikeout = true,  
+        symbol = false,  
+        rotary = false,  
+        shadow = true,  
+        additive = false,  
+        outline = false 
+    })
+end
 
 --<variables>
     local state = 0
@@ -109,46 +143,14 @@ local gameState = 0
     }
 
     local level_theme = level_themes[math.random(1)+1]
-
 --</variables>
 
--- some functions awadasdawhdjawkdhaskfjsahdkjsh
-    local function SetColor(r,g,b)
-        surface.SetDrawColor(r,g,b,255)
-    end
-
-    local function DrawRect(xr,yr,w,h)
-        surface.DrawRect(xr, yr, w, h)
-    end
-
-    local function DrawTexturedRect(xr,yr,w,h)
-        surface.DrawTexturedRect(xr, yr, w, h)
-    end
-
-    local function SetFont(font)
-        surface.SetFont(font)
-    end
-
-    local function SetMaterial(mat)
-        surface.SetMaterial(mat)
-    end
 
     local function DrawText(xt,yt,txt,r,g,b)
         surface.SetTextColor(Color(r,g,b,255))
         surface.SetTextPos(xt, yt)
         surface.DrawText(txt)
     end
-
-    local function DebugLog(txt)
-		debug_text = txt .. "\n" .. debug_text
-	end
-
-    local function ShowDebug()
-		DrawText(11,11,debug_text,0,0,0)
-		DrawText(10,10,debug_text,0,255,0)
-    end
-
---<game functions>
 
     local function GameReset()
         state = 0
@@ -311,8 +313,8 @@ local gameState = 0
     local function DrawSmokeParticles()
         for i=1,#smoke_particles do
             if smoke_particles[i].alive == 1 then
-                SetColor(smoke_particles[i].clr)
-                DrawRect(smoke_particles[i].x,smoke_particles[i].y,smoke_particles[i].w,smoke_particles[i].h)
+                surface.SetDrawColor(smoke_particles[i].clr)
+                surface.DrawRect(smoke_particles[i].x,smoke_particles[i].y,smoke_particles[i].w,smoke_particles[i].h)
             end
         end
     end
@@ -356,36 +358,36 @@ local gameState = 0
         end
 
         --plane base
-        SetColor(220-lower_color,220-lower_color,220-lower_color)
-        DrawRect(offx, offy, 80, 20)
+        surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
+        surface.DrawRect(offx, offy, 80, 20)
 
         --plane base front
-        SetColor(220-lower_color,220-lower_color,220-lower_color)
-        DrawRect(offx+72, offy+3, 15, 15)
+        surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
+        surface.DrawRect(offx+72, offy+3, 15, 15)
 
         --wing
-        SetColor(120,120,120)
-        DrawRect(offx+20, offy+8, 40, 7)
+        surface.SetDrawColor(120,120,120)
+        surface.DrawRect(offx+20, offy+8, 40, 7)
 
         --wing tail 1
-        SetColor(220-lower_color,220-lower_color,220-lower_color)
-        DrawRect(offx, offy-9, 20, 10)
+        surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
+        surface.DrawRect(offx, offy-9, 20, 10)
 
         --wing tail 2
-        SetColor(220-lower_color,220-lower_color,220-lower_color)
-        DrawRect(offx+10, offy-4, 20, 10)
+        surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
+        surface.DrawRect(offx+10, offy-4, 20, 10)
            
         --glass
-        --SetColor(0,115,55)
+        --SetDrawColor(0,115,55)
        -- DrawRect(offx+62, offy+2, 20, 7)
-       SetColor(30,145,30)
-       DrawRect(offx+66, offy+2, 20, 6)
+       surface.SetDrawColor(30,145,30)
+       surface.DrawRect(offx+66, offy+2, 20, 6)
 
     end
 
     local function DrawBomb()
-		SetColor(195,0,0)
-		DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
+		surface.SetDrawColor(195,0,0)
+		surface.DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
     end
 
     local function DropBomb()
@@ -405,8 +407,8 @@ local gameState = 0
 
     local function DrawExplodeParticles()
         for i = 1, #bomb_explode_particles do
-            SetColor(255,255,0)
-            DrawRect(bomb_explode_particles[i].x,bomb_explode_particles[i].y,5,5)
+            surface.SetDrawColor(255,255,0)
+            surface.DrawRect(bomb_explode_particles[i].x,bomb_explode_particles[i].y,5,5)
         end
     end
 
@@ -476,8 +478,8 @@ local gameState = 0
 
     local function DrawBombTrail()
         for i = 1,3 do
-            SetColor(70,0,0)
-            DrawRect(bomb_trail[i].x,bomb_trail[i].y,9,9)
+            surface.SetDrawColor(70,0,0)
+            surface.DrawRect(bomb_trail[i].x,bomb_trail[i].y,9,9)
         end
     end
 
@@ -526,23 +528,23 @@ local gameState = 0
             end
 
             if level_theme == "day" then
-                SetColor(120,120,120)
+                surface.SetDrawColor(120,120,120)
             elseif level_theme == "night" then
-                SetColor(80,80,80)
+                surface.SetDrawColor(80,80,80)
             end
             
             --base
-            DrawRect(building_parts[i].x + shake_x ,building_parts[i].y + shake_y ,building_parts[i].w,building_parts[i].h)
+            surface.DrawRect(building_parts[i].x + shake_x ,building_parts[i].y + shake_y ,building_parts[i].w,building_parts[i].h)
             
             if building_parts[i].collapsing == 1 or building_parts[i].collapsed == 1 then
-                SetColor(90,90,90)
+                surface.SetDrawColor(90,90,90)
             else
-                SetColor(240,240,100)
+                surface.SetDrawColor(240,240,100)
             end
             --window 1
-            DrawRect(5+building_parts[i].x + shake_x ,4+building_parts[i].y + shake_y ,building_parts[i].w/5,building_parts[i].h-8)
+            surface.DrawRect(5+building_parts[i].x + shake_x ,4+building_parts[i].y + shake_y ,building_parts[i].w/5,building_parts[i].h-8)
             --window 2
-            DrawRect((building_parts[i].w-5-(building_parts[i].w/5))+building_parts[i].x + shake_x ,4+building_parts[i].y + shake_y ,building_parts[i].w/5,building_parts[i].h-8)
+            surface.DrawRect((building_parts[i].w-5-(building_parts[i].w/5))+building_parts[i].x + shake_x ,4+building_parts[i].y + shake_y ,building_parts[i].w/5,building_parts[i].h-8)
         end
         --SetMaterial("")
     end
@@ -614,12 +616,12 @@ local gameState = 0
     local function DrawClouds()
         for i = 1,4 do
             if level_theme == "day" then
-                SetColor(155,155,155)
+                surface.SetDrawColor(155,155,155)
             elseif level_theme == "night" then
-                SetColor(95,95,95)
+                surface.SetDrawColor(95,95,95)
             end
 
-            DrawRect( clouds[i].x, clouds[i].y,80,44)
+            surface.DrawRect( clouds[i].x, clouds[i].y,80,44)
         end
     end
 
@@ -633,15 +635,15 @@ local gameState = 0
     local function DrawBackground()
         --sky
         if level_theme == "day" then
-            SetColor(88,84,205)
+            surface.SetDrawColor(88,84,205)
         elseif level_theme == "night" then
-            SetColor(18,14,105)
+            surface.SetDrawColor(18,14,105)
         end
 
-        DrawRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
+        surface.DrawRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT)
         --ground
-        SetColor(26,13,0)
-        DrawRect(0,SCREEN_HEIGHT-50,SCREEN_WIDTH,SCREEN_HEIGHT)
+        surface.SetDrawColor(26,13,0)
+        surface.DrawRect(0,SCREEN_HEIGHT-50,SCREEN_WIDTH,SCREEN_HEIGHT)
     end
 
     local function DrawPoints()
@@ -758,40 +760,6 @@ function GAME:Update()
     end
 end
 
-surface.CreateFont("CustomFont0022",  
-    { font = "Consolas",  
-    extended = false,  
-    size = 68,  weight = 200,  
-    blursize = 0,  
-    scanlines = 7,  
-    antialias = false,  
-    underline = false,  
-    italic = false,  
-    strikeout = true,  
-    symbol = false,  
-    rotary = false,  
-    shadow = true,  
-    additive = false,  
-    outline = false 
-})    
-
-surface.CreateFont("CustomFont0023",  
-    { font = "Consolas",  
-    extended = false,  
-    size = 17,  weight = 200,  
-    blursize = 0,  
-    scanlines = 0,  
-    antialias = false,  
-    underline = false,  
-    italic = false,  
-    strikeout = true,  
-    symbol = false,  
-    rotary = false,  
-    shadow = true,  
-    additive = false,  
-    outline = false 
-})
-
 
 function GAME:DrawMarquee()
     surface.SetDrawColor(0, 0, 0, 255)
@@ -813,25 +781,25 @@ function GAME:DrawMarquee()
     --surface.DrawText("C64")
     
     --building1
-    SetColor(110,110,110)
-    DrawRect(MARQUEE_WIDTH - 106,90,20,50)
+    surface.SetDrawColor(110,110,110)
+    surface.DrawRect(MARQUEE_WIDTH - 106,90,20,50)
     --building1(back)
-    SetColor(150,150,150)
-    DrawRect(MARQUEE_WIDTH - 106-2,90,20,50)
+    surface.SetDrawColor(150,150,150)
+    surface.DrawRect(MARQUEE_WIDTH - 106-2,90,20,50)
     --building2
-    SetColor(110,110,110)
-    DrawRect(MARQUEE_WIDTH - 80,110,20,30)
+    surface.SetDrawColor(110,110,110)
+    surface.DrawRect(MARQUEE_WIDTH - 80,110,20,30)
     --building2(back)
-    SetColor(150,150,150)
-    DrawRect(MARQUEE_WIDTH - 80-2,110,20,30)
+    surface.SetDrawColor(150,150,150)
+    surface.DrawRect(MARQUEE_WIDTH - 80-2,110,20,30)
 
 
-    SetColor(100,0,0)
-    DrawRect(MARQUEE_WIDTH - 186-2+18,54,6,6)
-    SetColor(100,0,0)
-    DrawRect(MARQUEE_WIDTH - 180-2+18,60,8,8)
-    SetColor(200,0,0)
-    DrawRect(MARQUEE_WIDTH - 175-2-1+18,70-1,10,10)
+    surface.SetDrawColor(100,0,0)
+    surface.DrawRect(MARQUEE_WIDTH - 186-2+18,54,6,6)
+    surface.SetDrawColor(100,0,0)
+    surface.DrawRect(MARQUEE_WIDTH - 180-2+18,60,8,8)
+    surface.SetDrawColor(200,0,0)
+    surface.DrawRect(MARQUEE_WIDTH - 175-2-1+18,70-1,10,10)
     
 
     DrawPlane(MARQUEE_WIDTH - 210,20)
@@ -841,12 +809,12 @@ end
 
 function GAME:Draw()
 
-    SetFont("DermaLarge")
+    surface.SetFont("DermaLarge")
 
     if gameState == 0 then
 
-		SetColor(0,0,0)
-		DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+		surface.SetDrawColor(0,0,0,255)
+		surface.DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
 
         local tw, th = surface.GetTextSize("INSERT COIN")
 
