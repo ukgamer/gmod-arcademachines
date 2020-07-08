@@ -23,6 +23,14 @@ Your game must implement the following methods:
 
 Your game table can implement the `Description` property. This will be shown when the player looks at the machine before entering. You should tell the player how to play your game here.
 
+Your game table can implement the `Bodygroup` property. This will control the physical appearance of the cabinet. Available bodygroups are:
+
+* BG_GENERIC_JOYSTICK
+* BG_GENERIC_TRACKBALL
+* BG_GENERIC_RECESSED_JOYSTICK
+* BG_GENERIC_RECESSED_TRACKBALL
+* BG_DRIVING
+
 Your game can implement the following methods:
 
 * `Init()`
@@ -66,30 +74,33 @@ Used to check if a font has already been created. Do not use `surface.CreateFont
 
 #### Images
 
-Used for loading images dynamically from the web as usable `Material`s.
+`IMAGE:LoadFromMaterial(name, key)`
 
-`IMAGE:LoadFromURL(url, name, noCache = false)`
+Creates a copy of the given material and registers it with your game. Use this to avoid unnecessary duplicate material loading and to allow materials to use alpha if they do not allow it already.
+
+`IMAGE:LoadFromURL(url, key, noCache = false)`
+
+Used for loading images dynamically from the web as usable `Material`s.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 
-Access your image with `IMAGE.Images[name]`, which will look like
+Access your image with `IMAGE.Images[key]`, which will look like
 
 ```lua
 {
     status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "Some error", -- if status == STATUS_ERROR
     mat = Material -- if not yet loaded then error material is used
 }
 ```
 
 #### Sounds
 
-`SOUND:LoadFromURL(url, name, callback)`
+`SOUND:LoadFromURL(url, key, callback)`
 
 `callback`, if defined, is passed the created `IGModAudioChannel`. This can be used for example to enable looping.
 
-To access your sound use `SOUND.Sounds[name]`, which will look like
-
-Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+To access your sound use `SOUND.Sounds[key]`, which will look like
 
 ```lua
 {
@@ -98,6 +109,8 @@ Sounds that are loaded via `LoadFromURL` are queued in order to prevent performa
     sound = IGModAudioChannel -- if status == STATUS_LOADED
 }
 ```
+
+Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
 
 #### Collisions
 

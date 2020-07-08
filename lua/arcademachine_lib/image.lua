@@ -43,14 +43,14 @@ function IMAGE:ClearCache()
     end
 end
 
-function IMAGE:LoadFromURL(url, name, noCache)
-    if self.Images[name] and not noCache then return end
+function IMAGE:LoadFromURL(url, key, noCache)
+    if self.Images[key] and not noCache then return end
     
     local filename = path .. "/" .. urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
     
     if not noCache then
         if file.Exists(filename, "DATA") then
-            self.Images[name] = {
+            self.Images[key] = {
                 status = self.STATUS_LOADED,
                 mat = Material("../data/" .. filename)
             }
@@ -58,7 +58,7 @@ function IMAGE:LoadFromURL(url, name, noCache)
         end
     end
     
-    self.Images[name] = {
+    self.Images[key] = {
         status = self.STATUS_LOADING,
         mat = Material("error")
     }
@@ -67,14 +67,34 @@ function IMAGE:LoadFromURL(url, name, noCache)
         url,
         function(body, size, headers, code)
             file.Write(filename, body)
-            self.Images[name].status = self.STATUS_LOADED
-            self.Images[name].mat = Material("../data/" .. filename)
+            self.Images[key].status = self.STATUS_LOADED
+            self.Images[key].mat = Material("../data/" .. filename)
         end,
         function(err)
-            self.Images[name].status = self.STATUS_ERROR
-            Error("Failed to load image:" .. err)
+            self.Images[key].status = self.STATUS_ERROR
+            self.Images[key].err = err
         end
     )
+end
+
+function IMAGE:LoadFromMaterial(name, key)
+    if self.Images[key] then return end
+
+    self.Images[key] = {
+        status = self.STATUS_LOADED,
+        mat = CreateMaterial(
+            "arcademachines_" .. key .. "_" .. math.random(9999),
+            "UnlitGeneric",
+            {
+                ["$basetexture"] = name,
+                ["$vertexcolor"] = 1,
+                ["$vertexalpha"] = 1,
+                ["$additive"] = 1,
+                ["$ignorez"] = 1,
+                ["$nolod"] = 1
+            }
+        )
+    }
 end
 
 return IMAGE
