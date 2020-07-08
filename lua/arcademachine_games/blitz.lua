@@ -17,12 +17,10 @@
 --</Controls>
 
 --<Todo>
---  <+> plane explode animation
+--  + plane explode animation
 --  + plane start animation
 --  + multiple bombs(Trails,Explosions)
---  + building particles while falling
 --  + random background objects
---  + random cars (extra points)
 --  + special weapons (level win bomb, slow down pickup)
 --      - aquired through completing level 5,10,15,..
 --  + recharging powerbar for movement
@@ -130,12 +128,15 @@ end
 
     local bomb_explode_particles = {}
     local bomb_explode_time = 0
+    local bomb_explode_ring_size = 0
 
     local bomb_trail_time = 0
     local bomb_trail = {}
     local bomb_trail_select = 0
 
     local clouds = {}
+
+    local cars = {}
 
     local level_themes = {
         "day",
@@ -177,6 +178,7 @@ end
 
         bomb_explode_particles = {}
         bomb_explode_time = 0
+        bomb_explode_ring_size = 0
      
         bomb_trail_time = 0
         bomb_trail = {}
@@ -205,6 +207,16 @@ end
             alive = 0,
             speed = 12
         }
+
+        for i = 1,10 do
+            cars[i] = {
+                alive = 0,
+                x = 0,
+                y = 0,
+                dir = 0,
+                destroyed = 1
+            }
+        end
 
         for i = 1,3 do
             bomb_trail[i] = {
@@ -242,6 +254,18 @@ end
             }
         end
 
+        for i = 1,10 do
+            smoke_particles[i] = {
+                alive = 0,
+                alive_time = 0,
+                x = 0,
+                y = 0,
+                clr = Color(255,255,255,155),
+                w = 28,
+                h = 22
+            }
+        end
+
     end
 
 
@@ -253,10 +277,80 @@ end
         level = temp_level + 1
     end
 
+
     local function Gameover()
         state = 1
         can_continue_time = RealTime()
         MACHINE:EmitSound("ambient/explosions/exp3.wav", 100)
+    end
+
+    local function CheckLevelComplete()
+        for i = 1, #building_parts do
+            if building_parts[i].collapsed == 0 then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function CheckAllCarsDestroyed()
+
+    end
+
+    local function SpawnCars()
+        local number_of_cars = math.random(3)
+        for i=1,number_of_cars do
+            cars[i].x = math.random(300)+30
+            cars[i].y = SCREEN_HEIGHT - 40
+            cars[i].dir = math.random(2)
+            cars[i].alive = 1
+            cars[i].destroyed = 0
+        end
+    end
+
+    local function DrawCars()
+        for i = 1, #cars do
+            if cars[i].alive == 1 then
+                --base
+                if cars[i].destroyed == 1 then
+                    surface.SetDrawColor(25,25,25)
+                else
+                    surface.SetDrawColor(80,15,15)
+                end
+                surface.DrawRect(cars[i].x+3,cars[i].y,43,12)
+                --roof
+                surface.DrawRect(cars[i].x+12,cars[i].y-11,25,14)
+                --window1
+                surface.SetDrawColor(80,80,180)
+                surface.DrawRect(cars[i].x+14,cars[i].y-8,9,7)
+                --window2
+                surface.DrawRect(cars[i].x+26,cars[i].y-8,9,7)
+                --wheel1
+                surface.SetDrawColor(110,110,110)
+                surface.DrawRect(cars[i].x+5,cars[i].y+8,9,9)
+                --wheel2
+                surface.DrawRect(cars[i].x+35,cars[i].y+8,9,9)
+
+            end  
+        end
+    end
+
+    local function UpdateCars()
+        for i=1, #cars do
+            if cars[i].alive == 1 and cars[i].destroyed == 0 then
+                if cars[i].dir == 1 then
+                    cars[i].x = cars[i].x + 2
+                    if cars[i].x > SCREEN_WIDTH + 10 then
+                        cars[i].x = -20
+                    end
+                else
+                    cars[i].x = cars[i].x - 2
+                    if cars[i].x < -10 then
+                        cars[i].x = SCREEN_WIDTH + 20
+                    end
+                end
+            end
+        end
     end
 
     local function FindFreeSmokeParticle()
@@ -343,9 +437,16 @@ end
         if plane.x > SCREEN_WIDTH+20 then
             plane.y = plane.y + 30
             plane.x = -85
-            if plane.y > (SCREEN_HEIGHT - 20) then
-                Gameover()
+
+            if CheckLevelComplete() then
+                NextLevel()
+            else
+                if plane.y > (SCREEN_HEIGHT - 20) then
+                    Gameover()
+                end
             end
+
+
         end
     end
 
@@ -412,6 +513,17 @@ end
         end
     end
 
+    local function BombExplodeCars(x1,y1)
+        for i = 1, #cars do
+            if cars[i].alive == 1 and cars[i].destroyed == 0 then
+                if CheckCollision(cars[i].x+20,cars[i].y,x1-40,y1-40,80,80) then
+                    cars[i].destroyed = 1
+                    points = points + 500
+                end
+            end
+        end
+    end
+
     local function BombExplode()
         bomb.alive = 0
         for i = 1, #bomb_explode_particles do
@@ -422,6 +534,9 @@ end
             bomb_explode_particles[i].downvel = 0
         end
         bomb_explode_time = 30
+
+        BombExplodeCars(bomb.x,bomb.y)
+
         local random_sound = math.random(2)
         if random_sound == 1 then
             MACHINE:EmitSound("ambient/explosions/exp4.wav", 50)
@@ -654,14 +769,7 @@ end
         DrawText(SCREEN_WIDTH-150,30,"LEVEL: "..level,255,255,255)
     end
 
-    local function CheckLevelComplete()
-        for i = 1, #building_parts do
-            if building_parts[i].collapsed == 0 then
-                return false
-            end
-        end
-        return true
-    end
+
 
     local function Menu_Up()
         menu_move_time = menu_time
@@ -727,6 +835,7 @@ function GAME:Update()
                 MACHINE:EmitSound("ambient/atmosphere/city_tone.wav", 40)
                 level_start = 0
                 GenerateBuildingParts()
+                SpawnCars()
             end
 
             UpdateBuildingParts()
@@ -734,10 +843,9 @@ function GAME:Update()
             UpdatePlane()
             UpdateClouds()
             UpdateSmokeParticles()
+            UpdateCars()
+            
 
-            if CheckLevelComplete() then
-                NextLevel()
-            end
 
             if bomb.alive == 1 then
                 UpdateBomb()
@@ -833,6 +941,7 @@ function GAME:Draw()
         DrawBombTrail()
         DrawSmokeParticles()
 
+
         if bomb.alive == 1 then
             DrawBomb()
         end
@@ -845,7 +954,7 @@ function GAME:Draw()
 
         DrawPoints()
         DrawLevel()
-
+        DrawCars()
         return
 
     elseif state == 1 then -- gameover
