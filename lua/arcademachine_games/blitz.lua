@@ -105,8 +105,7 @@ local gameState = 0
 
     local level_themes = {
         "day",
-        "night",
-        "snow"
+        "night"
     }
 
     local level_theme = level_themes[math.random(1)+1]
@@ -181,8 +180,8 @@ local gameState = 0
         bomb_trail = {}
         bomb_trail_select = 0
 
-        level_theme = level_themes[math.random(2)]
-        chatprint(level_theme)
+        level_theme = level_themes[math.random(#level_themes)]
+
         clouds = {}
 
          button = {
@@ -278,8 +277,10 @@ local gameState = 0
             smoke_particles[freeIndex].y = spawn_y
             smoke_particles[freeIndex].w = spawn_w
             smoke_particles[freeIndex].h = spawn_h
-            local brightness = math.random(60)+150
-            smoke_particles[freeIndex].clr = Color(brightness,brightness,brightness,100)
+            local brightness = math.random(70)+110
+            smoke_particles[freeIndex].alpha = 140
+            smoke_particles[freeIndex].clr = Color(brightness,brightness,brightness,smoke_particles[freeIndex].alpha)
+
         end
     end
 
@@ -292,10 +293,15 @@ local gameState = 0
     local function UpdateSmokeParticles()
         for i=1,#smoke_particles do
             if smoke_particles[i].alive == 1 then
+                if smoke_particles[i].alpha > 0 then
+                    smoke_particles[i].alpha = smoke_particles[i].alpha - 1 
+                end
+                smoke_particles[i].clr = Color(smoke_particles[i].clr.r,smoke_particles[i].clr.g,smoke_particles[i].clr.b,smoke_particles[i].alpha)
+                
                 smoke_particles[i].y = smoke_particles[i].y - math.random(2)+1
                 smoke_particles[i].x = smoke_particles[i].x + math.random(4)-2 +0.5
                 smoke_particles[i].alive_time = smoke_particles[i].alive_time + 1
-                if smoke_particles[i].alive_time > 90 + math.random(20) then
+                if smoke_particles[i].alive_time > 150 + math.random(20) then
                     DestroySmokeParticle(i)
                 end
             end
@@ -483,10 +489,14 @@ local gameState = 0
         for i = 1 , #building_parts do
 
             if building_parts[i].collapsing == 1 or building_parts[i].collapsed == 1 then
+                
                 building_parts[i].next_smoke = building_parts[i].next_smoke + 1
                 if building_parts[i].next_smoke >  building_parts[i].smoke_interval then
                     building_parts[i].next_smoke = 0 - math.random(5)
-                    SpawnSmokeParticle(building_parts[i].x,building_parts[i].y,math.random(7)+13,math.random(7)+13)
+                    building_parts[i].smoked_for = building_parts[i].smoked_for + 1
+                    if building_parts[i].smoked_for < 8 +math.random(9) then 
+                        SpawnSmokeParticle(building_parts[i].x,building_parts[i].y,math.random(7)+13,math.random(7)+13)
+                    end
                 end
             end
 
@@ -580,6 +590,7 @@ local gameState = 0
             part.collapsed = 0
             part.smoke_interval = math.random(9)+3
             part.next_smoke = 20
+            part.smoked_for = 0
             building_parts[building_index] = part
         end
 	end
@@ -739,10 +750,10 @@ function GAME:Update()
             if MACHINE:GetCoins() > 0 then
                 if can_continue_time + 2 < RealTime() then
                     GameReset()
+                    MACHINE:TakeCoins(1)
+                    state = 0
                 end
             end
-            MACHINE:TakeCoins(1)
-            state = 0
         end
     end
 end
