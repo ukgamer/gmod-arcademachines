@@ -205,6 +205,7 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
+    self.BodygroupChanged = false
 
     self.ScreenTexture = GetRenderTargetEx(
         "ArcadeMachine_Screen_" .. self:EntIndex(),
@@ -300,6 +301,14 @@ function ENT:Think()
             self.InRange = true
             self:OnEnteredRange()
         end
+    end
+
+    if self.Game and not self.BodygroupChanged and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.BodygroupChanged = true
+        timer.Simple(0.5, function() -- Thanks gmod
+            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+        end)
     end
 
     if self.InRange and self.Game then
@@ -550,10 +559,7 @@ function ENT:SetGame(game, forceLibLoad)
             self.Game:OnStartPlaying(self:GetPlayer())
         end
 
-        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
-        end
+        self.BodygroupChanged = false
     end
 
     self:UpdateMarquee()
