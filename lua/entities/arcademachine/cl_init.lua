@@ -248,6 +248,10 @@ function ENT:Initialize()
     self.InRange = self.InRange or false
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
+    
+    -- Used to work around network variable spamming being changed from
+    -- empty to a game and back again when loaded into room on MS
+    self.LastGameChangeAt = nil
 
     if self:GetCurrentGame() and not self.Game then
         self:SetGame(self:GetCurrentGame())
@@ -472,7 +476,13 @@ end
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
+    if self.LastGameChangeAt and (RealTime() - self.LastGameChangeAt) < 1 then return end
+
     self:SetGame(new)
+
+    if new ~= "" then
+        self.LastGameChangeAt = RealTime()
+    end
 end
 
 function ENT:StopSounds()
