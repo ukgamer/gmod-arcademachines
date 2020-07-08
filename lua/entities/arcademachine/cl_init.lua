@@ -480,7 +480,9 @@ function ENT:OnGameChange(name, old, new)
 
     self:SetGame(new)
 
-    self.LastGameChangeAt = RealTime()
+    if new ~= "" then
+        self.LastGameChangeAt = RealTime()
+    end
 end
 
 function ENT:StopSounds()
