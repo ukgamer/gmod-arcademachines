@@ -74,13 +74,17 @@ Used to check if a font has already been created. Do not use `surface.CreateFont
 
 #### Images
 
-Used for loading images dynamically from the web as usable `Material`s.
+`IMAGE:LoadFromMaterial(name, key)`
 
-`IMAGE:LoadFromURL(url, name, noCache = false)`
+Creates a copy of the given material and registers it with your game. Use this to avoid unnecessary duplicate material loading and to allow materials to use alpha if they do not allow it already.
+
+`IMAGE:LoadFromURL(url, key, noCache = false)`
+
+Used for loading images dynamically from the web as usable `Material`s.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 
-Access your image with `IMAGE.Images[name]`, which will look like
+Access your image with `IMAGE.Images[key]`, which will look like
 
 ```lua
 {
@@ -92,11 +96,11 @@ Access your image with `IMAGE.Images[name]`, which will look like
 
 #### Sounds
 
-`SOUND:LoadFromURL(url, name, callback)`
+`SOUND:LoadFromURL(url, key, callback)`
 
 `callback`, if defined, is passed the created `IGModAudioChannel`. This can be used for example to enable looping.
 
-To access your sound use `SOUND.Sounds[name]`, which will look like
+To access your sound use `SOUND.Sounds[key]`, which will look like
 
 ```lua
 {
