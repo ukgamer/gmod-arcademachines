@@ -90,7 +90,7 @@ local function ShowInfoPanel(machine)
     local bg = Color(0, 0, 0, 200)
 
     AMInfoPanel = vgui.Create("DFrame")
-    
+    AMInfoPanel:SetPaintedManually(true)
     AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
     AMInfoPanel:SetMinimumSize(300, 300)
     AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
@@ -633,9 +633,7 @@ local notificationColor = Color(255, 255, 255)
 hook.Add("HUDPaint", "arcademachine_hud", function()
     -- Paint manually so the panel hides when the camera is out
     if IsValid(AMInfoPanel) then
-        AMInfoPanel:SetPaintedManually(false)
         AMInfoPanel:PaintManual()
-        AMInfoPanel:SetPaintedManually(true)
     end
 
     if PressedUse then
