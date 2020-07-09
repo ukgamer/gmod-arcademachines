@@ -57,7 +57,7 @@ function IMAGE:LoadFromURL(url, key, noCache)
 
     local function err(err, body)
         self.Images[key].status = self.STATUS_ERROR
-        self.Images[key].err = body and code .. ":" .. body or err
+        self.Images[key].err = body and err .. ":" .. body or err
     end
     
     http.Fetch(
