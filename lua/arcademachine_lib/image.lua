@@ -35,14 +35,6 @@ local function urlhash(str)
     return hash
 end
 
-function IMAGE:ClearCache()
-    self.Images = {}
-
-    for _, v in ipairs(file.Find(path .. "/*", "DATA")) do
-        file.Delete(path .. "/" .. v)
-    end
-end
-
 function IMAGE:LoadFromURL(url, key, noCache)
     if self.Images[key] and not noCache then return end
     
@@ -62,18 +54,25 @@ function IMAGE:LoadFromURL(url, key, noCache)
         status = self.STATUS_LOADING,
         mat = Material("error")
     }
+
+    local function err(err, body)
+        self.Images[key].status = self.STATUS_ERROR
+        self.Images[key].err = body and code .. ":" .. body or err
+    end
     
     http.Fetch(
         url,
         function(body, size, headers, code)
+            if code >= 400 then
+                err(code, body)
+                return
+            end
+
             file.Write(filename, body)
             self.Images[key].status = self.STATUS_LOADED
             self.Images[key].mat = Material("../data/" .. filename)
         end,
-        function(err)
-            self.Images[key].status = self.STATUS_ERROR
-            self.Images[key].err = err
-        end
+        err
     )
 end
 

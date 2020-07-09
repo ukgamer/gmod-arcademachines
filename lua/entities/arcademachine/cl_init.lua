@@ -25,6 +25,28 @@ local LoadedLibs = {}
 local QueuedSounds = {}
 local NextQueueAt = 0
 
+local function ClearImageCache()
+    local path = "arcademachines/cache/images"
+    for _, v in ipairs(file.Find(path .. "/*", "DATA")) do
+        file.Delete(path .. "/" .. v)
+    end
+end
+
+local function ReloadMachines()
+    for _, v in ipairs(ents.FindByClass("arcademachine")) do
+        if v:GetCurrentGame() then
+            v:SetGame(v:GetCurrentGame())
+        elseif v.Game then
+            if v.Game.Destroy then
+                v.Game:Destroy()
+            end
+            if v.Game.Init then
+                v.Game:Init()
+            end
+        end
+    end
+end
+
 AMSettingsPanel = AMSettingsPanel or nil
 local function ShowSettingsPanel()
     if not IsValid(AMSettingsPanel) then
@@ -62,6 +84,30 @@ local function ShowSettingsPanel()
         checkbox:SetConVar("arcademachine_disable_others_when_active")
         checkbox:SetValue(DisableOthers:GetBool())
         checkbox:SizeToContents()
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 10)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("Debug")
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Clear image cache")
+        button.DoClick = function()
+            ClearImageCache()
+        end
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Reload machines")
+        button.DoClick = function()
+            ReloadMachines()
+        end
     end
 
     AMSettingsPanel:Center()
