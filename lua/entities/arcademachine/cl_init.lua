@@ -407,12 +407,20 @@ end
 function ENT:Draw()
     local marqueeIndex = self.Entity:GetBodygroup(0)
 
+    if IsValid(AMCurrentMachine) and AMCurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(true)
+    end
+
     -- To prevent using string table slots, don't set the submaterial on the server
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
+
+    if IsValid(AMCurrentMachine) and AMCurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(false)
+    end
 
     if not self.InRange or not self.Game or (DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self) then
         return
