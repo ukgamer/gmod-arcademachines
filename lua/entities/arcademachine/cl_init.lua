@@ -25,6 +25,28 @@ local LoadedLibs = {}
 local QueuedSounds = {}
 local NextQueueAt = 0
 
+local function ClearImageCache()
+    local path = "arcademachines/cache/images"
+    for _, v in ipairs(file.Find(path .. "/*", "DATA")) do
+        file.Delete(path .. "/" .. v)
+    end
+end
+
+local function ReloadMachines()
+    for _, v in ipairs(ents.FindByClass("arcademachine")) do
+        if v:GetCurrentGame() then
+            v:SetGame(v:GetCurrentGame())
+        elseif v.Game then
+            if v.Game.Destroy then
+                v.Game:Destroy()
+            end
+            if v.Game.Init then
+                v.Game:Init()
+            end
+        end
+    end
+end
+
 AMSettingsPanel = AMSettingsPanel or nil
 local function ShowSettingsPanel()
     if not IsValid(AMSettingsPanel) then
@@ -62,6 +84,30 @@ local function ShowSettingsPanel()
         checkbox:SetConVar("arcademachine_disable_others_when_active")
         checkbox:SetValue(DisableOthers:GetBool())
         checkbox:SizeToContents()
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 10)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("Debug")
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Clear image cache")
+        button.DoClick = function()
+            ClearImageCache()
+        end
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Reload machines")
+        button.DoClick = function()
+            ReloadMachines()
+        end
     end
 
     AMSettingsPanel:Center()
@@ -90,7 +136,7 @@ local function ShowInfoPanel(machine)
     local bg = Color(0, 0, 0, 200)
 
     AMInfoPanel = vgui.Create("DFrame")
-    
+    AMInfoPanel:SetPaintedManually(true)
     AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
     AMInfoPanel:SetMinimumSize(300, 300)
     AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
@@ -205,6 +251,7 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
+    self.BodygroupChanged = false
 
     self.ScreenTexture = GetRenderTargetEx(
         "ArcadeMachine_Screen_" .. self:EntIndex(),
@@ -300,6 +347,14 @@ function ENT:Think()
             self.InRange = true
             self:OnEnteredRange()
         end
+    end
+
+    if self.Game and not self.BodygroupChanged and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.BodygroupChanged = true
+        timer.Simple(0.5, function() -- Thanks gmod
+            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+        end)
     end
 
     if self.InRange and self.Game then
@@ -550,10 +605,7 @@ function ENT:SetGame(game, forceLibLoad)
             self.Game:OnStartPlaying(self:GetPlayer())
         end
 
-        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
-        end
+        self.BodygroupChanged = false
     end
 
     self:UpdateMarquee()
@@ -627,9 +679,7 @@ local notificationColor = Color(255, 255, 255)
 hook.Add("HUDPaint", "arcademachine_hud", function()
     -- Paint manually so the panel hides when the camera is out
     if IsValid(AMInfoPanel) then
-        AMInfoPanel:SetPaintedManually(false)
         AMInfoPanel:PaintManual()
-        AMInfoPanel:SetPaintedManually(true)
     end
 
     if PressedUse then
