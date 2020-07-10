@@ -350,8 +350,7 @@ function GAME:Init()
 	for i = 0, 9 do
 		table.insert(self.SpriteQueue, i .. ".png")
 	end
-
-	IMAGE:LoadFromURL("http://put.nu/files/y1sgr1O.png", "fbirdlogo")
+	table.insert(self.SpriteQueue, "logo.png")
 
 	LoadSound("swoosh.ogg", function(snd) snd:SetVolume(0.65) end)
 	LoadSound("point.ogg", function(snd) snd:SetVolume(0.65) end)
@@ -559,7 +558,7 @@ function GAME:DrawMarquee()
 
 	draw.NoTexture()
 
-	local fb = IMAGE.Images["fbirdlogo"] -- 840x263
+	local fb = IMAGE.Images["logo"] -- 840x263
 	if fb and fb.status == IMAGE.STATUS_LOADED then
 		local bg_pos_x = mw / 2
 		local bg_pos_y = mh / 2
@@ -651,7 +650,7 @@ local draw_logo_states = {
 	[GAME_STATE_WAITCOIN] = true
 }
 function GAME:DrawLogoOnScreen()
-	local fb = IMAGE.Images["fbirdlogo"] -- 840x263
+	local fb = IMAGE.Images["logo"] -- 840x263
 	if fb and fb.status == IMAGE.STATUS_LOADED and draw_logo_states[self:GetState()] then
 		local bg_pos_x = SCREEN_WIDTH / 2
 		local bg_pos_y = SCREEN_HEIGHT / 4
