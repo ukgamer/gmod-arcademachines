@@ -253,8 +253,10 @@ function ENT:Initialize()
     self.Initialized = true
     self.BodygroupChanged = false
 
+    local num = math.random(9999)
+
     self.ScreenTexture = GetRenderTargetEx(
-        "ArcadeMachine_Screen_" .. self:EntIndex(),
+        "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
         RT_SIZE_DEFAULT,
@@ -264,16 +266,18 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.ScreenMaterial = CreateMaterial(
-        "ArcadeMachine_Screen_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.ScreenTexture:GetName(),
-            ["$model"] = 1
+            ["$model"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
     self.MarqueeTexture = GetRenderTargetEx(
-        "ArcadeMachine_Marquee_" .. self:EntIndex(),
+        "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
         RT_SIZE_DEFAULT,
@@ -283,12 +287,14 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.MarqueeMaterial = CreateMaterial(
-        "ArcadeMachine_Marquee_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
             ["$model"] = 1,
-            ["$nodecal"] = 1
+            ["$nodecal"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
