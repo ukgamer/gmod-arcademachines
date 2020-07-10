@@ -24,6 +24,7 @@
 --  + recharging powerbar for movement
 --  + air defence (avoidable by Left/Right(uses powerbar))
 --  + <more> different themes
+--  + more sound effects (collapsed, collapsing, car explode, level change, points increase (blip), better drop)
 
 --</Todo>
 
@@ -289,6 +290,7 @@ end
             if building_parts[i].collapsed == 0 then
                 return false
             end
+            if bomb.alive == 1 then return false end
         end
         return true
     end
@@ -473,11 +475,11 @@ end
     local lower_color = 0
 
         if level_theme == "night" then
-            lower_color = 80
+            lower_color = 60
         end
 
         --plane base
-        surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
+        surface.SetDrawColor(230-lower_color,230-lower_color,230-lower_color)
         surface.DrawRect(offx, offy, 80, 20)
 
         --plane base front
@@ -485,11 +487,15 @@ end
         surface.DrawRect(offx+72, offy+3, 15, 15)
 
         --wing
-        surface.SetDrawColor(122,122,122)
+        surface.SetDrawColor(192-lower_color,192-lower_color,192-lower_color)
         surface.DrawRect(offx+20, offy+8, 40, 7)
 
-        surface.SetDrawColor(120,120,120)
+        surface.SetDrawColor(180-lower_color,180-lower_color,180-lower_color)
         surface.DrawRect(offx+15, offy+8, 50, 4)
+
+        surface.DrawRect(offx+10, offy+10, 15, 3)
+
+        
 
         --wing tail 1
         surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
@@ -506,7 +512,7 @@ end
         --glass
         --SetDrawColor(0,115,55)
        -- DrawRect(offx+62, offy+2, 20, 7)
-       surface.SetDrawColor(50,115,50)
+       surface.SetDrawColor(30,195,30)
        surface.DrawRect(offx+66, offy+3, 20, 5)
        surface.DrawRect(offx+66, offy+0, 15, 5)
        
@@ -548,6 +554,7 @@ end
                 if CheckCollision(cars[i].x+20,cars[i].y,x1-40,y1-40,80,80) then
                     cars[i].destroyed = 1
                     points = points + 500
+                    MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
                 end
             end
         end
@@ -662,6 +669,7 @@ end
                     if building_parts[i].collapsed == 0 then
                         building_parts[i].collapsed = 1
                         points = points + 100
+                        MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 35)
                     end
                 end
             end
@@ -887,7 +895,7 @@ function GAME:Update()
             if thePlayer:KeyDown(IN_JUMP) then
                 if bomb.alive == 0 then
                     DropBomb()
-                    MACHINE:EmitSound("ambient/misc/clank2.wav", 50)
+                    MACHINE:EmitSound("ambient/office/slidechange.wav", 40)
                 end
             end
 
