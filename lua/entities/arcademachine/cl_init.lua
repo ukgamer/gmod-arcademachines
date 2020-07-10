@@ -1,5 +1,6 @@
 include("shared.lua")
 
+local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 --local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
@@ -24,6 +25,12 @@ local LoadedLibs = {}
 
 local QueuedSounds = {}
 local NextQueueAt = 0
+
+local function DebugPrint(...)
+    if Debug:GetBool() then
+        print("[ARCADE]", ...)
+    end
+end
 
 local function ClearImageCache()
     local path = "arcademachines/cache/images"
@@ -251,7 +258,6 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
-    self.BodygroupChanged = false
 
     local num = math.random(9999)
 
@@ -304,7 +310,7 @@ function ENT:Initialize()
     
     -- Used to work around network variable spamming being changed from
     -- empty to a game and back again when loaded into room on MS
-    self.LastGameChangeAt = nil
+    self.AllowGameChangeAt = 0
 
     if self:GetCurrentGame() and not self.Game then
         self:SetGame(self:GetCurrentGame())
@@ -339,6 +345,13 @@ function ENT:Think()
         self:OnSeatCreated("Seat", nil, self:GetSeat())
     end
 
+    if self.LastGameNWVar ~= nil and self.AllowGameChangeAt - RealTime() <= 0 then
+        DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
+        self:SetGame(self.LastGameNWVar)
+        self.LastGameNWVar = nil
+        self.AllowGameChangeAt = RealTime() + 1
+    end
+
     if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
         return
     end
@@ -353,14 +366,6 @@ function ENT:Think()
             self.InRange = true
             self:OnEnteredRange()
         end
-    end
-
-    if self.Game and not self.BodygroupChanged and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-        self.BodygroupChanged = true
-        timer.Simple(0.5, function() -- Thanks gmod
-            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
-        end)
     end
 
     if self.InRange and self.Game then
@@ -545,12 +550,19 @@ end
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    if self.LastGameChangeAt and (RealTime() - self.LastGameChangeAt) < 1 then return end
+    DebugPrint(
+        self:EntIndex(),
+        "new", new,
+        "old", old,
+        "at", RealTime(),
+        "remain", self.AllowGameChangeAt ~= 0 and self.AllowGameChangeAt - RealTime() or "(first load)"
+    )
 
-    self:SetGame(new)
+    self.LastGameNWVar = new
 
-    if new ~= "" then
-        self.LastGameChangeAt = RealTime()
+    if self.AllowGameChangeAt == 0 or self.AllowGameChangeAt - RealTime() > 0 then
+        self.AllowGameChangeAt = RealTime() + 1
+        DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
     end
 end
 
@@ -611,6 +623,14 @@ function ENT:SetGame(game, forceLibLoad)
         upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
 
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
+
+        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+            timer.Simple(1, function() -- Thanks gmod
+                self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+                self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+            end)
+        end
+
         if self.Game.Init then
             self.Game:Init()
         end
@@ -618,8 +638,6 @@ function ENT:SetGame(game, forceLibLoad)
         if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
             self.Game:OnStartPlaying(self:GetPlayer())
         end
-
-        self.BodygroupChanged = false
     end
 
     self:UpdateMarquee()
