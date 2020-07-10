@@ -12,8 +12,6 @@
 
 --<Controls>
     --   Space: drop bomb
-    --   W: menu select up
-    --   S: menu select down
 --</Controls>
 
 --<Todo>
@@ -26,6 +24,7 @@
 --  + recharging powerbar for movement
 --  + air defence (avoidable by Left/Right(uses powerbar))
 --  + <more> different themes
+
 --</Todo>
 
 --BGAME = function() -- For testing
@@ -79,7 +78,7 @@ if not FONT:Exists("CustomFont0023") then
 end
 
 --<variables>
-    local state = 0
+    local state = 9
     local game_tick = 0
     local can_drop_bomb = 0
 
@@ -221,17 +220,19 @@ end
         for i = 1,3 do
             bomb_trail[i] = {
                 x = 0,
-                y = 0
+                y = 0,
+                alpha = 200
             }
         end
 
-        for i = 1, 15 do
+        for i = 1, 20 do
             bomb_explode_particles[i] = {
                 x = 0,
                 y = 0,
                 x_change = 0,
                 y_change = 0,
-                downvel = 0
+                downvel = 0,
+                speedvel = 0
             }
         end
 
@@ -265,7 +266,6 @@ end
                 h = 22
             }
         end
-
     end
 
 
@@ -320,13 +320,25 @@ end
                 surface.DrawRect(cars[i].x+3,cars[i].y,43,12)
                 --roof
                 surface.DrawRect(cars[i].x+12,cars[i].y-11,25,14)
+
+                
                 --window1
-                surface.SetDrawColor(80,80,180)
+                if cars[i].destroyed == 0 then
+                    surface.SetDrawColor(80,80,180)
+                else
+                    surface.SetDrawColor(80,80,80)
+                end
                 surface.DrawRect(cars[i].x+14,cars[i].y-8,9,7)
                 --window2
                 surface.DrawRect(cars[i].x+26,cars[i].y-8,9,7)
+
+
                 --wheel1
-                surface.SetDrawColor(110,110,110)
+                if cars[i].destroyed == 0 then
+                    surface.SetDrawColor(110,110,110)
+                else
+                    surface.SetDrawColor(80,80,80)
+                end
                 surface.DrawRect(cars[i].x+5,cars[i].y+8,9,9)
                 --wheel2
                 surface.DrawRect(cars[i].x+35,cars[i].y+8,9,9)
@@ -431,11 +443,17 @@ end
 
     local function UpdatePlane()
         CheckPlaneCollision()
+        if state == 9 then
+            plane.x = plane.x + 2
+        else
+            plane.x = plane.x + (plane.speed+(level/2))
+        end
 
-        plane.x = plane.x + (plane.speed+(level/2))
 
         if plane.x > SCREEN_WIDTH+20 then
-            plane.y = plane.y + 30
+            if state != 9 then
+                plane.y = plane.y + 30
+            end
             plane.x = -85
 
             if CheckLevelComplete() then
@@ -467,22 +485,31 @@ end
         surface.DrawRect(offx+72, offy+3, 15, 15)
 
         --wing
-        surface.SetDrawColor(120,120,120)
+        surface.SetDrawColor(122,122,122)
         surface.DrawRect(offx+20, offy+8, 40, 7)
+
+        surface.SetDrawColor(120,120,120)
+        surface.DrawRect(offx+15, offy+8, 50, 4)
 
         --wing tail 1
         surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
-        surface.DrawRect(offx, offy-9, 20, 10)
+        surface.DrawRect(offx, offy-8, 20, 10)
 
         --wing tail 2
         surface.SetDrawColor(220-lower_color,220-lower_color,220-lower_color)
-        surface.DrawRect(offx+10, offy-4, 20, 10)
+        surface.DrawRect(offx, offy-4, 30, 10)
            
+
+           
+
+
         --glass
         --SetDrawColor(0,115,55)
        -- DrawRect(offx+62, offy+2, 20, 7)
-       surface.SetDrawColor(30,145,30)
-       surface.DrawRect(offx+66, offy+2, 20, 6)
+       surface.SetDrawColor(50,115,50)
+       surface.DrawRect(offx+66, offy+3, 20, 5)
+       surface.DrawRect(offx+66, offy+0, 15, 5)
+       
 
     end
 
@@ -499,10 +526,12 @@ end
 
     local function ExplodeParticles()
         bomb_explode_time = bomb_explode_time - 1
+
         for i = 1, #bomb_explode_particles do
+            bomb_explode_particles[i].speedvel = bomb_explode_particles[i].speedvel - 0.05
             bomb_explode_particles[i].downvel = bomb_explode_particles[i].downvel + 0.03
-            bomb_explode_particles[i].x = bomb_explode_particles[i].x + (bomb_explode_particles[i].x_change)
-            bomb_explode_particles[i].y = bomb_explode_particles[i].y + (bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel)
+            bomb_explode_particles[i].x = bomb_explode_particles[i].x + (bomb_explode_particles[i].x_change) * bomb_explode_particles[i].speedvel
+            bomb_explode_particles[i].y = bomb_explode_particles[i].y + (bomb_explode_particles[i].y_change + bomb_explode_particles[i].downvel) * bomb_explode_particles[i].speedvel
         end
     end
 
@@ -532,6 +561,7 @@ end
             bomb_explode_particles[i].x_change = (math.sin(math.random(360)) * 2)
             bomb_explode_particles[i].y_change = (math.cos(math.random(360)) * 2)
             bomb_explode_particles[i].downvel = 0
+            bomb_explode_particles[i].speedvel = 2
         end
         bomb_explode_time = 30
 
@@ -572,11 +602,16 @@ end
 
     local function UpdateBombTrail()
         if bomb_trail_time == 0 then
+
             bomb_trail_time = 2
             bomb_trail_select = bomb_trail_select + 1
+
             if bomb_trail_select > 3 then 
                 bomb_trail_select = 1
             end
+
+            bomb_trail[bomb_trail_select].alpha = 200
+
             if bomb.alive == 1 then
                 bomb_trail[bomb_trail_select].x = bomb.x
                 bomb_trail[bomb_trail_select].y = bomb.y
@@ -593,7 +628,8 @@ end
 
     local function DrawBombTrail()
         for i = 1,3 do
-            surface.SetDrawColor(70,0,0)
+            bomb_trail[i].alpha = bomb_trail[i].alpha - 5
+            surface.SetDrawColor(70,0,0,bomb_trail[i].alpha)
             surface.DrawRect(bomb_trail[i].x,bomb_trail[i].y,9,9)
         end
     end
@@ -786,6 +822,7 @@ end
 
 function GAME:Init()
     GameReset()
+    state = 9
 end
 
 function GAME:Destroy()
@@ -796,6 +833,9 @@ function GAME:Start()
     x, y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
     gameOverAt = now + 10
     gameState = 1
+    MACHINE:EmitSound("ambient/office/coinslot1.wav", 50)
+    GameReset()
+    state = 0
 end
 
 function GAME:Stop()
@@ -807,6 +847,26 @@ end
 function GAME:Update()
     now = RealTime()
 
+    if state == 9 then -- no player screen
+        if lastUpdate + 0.020 < RealTime() then
+            lastUpdate = RealTime()
+
+            if level_start == 1 then
+                level_start = 0
+                GenerateBuildingParts()
+                SpawnCars()
+            end
+
+            UpdateBuildingParts()
+            UpdateBombTrail()
+            UpdatePlane()
+            UpdateClouds()
+            UpdateSmokeParticles()
+            UpdateCars()
+            
+        end
+    end
+
     if gameState == 0 then return end
     if not IsValid(thePlayer) then
         self:Stop()
@@ -816,11 +876,12 @@ function GAME:Update()
     if now >= gameOverAt and gameState ~= 2 then
         gameState = 2
 
-        return
+        
     end
 
+
     if state == 0 then -- in game
-        if lastUpdate + 0.025 < RealTime() then
+        if lastUpdate + 0.020 < RealTime() then
             lastUpdate = RealTime()
 
             if thePlayer:KeyDown(IN_JUMP) then
@@ -859,9 +920,11 @@ function GAME:Update()
         if thePlayer:KeyDown(IN_JUMP) then
             if MACHINE:GetCoins() > 0 then
                 if can_continue_time + 2 < RealTime() then
-                    GameReset()
+                    --GameReset()
+                    plane.y = -200
                     MACHINE:TakeCoins(1)
-                    state = 0
+                    can_continue_time = RealTime()
+                    --state = 0
                 end
             end
         end
@@ -888,6 +951,8 @@ function GAME:DrawMarquee()
     surface.SetTextPos(126+(MARQUEE_WIDTH / 2) - (tw / 2), -4+(MARQUEE_HEIGHT / 2) - (th / 2))
     --surface.DrawText("C64")
     
+
+
     --building1
     surface.SetDrawColor(110,110,110)
     surface.DrawRect(MARQUEE_WIDTH - 106,90,20,50)
@@ -931,9 +996,27 @@ function GAME:Draw()
         surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
         surface.SetTextPos((SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2))
         surface.DrawText("INSERT COIN")
-		return
-	end
-    if state == 0 then -- in game
+		
+    end
+    
+    if state == 9 then -- wait
+ 
+        DrawBackground()
+        DrawClouds()
+        DrawPlane(plane.x,plane.y)
+        DrawBombTrail()
+        DrawSmokeParticles()
+        DrawBuildingParts()
+        DrawCars()
+
+        surface.SetFont("DermaLarge")
+        local tw, th = surface.GetTextSize("INSERT COIN")
+        surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
+        surface.SetTextPos((SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2)+30)
+        surface.DrawText("INSERT COIN")
+
+        return
+    elseif state == 0 then -- in game
         
         DrawBackground()
         DrawClouds()
@@ -952,9 +1035,11 @@ function GAME:Draw()
             DrawExplodeParticles()
         end
 
+        DrawCars()
+        
         DrawPoints()
         DrawLevel()
-        DrawCars()
+        
         return
 
     elseif state == 1 then -- gameover
@@ -993,6 +1078,7 @@ function GAME:OnStopPlaying(ply)
         MACHINE:StopSound("ambient/atmosphere/city_tone.wav")
         thePlayer = nil
         GameReset()
+        state = 9 -- wait
     end
 end
 function GAME:OnCoinsInserted(ply, old, new)
