@@ -12,50 +12,51 @@
 
 --<Controls>
     --   Space: drop bomb
+    --   S + Space : drop nuke
 --</Controls>
 
 --<Todo>
---  + plane explode animation
---  + plane start animation
 --  + multiple bombs(Trails,Explosions)
 --  + random background objects
---  + special weapons (level win bomb, slow down pickup)
---      - aquired through completing level 5,10,15,..
---  + recharging powerbar for movement
---  + air defence (avoidable by Left/Right(uses powerbar))
+--  ? recharging powerbar for movement
+--  ? air defence (avoidable by Left/Right(uses powerbar))
 --  + <more> different themes
+<<<<<<< HEAD
+=======
 --  + more sound effects (collapsed, collapsing, car explode, level change, points increase (blip), better drop)
 
+>>>>>>> upstream/master
 --</Todo>
 
 --BGAME = function() -- For testing
 local GAME = {}
 
 GAME.Name = "Blitz"
-GAME.Description = "Destroy buildings by dropping bombs with SPACE and complete as many levels as possible!"
+GAME.Description = "Destroy buildings by dropping bombs with SPACE and complete as many levels as possible!\n\nControls:\n    Space: drop bomb\n    S + Space: drop nuke"
 
 local thePlayer = nil
 local x, y = 0, 0
 local now = RealTime()
 local gameOverAt = 0
 local gameState = 0 
+ 
 
 if not FONT:Exists("CustomFont0022") then
     surface.CreateFont("CustomFont0022",  
-        { font = "Consolas",  
-        extended = false,  
-        size = 68,  weight = 200,  
-        blursize = 0,  
-        scanlines = 7,  
-        antialias = false,  
-        underline = false,  
-        italic = false,  
-        strikeout = true,  
-        symbol = false,  
-        rotary = false,  
-        shadow = true,  
-        additive = false,  
-        outline = false 
+    { font = "Consolas",  
+    extended = false,  
+    size = 70,  weight = 200,  
+    blursize = 0,  
+    scanlines = 9,  
+    antialias = false,  
+    underline = false,  
+    italic = false,  
+    strikeout = true,  
+    symbol = false,  
+    rotary = false,  
+    shadow = true,  
+    additive = false,  
+    outline = false 
     })    
 end
 
@@ -123,6 +124,15 @@ end
         speed = 3
     }
 
+    local nuke = {
+        x = 0,
+        y = 0,
+        alive =0,
+        levels = 0,
+        count = 3,
+        can_drop = 1
+    }
+
     local smoke_particles_spawners = {}
     local smoke_particles = {}
 
@@ -130,6 +140,9 @@ end
     local bomb_explode_time = 0
     local bomb_explode_ring_size = 0
 
+
+    local nuke_explode_particles = {}
+    
     local bomb_trail_time = 0
     local bomb_trail = {}
     local bomb_trail_select = 0
@@ -180,6 +193,8 @@ end
         bomb_explode_time = 0
         bomb_explode_ring_size = 0
      
+        nuke_explode_particles = {}
+
         bomb_trail_time = 0
         bomb_trail = {}
         bomb_trail_select = 0
@@ -194,7 +209,7 @@ end
         }
     
          plane = {
-            x = -10,
+            x = -50,
             y = 80,
             speed = 6
         }
@@ -207,6 +222,19 @@ end
             alive = 0,
             speed = 12
         }
+
+        nuke = {
+            x = 0,
+            y = 0,
+            can_drop = nuke.can_drop,
+            alive =0,
+            levels = nuke.levels,
+            time = RealTime(),
+            exploding = 0,
+            count = nuke.count
+        }
+
+        if nuke.levels > 0 then nuke.levels = nuke.levels - 1 chatprint(nuke.levels) end
 
         for i = 1,10 do
             cars[i] = {
@@ -236,6 +264,19 @@ end
                 speedvel = 0
             }
         end
+        if nuke.levels == 0 then
+            for i = 1, 180 do
+                nuke_explode_particles[i] = {
+                    x = 0,
+                    y = 0,
+                    x_change = 0,
+                    y_change = 0,
+                    downvel = 0,
+                    speedvel = 0
+                }
+            end
+        end
+        
 
         for i = 1,7 do
             clouds[i] = {
@@ -267,6 +308,9 @@ end
                 h = 22
             }
         end
+
+
+
     end
 
 
@@ -276,6 +320,7 @@ end
         GameReset()
         points = temp_points
         level = temp_level + 1
+
     end
 
 
@@ -448,17 +493,28 @@ end
         if state == 9 then
             plane.x = plane.x + 2
         else
-            plane.x = plane.x + (plane.speed+(level/2))
+            if level <= 25 then
+                plane.x = plane.x + (plane.speed+(level/2))
+            elseif level < 35 then
+                plane.x = plane.x + (plane.speed+(25/2))
+            elseif level < 45 then
+                plane.x = plane.x + (plane.speed+(28/2))
+            else
+                plane.x = plane.x + (plane.speed+(30/2))
+            end
         end
 
 
         if plane.x > SCREEN_WIDTH+20 then
-            if state != 9 then
+            if state != 9 and nuke.levels == 0 and nuke.alive == 0 then
                 plane.y = plane.y + 30
             end
-            plane.x = -85
+            
+            if nuke.levels == 0 and nuke.alive == 0 then
+               plane.x = -95
+            end
 
-            if CheckLevelComplete() then
+            if CheckLevelComplete() and nuke.alive == 0 then
                 NextLevel()
             else
                 if plane.y > (SCREEN_HEIGHT - 20) then
@@ -519,15 +575,20 @@ end
 
     end
 
-    local function DrawBomb()
-		surface.SetDrawColor(195,0,0)
-		surface.DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
-    end
 
-    local function DropBomb()
-        bomb.alive = 1
-        bomb.x = plane.x + 17
-        bomb.y = plane.y
+    local function DestroyAll()
+        for i = 1,#cars do
+            if cars[i].destroyed == 0 then
+                cars[i].destroyed = 1
+                points = points + 500
+                MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
+            end
+        end
+        for i = 1,#building_parts do
+            if building_parts[i].collapsed == 0 then
+                building_parts[i].collapsing = 1
+            end
+        end
     end
 
     local function ExplodeParticles()
@@ -548,6 +609,110 @@ end
         end
     end
 
+
+    local function NukeExplodeParticles()
+        bomb_explode_time = bomb_explode_time - 1
+
+        for i = 1, #nuke_explode_particles do
+            nuke_explode_particles[i].speedvel = nuke_explode_particles[i].speedvel - 0.03
+            nuke_explode_particles[i].downvel = nuke_explode_particles[i].downvel + 0.03
+            nuke_explode_particles[i].x = nuke_explode_particles[i].x + (nuke_explode_particles[i].x_change) * nuke_explode_particles[i].speedvel
+            nuke_explode_particles[i].y = nuke_explode_particles[i].y + (nuke_explode_particles[i].y_change + nuke_explode_particles[i].downvel) * nuke_explode_particles[i].speedvel
+        end
+    end
+    
+    local function DrawNukeExplodeParticles()
+        for i = 1, #nuke_explode_particles do
+            surface.SetDrawColor(155+math.random(100),155+math.random(100),0)
+            surface.DrawRect(nuke_explode_particles[i].x,nuke_explode_particles[i].y,25,25)
+        end
+    end
+
+    local function NukeExplode(x1,y1)
+        for i = 1, #nuke_explode_particles do
+            nuke_explode_particles[i].x = x1
+            nuke_explode_particles[i].y = y1
+            nuke_explode_particles[i].x_change = (math.sin(math.random(360)) * 9)
+            nuke_explode_particles[i].y_change = (math.cos(math.random(360)) * 9)
+            nuke_explode_particles[i].downvel = 0
+            nuke_explode_particles[i].speedvel = 2
+        end
+        bomb_explode_time = 340
+        local random_sound = math.random(2)
+
+            MACHINE:EmitSound("ambient/explosions/exp1.wav", 80)
+
+    end 
+--count = 3 ambient/alarms/siren.wav
+    local function DropNuke()
+        if nuke.can_drop == 1  then
+            nuke.x = SCREEN_WIDTH/2
+            nuke.y = -50
+            nuke.alive = 1
+            nuke.can_drop = 0
+            nuke.time = RealTime()
+        end
+    end
+
+    local function ExplodeNuke()
+        nuke.alive = 0
+        nuke.x = -15
+        nuke.y = -15
+        DestroyAll()
+    end
+
+    local function DrawNukeExploding()
+        surface.SetDrawColor(nuke.levels*50,nuke.levels*50,152,255)
+        surface.DrawRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT-40)
+    end
+
+    local function UpdateNuke()
+        if nuke.alive == 1 then
+            nuke.y = nuke.y + 12
+            if nuke.y > SCREEN_WIDTH - 80 then
+                NukeExplode(nuke.x,nuke.y)
+                ExplodeNuke()
+                nuke.levels = 5
+            end
+        end
+        if nuke.levels > 0 then
+            ExplodeNuke()
+        end
+    end
+
+    local function DrawNuke(x1,y1,scale)
+        --base
+        surface.SetDrawColor(150,150,150,255)
+        surface.DrawRect(x1,y1,10*scale,30*scale)
+        --head
+        surface.SetDrawColor(180,0,0,255)
+        surface.DrawRect(x1,y1+(25*scale),10*scale,7*scale)
+        --head2
+        surface.SetDrawColor(180,0,0,255)
+        surface.DrawRect(x1+(1*scale),y1+(27*scale),8*scale,7*scale)
+                
+        --tail
+        surface.SetDrawColor(150,150,150,255)
+        surface.DrawRect(x1-(2*scale),y1+0,14*scale,10*scale)
+    end
+
+    local function DrawNukeAmmo()
+        for i=1,nuke.count do
+            DrawNuke(SCREEN_WIDTH-(i*15),70,0.8)
+        end
+    end
+
+    local function DrawBomb()
+		surface.SetDrawColor(195,0,0)
+		surface.DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
+    end
+
+    local function DropBomb()
+        bomb.alive = 1
+        bomb.x = plane.x + 17
+        bomb.y = plane.y
+    end
+
     local function BombExplodeCars(x1,y1)
         for i = 1, #cars do
             if cars[i].alive == 1 and cars[i].destroyed == 0 then
@@ -560,11 +725,11 @@ end
         end
     end
 
-    local function BombExplode()
+    local function BombExplode(x1,y1)
         bomb.alive = 0
         for i = 1, #bomb_explode_particles do
-            bomb_explode_particles[i].x = bomb.x
-            bomb_explode_particles[i].y = bomb.y
+            bomb_explode_particles[i].x = x1
+            bomb_explode_particles[i].y = y1
             bomb_explode_particles[i].x_change = (math.sin(math.random(360)) * 2)
             bomb_explode_particles[i].y_change = (math.cos(math.random(360)) * 2)
             bomb_explode_particles[i].downvel = 0
@@ -585,12 +750,15 @@ end
 
     local function UpdateBomb()
 		if bomb.alive == 1 then
-            
-            bomb.y = bomb.y + (bomb.speed +(level/8))
+            if level < 25 then
+                bomb.y = bomb.y + (bomb.speed +(level/8))
+            else 
+                bomb.y = bomb.y + (bomb.speed +(25/8))
+            end
             bomb.x = bomb.x + 2
             
             if bomb.y > SCREEN_HEIGHT - 40 then
-                BombExplode()
+                BombExplode(bomb.x,bomb.y)
             end
 
             for i = 1 , #building_parts do
@@ -600,7 +768,7 @@ end
                             building_parts[j].collapsing = 1
                         end
                     end
-                    BombExplode()
+                    BombExplode(bomb.x,bomb.y)
                     return
                 end
             end
@@ -710,14 +878,22 @@ end
     
     local function GetBuildingPartsOffset()
         local parts_offset = 5
+
+        if level > 50 then
+            parts_offset = 7
+        elseif level > 40 then
+            parts_offset = 6
+        elseif level > 30 then
+            parts_offset = 5
+        end
+
+
         if level < 11 then
             parts_offset = 5
         elseif level < 23 then
             parts_offset = 4
         elseif level < 28 then
             parts_offset = 3
-        else
-            parts_offset = 2
         end
         return parts_offset
     end
@@ -758,6 +934,12 @@ end
 
     local function GenerateBuildingParts()
         local building_count = math.random(5)+1
+        if level > 30 then
+            building_count  = math.random(3)+3
+        elseif level > 40 then
+            building_count  = math.random(2)+6
+        end
+
         for i = 1, building_count do
             GenerateBuildingPart(i)
         end
@@ -810,7 +992,11 @@ end
     end
 
     local function DrawLevel()
-        DrawText(SCREEN_WIDTH-150,30,"LEVEL: "..level,255,255,255)
+        if level < 25 then
+            DrawText(SCREEN_WIDTH-150,30,"LEVEL: "..level,255,255,255)
+        else
+            DrawText(SCREEN_WIDTH-150,30,"LEVEL: "..level,255,180,180)
+        end
     end
 
 
@@ -844,6 +1030,8 @@ function GAME:Start()
     MACHINE:EmitSound("ambient/office/coinslot1.wav", 50)
     GameReset()
     state = 0
+    nuke.count = 3
+    nuke.levels = 0
 end
 
 function GAME:Stop()
@@ -892,13 +1080,27 @@ function GAME:Update()
         if lastUpdate + 0.020 < RealTime() then
             lastUpdate = RealTime()
 
-            if thePlayer:KeyDown(IN_JUMP) then
+            if thePlayer:KeyDown(IN_JUMP) and not thePlayer:KeyDown(IN_BACK) then
                 if bomb.alive == 0 then
                     DropBomb()
                     MACHINE:EmitSound("ambient/office/slidechange.wav", 40)
                 end
             end
 
+
+            if thePlayer:KeyDown(IN_JUMP) and thePlayer:KeyDown(IN_BACK) then
+                if nuke.can_drop == 1 then
+                    if nuke.count > 0 then
+                    DropNuke()
+                    MACHINE:EmitSound("ambient/alarms/siren.wav", 50)
+                    MACHINE:EmitSound("ambient/office/tech_oneshot_06.wav", 50)
+                    nuke.count = nuke.count -1 
+                    else
+                        MACHINE:EmitSound("ambient/alarms/klaxon1.wav", 30)
+                    end
+                end
+            end
+            
             if level_start == 1 then
                 MACHINE:StopSound("ambient/atmosphere/city_tone.wav")
                 MACHINE:EmitSound("ambient/atmosphere/city_tone.wav", 40)
@@ -913,7 +1115,14 @@ function GAME:Update()
             UpdateClouds()
             UpdateSmokeParticles()
             UpdateCars()
+            UpdateNuke()
             
+            if nuke.levels == 1 then
+                MACHINE:StopSound("ambient/alarms/siren.wav")
+            elseif nuke.levels == 0 and nuke.alive == 0  then
+                nuke.can_drop = 1
+            end
+
 
 
             if bomb.alive == 1 then
@@ -921,8 +1130,13 @@ function GAME:Update()
             end
 
             if bomb_explode_time > 0 then
-                ExplodeParticles()
+                if nuke.levels == 0 then
+                    ExplodeParticles()
+                else
+                    NukeExplodeParticles()
+                end
             end
+
         end
     elseif state == 1 then --gameover
         if thePlayer:KeyDown(IN_JUMP) then
@@ -941,18 +1155,28 @@ end
 
 
 function GAME:DrawMarquee()
+
     surface.SetDrawColor(0, 0, 0, 255)
     surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+
+   -- surface.SetDrawColor(40,40,40)
+  --  surface.DrawRect(4,MARQUEE_HEIGHT-50,MARQUEE_WIDTH,80)
+
+    surface.SetDrawColor(0,50,0,255)
+    surface.DrawOutlinedRect(2,2,MARQUEE_WIDTH-4,MARQUEE_HEIGHT-4)
+    surface.SetDrawColor(0,90,0,255)
+    surface.DrawOutlinedRect(1+3,1+3,MARQUEE_WIDTH-4,MARQUEE_HEIGHT-4)
+    
 
     surface.SetFont("CustomFont0022")
     local tw, th = surface.GetTextSize("BLITZ Game")
     surface.SetTextColor(0, 75, 0, 255)
-    surface.SetTextPos(-10+(MARQUEE_WIDTH / 2) - (tw / 2),-10+ (MARQUEE_HEIGHT / 2) - (th / 2))
-    surface.DrawText("BLITZ ")
+    surface.SetTextPos(-9+(MARQUEE_WIDTH / 2) - (tw / 2),-10+ (MARQUEE_HEIGHT / 2) - (th / 2))
+    surface.DrawText("BLITZ")
 
-    surface.SetTextColor(0, 225, 0, 255)
-    surface.SetTextPos(-13+(MARQUEE_WIDTH / 2) - (tw / 2),-10+ -3+(MARQUEE_HEIGHT / 2) - (th / 2))
-    surface.DrawText("BLITZ ")
+    surface.SetTextColor(90, 290, 0, 255)
+    surface.SetTextPos(-9+-3+(MARQUEE_WIDTH / 2) - (tw / 2),-10+ -3+(MARQUEE_HEIGHT / 2) - (th / 2))
+    surface.DrawText("BLITZ")
 
     surface.SetFont("CustomFont0023")
     surface.SetTextColor(0, 195, 0, 255)
@@ -960,19 +1184,60 @@ function GAME:DrawMarquee()
     --surface.DrawText("C64")
     
 
+    local offx = MARQUEE_WIDTH - 80
+    local offy = 40
+    
+for i = 1,5 do
+    --base
+    surface.SetDrawColor(80,80,80)
+    surface.DrawRect(offx  ,offy - (-20*i) ,40,20)
+    surface.SetDrawColor(240,240,100)
+    --window 1
+    surface.DrawRect(5+offx  ,4+offy- (-20*i)  ,40/5,20-8)
+    --window 2
+    surface.DrawRect((40-5-(40/5))+offx ,4+offy -(-20*i)  ,40/5,20-8)
+end
 
-    --building1
+local offx = MARQUEE_WIDTH - 130
+local offy = 60
+
+for i = 1,4 do
+    --base
+    surface.SetDrawColor(80,80,80)
+    surface.DrawRect(offx  ,offy - (-20*i) ,40,20)
+    surface.SetDrawColor(240,240,100)
+    --window 1
+    surface.DrawRect(5+offx  ,4+offy- (-20*i)  ,40/5,20-8)
+    --window 2
+    surface.DrawRect((40-5-(40/5))+offx ,4+offy -(-20*i)  ,40/5,20-8)
+end
+
+
+
+local offx = MARQUEE_WIDTH - 420
+local offy = 145
+
+    --base
+
+ 
+local offx = MARQUEE_WIDTH - 200
+local offy = 140
+
+    --base
+    surface.SetDrawColor(80,15,15)
+    surface.DrawRect(offx+3,offy,43,12)
+    --roof
+    surface.DrawRect(offx+12,offy-11,25,14)
+    --window1
+    surface.SetDrawColor(80,80,180)
+    surface.DrawRect(offx+14,offy-8,9,7)
+    --window2
+    surface.DrawRect(offx+26,offy-8,9,7)
+    --wheel1
     surface.SetDrawColor(110,110,110)
-    surface.DrawRect(MARQUEE_WIDTH - 106,90,20,50)
-    --building1(back)
-    surface.SetDrawColor(150,150,150)
-    surface.DrawRect(MARQUEE_WIDTH - 106-2,90,20,50)
-    --building2
-    surface.SetDrawColor(110,110,110)
-    surface.DrawRect(MARQUEE_WIDTH - 80,110,20,30)
-    --building2(back)
-    surface.SetDrawColor(150,150,150)
-    surface.DrawRect(MARQUEE_WIDTH - 80-2,110,20,30)
+    surface.DrawRect(offx+5,offy+8,9,9)
+    --wheel2
+    surface.DrawRect(offx+35,offy+8,9,9)
 
 
     surface.SetDrawColor(100,0,0)
@@ -1027,10 +1292,18 @@ function GAME:Draw()
     elseif state == 0 then -- in game
         
         DrawBackground()
+        if nuke.levels > 0 then
+            DrawNukeExploding()
+        end
         DrawClouds()
         DrawPlane(plane.x,plane.y)
         DrawBombTrail()
         DrawSmokeParticles()
+
+        if nuke.alive == 1 then
+            DrawNuke(nuke.x,nuke.y,1)
+        end
+
 
 
         if bomb.alive == 1 then
@@ -1040,14 +1313,21 @@ function GAME:Draw()
         DrawBuildingParts()
 
         if bomb_explode_time > 0 then
-            DrawExplodeParticles()
+            if nuke.levels == 0 then
+                DrawExplodeParticles()
+            else
+                DrawNukeExplodeParticles()
+            end
         end
+
+
 
         DrawCars()
         
         DrawPoints()
         DrawLevel()
-        
+        DrawNukeAmmo()
+
         return
 
     elseif state == 1 then -- gameover
@@ -1084,6 +1364,7 @@ end
 function GAME:OnStopPlaying(ply)
     if ply == thePlayer then
         MACHINE:StopSound("ambient/atmosphere/city_tone.wav")
+        MACHINE:StopSound("ambient/alarms/siren.wav")
         thePlayer = nil
         GameReset()
         state = 9 -- wait
