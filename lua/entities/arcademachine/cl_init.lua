@@ -368,6 +368,11 @@ function ENT:Think()
         self.CoinChange = nil
     end
 
+    if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+    end
+
     if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
         return
     end
@@ -636,13 +641,6 @@ function ENT:SetGame(game, forceLibLoad)
         upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
 
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
-
-        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-            timer.Simple(1, function() -- Thanks gmod
-                self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-                self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
-            end)
-        end
 
         if self.Game.Init then
             self.Game:Init()
