@@ -60,10 +60,6 @@ GAME.grid.length = {
 	y = (GAME.SY-2*GAME.grid.border.y)/3
 }
 
-GAME.game_repository = {
-	"004300209005009001070060043006002087190007400050083000600000105003508690042910300"
-}
-
 local border, width, length = GAME.grid.border, GAME.grid.width, GAME.grid.length
 
 function GAME:GetDigitPos (digit_x, digit_y)
@@ -147,7 +143,7 @@ function GAME:DrawGridSelectionBox()
 	end
 end
 
-function GAME:DrawGridContent()
+function GAME:DrawGridContent(attract_mode)
 	local valid, bad_entry = true
 	if self.check_mode then
 		valid, bad_entry = self:IsValid()
@@ -157,7 +153,9 @@ function GAME:DrawGridContent()
 		for y, entry in next, col do
 			if entry.digit then
 				surface.SetFont("DermaLarge")
-				if entry.seed then
+				if attract_mode then
+					surface.SetTextColor(0, 150, 0, 255)
+				elseif entry.seed then
 					surface.SetTextColor(255, 255, 255, 255)
 				else
 					surface.SetTextColor(0, 255, 255, 255)
@@ -167,7 +165,7 @@ function GAME:DrawGridContent()
 						end
 					end
 				end
-				surface.SetTextPos(self:GetDigitPos(entry.x, entry.y))
+				surface.SetTextPos(self:GetDigitPos(x, y))
 				surface.DrawText(entry.digit)
 			end
 			if entry.guesses then
@@ -175,13 +173,85 @@ function GAME:DrawGridContent()
 					if set then
 						surface.SetFont("DermaDefault")
 						surface.SetTextColor(0, 255, 255, 255)
-						surface.SetTextPos(self:GetGuessDigitPos(entry.x, entry.y, guess))
+						surface.SetTextPos(self:GetGuessDigitPos(x, y, guess))
 						surface.DrawText(guess)
 					end
 				end
 			end
 		end
 	end
+end
+
+local KANJI do
+	local K = {'乙','了','又','与','及','丈','刃','凡','勺','互','弔','井','升',
+		'丹','乏','匁','屯','介','冗','凶','刈','匹','厄','双','孔','幻','斗',
+		'斤','且','丙','甲','凸','丘','斥','仙','凹','召','巨','占','囚','奴',
+		'尼','巧','払','汁','玄','甘','矛','込','弐','朱','吏','劣','充','妄',
+		'企','仰','伐','伏','刑','旬','旨','匠','叫','吐','吉','如','妃','尽',
+		'帆','忙','扱','朽','朴','汚','汗','江','壮','缶','肌','舟','芋','芝',
+		'巡','迅','亜','更','寿','励','含','佐','伺','伸','但','伯','伴','呉',
+		'克','却','吟','吹','呈','壱','坑','坊','妊','妨','妙','肖','尿','尾',
+		'岐','攻','忌','床','廷','忍','戒','戻','抗','抄','択','把','抜','扶',
+		'抑','杉','沖','沢','沈','没','妥','狂','秀','肝','即','芳','辛','迎',
+		'邦','岳','奉','享','盲','依','佳','侍','侮','併','免','刺','劾','卓',
+		'叔','坪','奇','奔','姓','宜','尚','屈','岬','弦','征','彼','怪','怖',
+		'肩','房','押','拐','拒','拠','拘','拙','拓','抽','抵','拍','披','抱',
+		'抹','昆','昇','枢','析','杯','枠','欧','肯','殴','況','沼','泥','泊',
+		'泌','沸','泡','炎','炊','炉','邪','祈','祉','突','肢','肪','到','茎',
+		'苗','茂','迭','迫','邸','阻','附','斉','甚','帥','衷','幽','為','盾',
+		'卑','哀','亭','帝','侯','俊','侵','促','俗','盆','冠','削','勅','貞',
+		'卸','厘','怠','叙','咲','垣','契','姻','孤','封','峡','峠','弧','悔',
+		'恒','恨','怒','威','括','挟','拷','挑','施','是','冒','架','枯','柄',
+		'柳','皆','洪','浄','津','洞','牲','狭','狩','珍','某'}
+	local nK = #K
+	KANJI = function() local p = math.random(1,nK) return K[p] end
+end
+
+function GAME:UpdateAttract()
+	if CurTime() > (self.next_attract_tick or 0) then
+		for _, col in next, self.game_data do
+			local overflow = col[9]
+			for line = 9, 2, -1 do
+				col[line] = col[line-1]
+				if col[line] and col[line].digit then
+					col[line].digit = KANJI()
+				end
+			end
+			if overflow then
+				overflow.digit = nil
+				col[1] = overflow
+			end
+		end
+		self.next_attract_tick = CurTime()+0.2
+	end
+
+	if math.random()>0.8 then
+		--local x, y = math.random(1,9), math.random(1,9)
+		for x = 1, 9 do
+			for y = 9, 1, -1 do
+				if self.game_data[x][y] and self.game_data[x][y].digit then
+					self.game_data[x][y].digit = KANJI()
+					break
+				end
+			end
+		end
+	end
+
+	if math.random()>0.5 then
+		local x = (not self.last_attract_x_duration or self.last_attract_x_duration < 3 or math.random()>0.2) and self.last_attract_x or math.random(1,9)
+		self.last_attract_x = x
+		self.last_attract_x_duration = (self.last_attract_x_duration or 0)+1
+
+		self.game_data[x][1] = self.game_data[x][1] or {}
+		self.game_data[x][1].digit = KANJI()
+	end
+end
+
+function GAME:DrawAttract()
+	self:DrawUI()
+	self:DrawGrid()
+	self:UpdateAttract()
+	self:DrawGridContent(true)
 end
 
 function GAME:DrawUI ()
@@ -295,11 +365,22 @@ function GAME:InitGameData ()
 end
 
 function GAME:Init()
-	self.active_game = self.game_repository[1]
+	if not self.game_repository or #self.game_repository == 0 then
+		if FILE.Files.sudokugames and FILE.Files.sudokugames.path then
+			local games = file.Read(FILE.Files.sudokugames.path)
+			self.game_repository = string.Split(games, "\n")
+		end
+	end
+	self.active_game = self.game_repository[math.random(1, #self.game_repository)] or "004300209005009001070060043006002087190007400050083000600000105003508690042910300"
 	self:InitGameData ()
 end
 
 function GAME:Draw()
+	if not IsValid(self.player) then
+		self:DrawAttract()
+		return
+	end
+
 	self:DrawUI()
 	if self.state == STATE_MENU then
 		self:DrawMenu()
@@ -397,6 +478,8 @@ function GAME:IsValid()
 end
 
 function GAME:SetWinStateFromGameData()
+	if self.state ~= STATE_GAME then return end
+
 	if self:IsComplete() and self:IsValid() then
 		self.state = STATE_WON
 	else
@@ -569,6 +652,9 @@ end
 
 function GAME:OnStartPlaying(ply)
 	if ply ~= LocalPlayer() then return end
+
+	FILE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/sudoku/games.txt", "sudokugames")
+
 	self.player = ply
 	self.state = STATE_MENU
 	self:Init()
@@ -597,7 +683,5 @@ function GAME:OnCoinsLost(ply, old, new)
     if ply ~= LocalPlayer() then return end
 	self:SetWinStateFromGameData()
 end
-
---MACHINE:SetGame(function() return GAME end)
 
 return GAME
