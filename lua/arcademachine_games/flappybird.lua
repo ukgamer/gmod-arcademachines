@@ -16,7 +16,7 @@
 --   Fonts
 --
 
---FB = function()
+-- FB = function()
 
 --------------------------------------------------
 local function NewBoxCollisionObject()
@@ -397,10 +397,8 @@ function GAME:Update()
 					self:SetState(GAME_STATE_ATTRACT)
 					MACHINE:UpdateMarquee()
 				end
-			else
-				self:SetFlag("ProcessingSprite", false)
-				error("Image library isn't working", cool_name)
 			end
+			-- dont do anything if the image hasn't loaded
 		end
 
 	-- attracting players
@@ -773,4 +771,4 @@ return GAME
 
 
 
---end
+-- end
