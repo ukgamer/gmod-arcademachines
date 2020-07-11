@@ -21,11 +21,8 @@
 --  ? recharging powerbar for movement
 --  ? air defence (avoidable by Left/Right(uses powerbar))
 --  + <more> different themes
-<<<<<<< HEAD
-=======
 --  + more sound effects (collapsed, collapsing, car explode, level change, points increase (blip), better drop)
 
->>>>>>> upstream/master
 --</Todo>
 
 --BGAME = function() -- For testing
