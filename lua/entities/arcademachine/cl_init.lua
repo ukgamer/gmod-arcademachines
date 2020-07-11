@@ -352,6 +352,22 @@ function ENT:Think()
         self.AllowGameChangeAt = RealTime() + 1
     end
 
+    -- Used to work around GetCoins not returning the correct value after the
+    -- network var notify was called
+    if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
+        if self.Game then
+            if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
+                self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        
+            if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
+                self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        end
+        
+        self.CoinChange = nil
+    end
+
     if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
         return
     end
@@ -538,13 +554,7 @@ function ENT:UpdateScreen()
 end
 
 function ENT:OnCoinsChange(name, old, new)
-    if new > old and self.Game and self.Game.OnCoinsInserted then
-        self.Game:OnCoinsInserted(self:GetPlayer(), old, new)
-    end
-
-    if new < old and self.Game and self.Game.OnCoinsLost then
-        self.Game:OnCoinsLost(self:GetPlayer(), old, new)
-    end
+    self.CoinChange = { old = old, new = new }
 end
 
 function ENT:OnGameChange(name, old, new)
