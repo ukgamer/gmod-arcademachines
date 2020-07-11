@@ -121,6 +121,26 @@ To access your sound use `SOUND.Sounds[key]`, which will look like
 
 Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
 
+#### Files
+
+`FILE:LoadFromURL(url, key, noCache = false)`
+
+Used for loading arbitrary files from the web.
+
+`noCache` can be used during development to bypass the built in caching mechanism.
+
+Access your file with `FILE.Files[key]`, which will look like
+
+```lua
+{
+    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "Some error", -- if status == STATUS_ERROR
+    path = "somepath" -- if status == STATUS_LOADED
+}
+```
+
+The path is returned so that you can use GMod's usual file methods on it.
+
 #### Collisions
 
 A simple collision library using a mixture of methods including SAT (Separating Axis Theorem) for polygons.
