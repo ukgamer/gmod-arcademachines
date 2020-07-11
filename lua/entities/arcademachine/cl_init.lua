@@ -616,16 +616,19 @@ function ENT:SetGame(game, forceLibLoad)
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         else
             LoadedLibs[game] = {
                 COLLISION = include("arcademachine_lib/collision.lua"),
                 IMAGE = include("arcademachine_lib/image.lua"),
-                FONT = include("arcademachine_lib/font.lua")
+                FONT = include("arcademachine_lib/font.lua"),
+                FILE = include("arcademachine_lib/file.lua")
             }
 
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         end
 
         -- Allow each instance to have its own copy of sound library in case they want to
