@@ -20,7 +20,7 @@ function FILE:LoadFromURL(url, key, noCache)
         if file.Exists(filename, "DATA") then
             self.Files[key] = {
                 status = self.STATUS_LOADED,
-                path = path .. "/" .. filename
+                path = filename
             }
             return
         end
@@ -35,7 +35,7 @@ function FILE:LoadFromURL(url, key, noCache)
         function(body, size, headers, code)
             file.Write(filename, body)
             self.Files[key].status = self.STATUS_LOADED
-            self.Files[key].path = path .. "/" .. filename
+            self.Files[key].path = filename
         end,
         function(err, body)
             self.Files[key].status = self.STATUS_ERROR
