@@ -24,7 +24,32 @@ local STATE_LOST = 3
 
 local GAME = {
 	Name = 'Sudoku',
-	Description = "数字は独身に限る",
+	Description = [[
+	You will be presented with a 9x9 grid of fields. Some contain numbers between 1 and 9, some don't.
+	This 9x9 grid is subdivided into 9 smaller 3x3 boxes.
+	Your job is to fill in the missing fields with numbers between 1 and 9. These numbers have to meet certain criteria:
+
+	Rules: Each number from 1 through 9 can only appear once per: line, column and 3x3 box.
+
+	Controls:
+	- WASD: move the cursor
+	- NUMPAD 1-9: set a number
+	- NUMPAD 0: clear a number
+	- SPACE + NUMPAD 1-9: toggle a guess
+	- SPACE + NUMPAD 0: unset all guesses
+	- DEL: clear a field completely
+	- ENTER: submit
+
+	Once the sudoku is complete, you can press ENTER to check if it's correct.
+	- If it's correct, you win!
+	- If it's incorrect, you can either try to fix mistakes or try another one.
+
+	You will get a prompt that tells you what to press in either case.
+
+	GoTo-Mode:
+	Alternative cursor mode. Press NUMPAD ENTER and then NUMPAD 1-9 to first select a 3x3 box and then the field within.
+
+	数字は独身に限る]],
 	SX = 500,
 	SY = 500,
 
@@ -288,6 +313,17 @@ function GAME:DrawMenu()
 	surface.DrawText("If you've made a mistake, it will display one random mistake with red color.")
 	surface.SetTextPos(10,170)
 	surface.DrawText("You can try to fix it and re-try by spending another coin.")
+	surface.SetTextPos(10,190)
+	surface.DrawText("Everything is explained in the arcade machine description, a short command")
+	surface.SetTextPos(10,210)
+	surface.DrawText("reference/summary is at the bottom!")
+
+	surface.SetTextPos(10,290)
+	surface.DrawText("Rules: Each number from 1 through 9 can only appear once per  line,  column,  3x3 box")
+	surface.SetTextPos(10,310)
+	surface.DrawText("Yoar goal is to fill in all empty fields so that the entire puzzle is 100 % filled with numbers")
+	surface.SetTextPos(10,330)
+	surface.DrawText("and all numbers meet the rules!")
 end
 
 function GAME:DrawGameOver()
