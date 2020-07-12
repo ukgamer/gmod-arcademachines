@@ -154,6 +154,14 @@ end
     local level_theme = level_themes[math.random(1)+1]
 --</variables>
 
+local function ResetClouds()
+    for i = 1,7 do
+        clouds[i] = {
+            x = math.random(400)+0,
+            y = math.random(320)+80
+        }
+    end
+end
 
     local function DrawText(xt,yt,txt,r,g,b)
         surface.SetTextColor(Color(r,g,b,255))
@@ -197,12 +205,7 @@ end
         level_theme = level_themes[math.random(#level_themes)]
 
         clouds = {}
-        for i = 1,7 do
-            clouds[i] = {
-                x = math.random(400)+20,
-                y = math.random(320)+20
-            }
-        end
+        ResetClouds()
 
 
          button = {
@@ -941,17 +944,9 @@ end
         end
     end
 
-    local function ResetClouds()
-        for i = 1,7 do
-            clouds[i] = {
-                x = math.random(400)+0,
-                y = math.random(320)+80
-            }
-        end
-    end
 
     local function DrawClouds()
-        for i = 1,4 do
+        for i = 1,#clouds do
             if level_theme == "day" then
                 surface.SetDrawColor(155,155,155)
             elseif level_theme == "night" then
@@ -963,7 +958,7 @@ end
     end
 
     local function UpdateClouds()
-        for i = 1,4 do
+        for i = 1,#clouds do
             clouds[i].x = clouds[i].x + 1
             if clouds[i].x > SCREEN_WIDTH then clouds[i].x = -60 end
         end
