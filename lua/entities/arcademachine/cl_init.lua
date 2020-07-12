@@ -1,5 +1,6 @@
 include("shared.lua")
 
+local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 --local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
@@ -24,6 +25,34 @@ local LoadedLibs = {}
 
 local QueuedSounds = {}
 local NextQueueAt = 0
+
+local function DebugPrint(...)
+    if Debug:GetBool() then
+        print("[ARCADE]", ...)
+    end
+end
+
+local function ClearImageCache()
+    local path = "arcademachines/cache/images"
+    for _, v in ipairs(file.Find(path .. "/*", "DATA")) do
+        file.Delete(path .. "/" .. v)
+    end
+end
+
+local function ReloadMachines()
+    for _, v in ipairs(ents.FindByClass("arcademachine")) do
+        if v:GetCurrentGame() then
+            v:SetGame(v:GetCurrentGame())
+        elseif v.Game then
+            if v.Game.Destroy then
+                v.Game:Destroy()
+            end
+            if v.Game.Init then
+                v.Game:Init()
+            end
+        end
+    end
+end
 
 AMSettingsPanel = AMSettingsPanel or nil
 local function ShowSettingsPanel()
@@ -62,6 +91,30 @@ local function ShowSettingsPanel()
         checkbox:SetConVar("arcademachine_disable_others_when_active")
         checkbox:SetValue(DisableOthers:GetBool())
         checkbox:SizeToContents()
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 10)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("Debug")
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Clear image cache")
+        button.DoClick = function()
+            ClearImageCache()
+        end
+
+        local button = vgui.Create("DButton", scroll)
+        button:Dock(TOP)
+        button:DockMargin(0, 0, 0, 5)
+        button:SetText("Reload machines")
+        button.DoClick = function()
+            ReloadMachines()
+        end
     end
 
     AMSettingsPanel:Center()
@@ -90,7 +143,7 @@ local function ShowInfoPanel(machine)
     local bg = Color(0, 0, 0, 200)
 
     AMInfoPanel = vgui.Create("DFrame")
-    
+    AMInfoPanel:SetPaintedManually(true)
     AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
     AMInfoPanel:SetMinimumSize(300, 300)
     AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
@@ -206,8 +259,10 @@ ENT.Initialized = false
 function ENT:Initialize()
     self.Initialized = true
 
+    local num = math.random(9999)
+
     self.ScreenTexture = GetRenderTargetEx(
-        "ArcadeMachine_Screen_" .. self:EntIndex(),
+        "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
         RT_SIZE_DEFAULT,
@@ -217,16 +272,18 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.ScreenMaterial = CreateMaterial(
-        "ArcadeMachine_Screen_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.ScreenTexture:GetName(),
-            ["$model"] = 1
+            ["$model"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
     self.MarqueeTexture = GetRenderTargetEx(
-        "ArcadeMachine_Marquee_" .. self:EntIndex(),
+        "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
         RT_SIZE_DEFAULT,
@@ -236,18 +293,24 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.MarqueeMaterial = CreateMaterial(
-        "ArcadeMachine_Marquee_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
             ["$model"] = 1,
-            ["$nodecal"] = 1
+            ["$nodecal"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
     self.InRange = self.InRange or false
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
+    
+    -- Used to work around network variable spamming being changed from
+    -- empty to a game and back again when loaded into room on MS
+    self.AllowGameChangeAt = 0
 
     if self:GetCurrentGame() and not self.Game then
         self:SetGame(self:GetCurrentGame())
@@ -280,6 +343,34 @@ function ENT:Think()
     -- when the seat was created so manually call
     if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeMachine then
         self:OnSeatCreated("Seat", nil, self:GetSeat())
+    end
+
+    if self.LastGameNWVar ~= nil and self.AllowGameChangeAt - RealTime() <= 0 then
+        DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
+        self:SetGame(self.LastGameNWVar)
+        self.LastGameNWVar = nil
+        self.AllowGameChangeAt = RealTime() + 1
+    end
+
+    -- Used to work around GetCoins not returning the correct value after the
+    -- network var notify was called
+    if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
+        if self.Game then
+            if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
+                self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        
+            if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
+                self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        end
+        
+        self.CoinChange = nil
+    end
+
+    if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
     end
 
     if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
@@ -342,12 +433,20 @@ end
 function ENT:Draw()
     local marqueeIndex = self.Entity:GetBodygroup(0)
 
+    if IsValid(AMCurrentMachine) and AMCurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(true)
+    end
+
     -- To prevent using string table slots, don't set the submaterial on the server
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
+
+    if IsValid(AMCurrentMachine) and AMCurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(false)
+    end
 
     if not self.InRange or not self.Game or (DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self) then
         return
@@ -460,19 +559,26 @@ function ENT:UpdateScreen()
 end
 
 function ENT:OnCoinsChange(name, old, new)
-    if new > old and self.Game and self.Game.OnCoinsInserted then
-        self.Game:OnCoinsInserted(self:GetPlayer(), old, new)
-    end
-
-    if new < old and self.Game and self.Game.OnCoinsLost then
-        self.Game:OnCoinsLost(self:GetPlayer(), old, new)
-    end
+    self.CoinChange = { old = old, new = new }
 end
 
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    self:SetGame(new)
+    DebugPrint(
+        self:EntIndex(),
+        "new", new,
+        "old", old,
+        "at", RealTime(),
+        "remain", self.AllowGameChangeAt ~= 0 and self.AllowGameChangeAt - RealTime() or "(first load)"
+    )
+
+    self.LastGameNWVar = new
+
+    if self.AllowGameChangeAt == 0 or self.AllowGameChangeAt - RealTime() > 0 then
+        self.AllowGameChangeAt = RealTime() + 1
+        DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
+    end
 end
 
 function ENT:StopSounds()
@@ -515,16 +621,19 @@ function ENT:SetGame(game, forceLibLoad)
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         else
             LoadedLibs[game] = {
                 COLLISION = include("arcademachine_lib/collision.lua"),
                 IMAGE = include("arcademachine_lib/image.lua"),
-                FONT = include("arcademachine_lib/font.lua")
+                FONT = include("arcademachine_lib/font.lua"),
+                FILE = include("arcademachine_lib/file.lua")
             }
 
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         end
 
         -- Allow each instance to have its own copy of sound library in case they want to
@@ -532,17 +641,13 @@ function ENT:SetGame(game, forceLibLoad)
         upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
 
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
+
         if self.Game.Init then
             self.Game:Init()
         end
 
         if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
             self.Game:OnStartPlaying(self:GetPlayer())
-        end
-
-        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-            self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-            self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
         end
     end
 
@@ -617,9 +722,7 @@ local notificationColor = Color(255, 255, 255)
 hook.Add("HUDPaint", "arcademachine_hud", function()
     -- Paint manually so the panel hides when the camera is out
     if IsValid(AMInfoPanel) then
-        AMInfoPanel:SetPaintedManually(false)
         AMInfoPanel:PaintManual()
-        AMInfoPanel:SetPaintedManually(true)
     end
 
     if PressedUse then
