@@ -233,34 +233,13 @@ local function MakePup(name, time, mat, init, update, reset, mean, fullDraw)
 end
 
 MakePup("big_pad", 20, "sprites/key_12", function(p)
-	p.oldColor = padObject.render.color
 	p.oldSizeX = padObject.size.x
 	padObject.size.x = padObject.size.x * 2
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
 end,
-function(p)
-	if CurTime() < p.endTime - p.time / 2 then
-		padObject.render.color = p.oldColor
-		return
-	end
-
-	if not p.nextFlick then
-		p.nextFlick = CurTime() + 0.3
-	end
-
-	if CurTime() >= p.nextFlick then
-		if p.invertColor then
-			padObject.render.color = Color(255, 0, 0)
-		else
-			padObject.render.color = p.oldColor
-		end
-		p.invertColor = not p.invertColor
-		p.nextFlick = CurTime() + 0.3
-	end
-end,
+nil,
 function(p)
 	padObject.size.x = p.oldSizeX
-	padObject.render.color = p.oldColor
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end)
 
@@ -326,7 +305,7 @@ MakePup("small_pad", 15, "hud/killicons/default", function(p)
 	padObject.size.x = padObject.size.x / 2
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end,
-function(p) end,
+nil,
 function(p)
 	padObject.size.x = p.oldSizeX
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
@@ -336,18 +315,21 @@ MakePup("monk", 10, "sprites/obsolete", function(p)
 	reverseControl = true
 	MakeSound("vo/ravenholm/madlaugh04.wav", 100, 0.75)
 end,
-function(p) end,
+nil,
 function(p)
 	reverseControl = false
 end, true, true)
 
 MakePup("speed", 15, "decals/decal_signroute006a",
 function(p)
+	p.oldColor = padObject.render.color
+	padObject.render.color = Color(100, 255, 100)
 	MakeSound("npc/dog/dog_pneumatic2.wav", 100, 0.5)
 	moveSpeed = moveSpeed * 1.5
 end,
-function(p) return end,
+nil,
 function(p)
+	padObject.render.color = p.oldColor
 	moveSpeed = defaultMoveSpeed
 end, false, true)
 
@@ -404,7 +386,12 @@ local function UpdatePowerups()
 
 							if name == data.name then --if there's already a powerup with this name, we just extend time
 								hasPowerUp = true
-								powerUp.endTime = CurTime() + powerUp.time
+
+								if name == "big_ball" then
+									ballObject.bigBallUses = ballObject.bigBallUses + 15 --we just add 15, harsh solution, but it works
+								else
+									powerUp.endTime = powerUp.endTime + powerUp.time
+								end
 							end
 						end
 					end
@@ -424,34 +411,35 @@ local function UpdatePowerups()
 		end
 	end
 
-	if not table.IsEmpty(currentPowerUps) then
-		for name, powerUp in pairs(currentPowerUps) do
-			if powerUp then
-				if not powerUp.hasInit then
-					powerUp.hasInit = true
-					powerUp.init(powerUp)
-					powerUp.endTime = CurTime() + powerUp.time
+	if table.IsEmpty(currentPowerUps) then
+		return
+	end
+
+	for name, powerUp in pairs(currentPowerUps) do
+		if powerUp then
+			if not powerUp.hasInit then
+				powerUp.hasInit = true
+				powerUp.init(powerUp)
+				powerUp.endTime = CurTime() + powerUp.time
+			end
+
+			if powerUp.hasInit then
+				powerUp.update(powerUp)
+
+				if powerUp.destroy then
+					powerUp.reset(powerUp)
+					currentPowerUps[name] = nil
 				end
 
-				if powerUp.hasInit then
-					powerUp.update(powerUp)
-
-					if powerUp.destroy then
+				if powerUp.time > -1 then
+					if CurTime() >= powerUp.endTime then
 						powerUp.reset(powerUp)
 						currentPowerUps[name] = nil
-					end
-	
-					if powerUp.time > -1 then
-						if CurTime() >= powerUp.endTime then
-							powerUp.reset(powerUp)
-							currentPowerUps[name] = nil
-						end
 					end
 				end
 			end
 		end
 	end
-
 end
 
 local function RespawnBall()
@@ -506,7 +494,6 @@ local function UpdateBallObject()
 
 			--bigball smashes through blocks
 			if ballObject.isBigBall and ob.isBlock then
-
 				if ballObject.bigBallUses > 0 then
 					if ob.hardness > 1 and ob.hardness + 1 < ballObject.bigBallUses then
 						ballObject.bigBallUses = ballObject.bigBallUses - (ob.hardness - 1)
@@ -541,7 +528,6 @@ local function UpdateBallObject()
 					ob.hardness = newHard
 					ob.render.color = hardnessColors[newHard]
 					MakeSound("weapons/airboat/airboat_gun_energy2.wav", math.random(125, 200), 0.2)
-					--MakeSound("physics/concrete/rock_impact_hard" .. math.random(1, 6) ..".wav", 250, 0.1)
 				else
 					local shouldSpawnPup = math.random(0, 100)
 
@@ -556,10 +542,17 @@ local function UpdateBallObject()
 					ob.destroyed = true
 					local pos = MACHINE:GetPos()
 					local len = ballObject.vel:Length()
-					len = math.Clamp(len, 100, 255)
-					MakeSound("friends/friend_join.wav", len, 0.5)
-					if ballObject.vel.x >= maxBallSpeed - 10 or ballObject.vel.x <= -maxBallSpeed - 10 then
-						MakeSound("weapons/fx/rics/ric" .. math.random(1, 5) ..".wav", 100, 0.1)
+					len = math.Clamp(len, 100, 230)
+
+					len = len + math.random(-15, 25)
+
+					if ballObject.isBigBall then
+						MakeSound("weapons/physcannon/energy_disintegrate" .. math.random(4, 5) .. ".wav", math.random(150, 200), 0.15)
+					else
+						MakeSound("friends/friend_join.wav", len, 0.5)
+						if ballObject.vel.x >= maxBallSpeed - 10 or ballObject.vel.x <= -maxBallSpeed - 10 then
+							MakeSound("weapons/fx/rics/ric" .. math.random(1, 5) ..".wav", 100, 0.1)
+						end
 					end
 				end
 			end
@@ -583,7 +576,7 @@ local function UpdateBallObject()
 		ballObject.setVel(Vector(velX, math.abs(ballObject.vel.y)))
 	end
 
-	if posX >= SCREEN_WIDTH - ballObject.size.x -margin then
+	if posX >= SCREEN_WIDTH - ballObject.size.x - margin then
 		ballObject.lastHitID = - 1
 		ballObject.setVel(Vector(-math.abs(ballObject.vel.x), velY))
 	end
@@ -658,7 +651,7 @@ local function RenderObjects()
 		if not ob.destroyed then
 			if ob.render.func then
 				ob.render.func(ob.pos.x, ob.pos.y, ob.size.x, ob.size.y)
-			else
+			elseif ob.render.color then
 				local w, h = ob.size.x, ob.size.y
 				surface.SetDrawColor(ob.render.color:Unpack())
 				surface.DrawRect(ob.pos.x, ob.pos.y, w, h)
@@ -758,6 +751,14 @@ function GAME:GameOver()
 			return
 		end
 
+		for name, powerUp in pairs(currentPowerUps) do
+			if powerUp and powerUp.endTime and powerUp.time ~= 0 then
+				if not powerUp.pauseTime then
+					powerUp.pauseTime = powerUp.endTime - CurTime()
+				end
+			end
+		end
+
 		gameOverAt = RealTime() + 10
 		isGameOver = true
 	end
@@ -777,6 +778,14 @@ function GAME:Continue()
 	nextBallSpawn = CurTime() + 1
 	--RespawnBall()
 	MACHINE:TakeCoins(1)
+
+	--Continue the game with the same time they had when it paused
+	for name, powerUp in pairs(currentPowerUps) do
+		if powerUp and powerUp.pauseTime then
+			powerUp.endTime = CurTime() + powerUp.pauseTime
+			powerUp.pauseTime = nil
+		end
+	end
 end
 
 function GAME:Stop()
@@ -1078,6 +1087,10 @@ function GAME:Draw()
 	local text = "Coins left: " .. MACHINE:GetCoins() - 1
 	surface.SetFont("GModNotify")
 	local tW, tH = surface.GetTextSize(text)
+
+	surface.SetDrawColor(0, 0, 0, 200)
+	surface.DrawRect(margin / 2, margin / 2, tW + margin, tH + margin)
+
 	surface.SetTextColor(50, 125, 2555)
 	surface.SetTextPos(margin, margin)
 	surface.DrawText(text)
@@ -1085,15 +1098,20 @@ function GAME:Draw()
 	local i = 1
 	for name, powerUp in pairs(currentPowerUps) do
 		if powerUp and powerUp.endTime and powerUp.time ~= 0 then
+
 			surface.SetDrawColor(255, 255, 255)
 			surface.SetMaterial(powerUp.icon)
-			local x, y = SCREEN_WIDTH - 24 * i - margin, margin
-			surface.DrawTexturedRect(SCREEN_WIDTH - 24 * i - margin, margin, 20, 20)
+			local x, y = SCREEN_WIDTH - 24 * i - margin, SCREEN_HEIGHT - 20 - margin * 4
+			surface.DrawTexturedRect(x, y, 20, 20)
 
 			local txt = math.Round(powerUp.endTime - CurTime(), 0) .. "s"
+			if powerUp.pauseTime then
+				txt = math.Round(powerUp.pauseTime) .. "s"
+			end
 			if powerUp.time == -1 and ballObject.isBigBall then
 				txt = ballObject.bigBallUses
 			end
+
 			surface.SetFont("Default")
 			local tW, tH = surface.GetTextSize(txt)
 			surface.SetTextColor(50, 125, 255)
@@ -1103,7 +1121,7 @@ function GAME:Draw()
 		end
 	end
 
-	local soundIconPosX, soundIconPosY = SCREEN_WIDTH - 32, SCREEN_HEIGHT - 32
+	local soundIconPosX, soundIconPosY = SCREEN_WIDTH - 42, 10
 
 	if isMusicMuted then
 		surface.SetDrawColor(255, 0, 0, 50)
@@ -1162,8 +1180,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
 	if ply ~= LocalPlayer() then return end
 
 	if gameState == 0 and new > 0 then
@@ -1186,7 +1202,7 @@ end
 return GAME
 --end -- For testing
 
---local ent = Entity(1445)
+--local ent = Entity(2051)
 --if IsValid(ent) and ent.SetGame then
 --	ent:SetGame(game)
 --end
