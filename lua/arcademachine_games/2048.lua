@@ -730,8 +730,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
     if ply ~= LocalPlayer() then return end
 
     if new > 0 and gameState == 0 then

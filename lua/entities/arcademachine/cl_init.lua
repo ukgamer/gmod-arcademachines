@@ -375,6 +375,7 @@ function ENT:Think()
     if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
         if self.Game then
             if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
+                self.Entity:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
                 self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
             end
         

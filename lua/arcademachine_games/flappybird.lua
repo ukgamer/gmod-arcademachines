@@ -515,8 +515,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
 	if new > 0 and self:GetState() == GAME_STATE_WAITCOIN then
 		self:Reset()
 		self:SetState(GAME_STATE_STARTING)
