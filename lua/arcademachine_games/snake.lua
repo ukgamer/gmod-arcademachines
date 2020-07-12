@@ -485,7 +485,6 @@
     function GAME:OnCoinsInserted( ply, old, new )
         if ply ~= LocalPlayer() then return end
 
-        MACHINE:EmitSound( "garrysmod/content_downloaded.wav" )
         if new > 0 and self.State == STATE_AWAITING_COINS then
             self:Start()
         end

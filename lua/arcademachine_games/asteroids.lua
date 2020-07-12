@@ -570,8 +570,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
-
     if ply ~= LocalPlayer() then return end
 
     if new > 0 and gameState == GAME_STATE_ATTRACT then
