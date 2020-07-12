@@ -21,8 +21,6 @@
 --  ? recharging powerbar for movement
 --  ? air defence (avoidable by Left/Right(uses powerbar))
 --  + <more> different themes
---  + more sound effects (collapsed, collapsing, car explode, level change, points increase (blip), better drop)
-
 --</Todo>
 
 --BGAME = function() -- For testing
@@ -199,6 +197,13 @@ end
         level_theme = level_themes[math.random(#level_themes)]
 
         clouds = {}
+        for i = 1,7 do
+            clouds[i] = {
+                x = math.random(400)+20,
+                y = math.random(320)+20
+            }
+        end
+
 
          button = {
             w = 200,
@@ -231,7 +236,7 @@ end
             count = nuke.count
         }
 
-        if nuke.levels > 0 then nuke.levels = nuke.levels - 1 chatprint(nuke.levels) end
+        if nuke.levels > 0 then nuke.levels = nuke.levels - 1 end
 
         for i = 1,10 do
             cars[i] = {
@@ -275,12 +280,6 @@ end
         end
         
 
-        for i = 1,7 do
-            clouds[i] = {
-                x = math.random(400)+20,
-                y = math.random(320)+20
-            }
-        end
 
         for i = 1,300 do
             smoke_particles[i] = {
@@ -1077,7 +1076,7 @@ function GAME:Update()
         if lastUpdate + 0.020 < RealTime() then
             lastUpdate = RealTime()
 
-            if thePlayer:KeyDown(IN_JUMP) and not thePlayer:KeyDown(IN_BACK) then
+            if thePlayer:KeyDown(IN_JUMP) and not thePlayer:KeyDown(IN_BACK) and nuke.levels == 0 and nuke.alive == 0 then
                 if bomb.alive == 0 then
                     DropBomb()
                     MACHINE:EmitSound("ambient/office/slidechange.wav", 40)
