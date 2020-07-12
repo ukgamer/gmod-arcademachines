@@ -125,8 +125,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
     if ply ~= LocalPlayer() then return end
 
     -- If a fullupdate occurs then the game will be reset, so when the player inserts a coin again

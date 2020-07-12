@@ -2,6 +2,7 @@ include("shared.lua")
 
 local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
 local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
+local DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false)
 local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
 --local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
 local DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
@@ -18,6 +19,7 @@ local PressedWalk = false
 local PressedUse = false
 local PressedUseAt = 0
 
+local BloomWasDisabled = false
 local PACWasDisabled = false
 --local OutfitterWasDisabled = false
 
@@ -58,13 +60,29 @@ AMSettingsPanel = AMSettingsPanel or nil
 local function ShowSettingsPanel()
     if not IsValid(AMSettingsPanel) then
         AMSettingsPanel = vgui.Create("DFrame")
-        AMSettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.15)
+        AMSettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
         AMSettingsPanel:SetMinimumSize(200, 200)
         AMSettingsPanel:SetTitle("Arcade Machine Settings")
         AMSettingsPanel:DockPadding(10, 30, 10, 10)
     
         local scroll = vgui.Create("DScrollPanel", AMSettingsPanel)
         scroll:Dock(FILL)
+
+        local label = vgui.Create("DLabel", scroll)
+        label:Dock(TOP)
+        label:SetWrap(true)
+        label:SetAutoStretchVertical(true)
+        label:DockMargin(0, 0, 0, 10)
+        label:SetFont("DermaDefaultBold")
+        label:SetText("General")
+
+        local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+        checkbox:Dock(TOP)
+        checkbox:DockMargin(0, 0, 0, 5)
+        checkbox:SetText("Disable bloom when in machine")
+        checkbox:SetConVar("arcademachine_disable_bloom")
+        checkbox:SetValue(DisableBloom:GetBool())
+        checkbox:SizeToContents()
 
         local label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
@@ -352,6 +370,28 @@ function ENT:Think()
         self.AllowGameChangeAt = RealTime() + 1
     end
 
+    -- Used to work around GetCoins not returning the correct value after the
+    -- network var notify was called
+    if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
+        if self.Game then
+            if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
+                self.Entity:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
+                self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        
+            if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
+                self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        end
+        
+        self.CoinChange = nil
+    end
+
+    if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+    end
+
     if DisableOthers:GetBool() and AMCurrentMachine and AMCurrentMachine ~= self then
         return
     end
@@ -468,6 +508,11 @@ end
 function ENT:OnLocalPlayerEntered()
     AMCurrentMachine = self
 
+    if DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
+        LocalPlayer():ConCommand("mat_disable_bloom 1")
+        BloomWasDisabled = true
+    end
+
     if DisablePAC:GetBool() and pac then
         pac.Disable()
         PACWasDisabled = true
@@ -486,6 +531,10 @@ end
 
 function ENT:OnLocalPlayerLeft()
     AMCurrentMachine = nil
+
+    if DisableBloom:GetBool() and BloomWasDisabled then
+        LocalPlayer():ConCommand("mat_disable_bloom 0")
+    end
 
     if DisablePAC:GetBool() and PACWasDisabled then
         pac.Enable()
@@ -538,13 +587,7 @@ function ENT:UpdateScreen()
 end
 
 function ENT:OnCoinsChange(name, old, new)
-    if new > old and self.Game and self.Game.OnCoinsInserted then
-        self.Game:OnCoinsInserted(self:GetPlayer(), old, new)
-    end
-
-    if new < old and self.Game and self.Game.OnCoinsLost then
-        self.Game:OnCoinsLost(self:GetPlayer(), old, new)
-    end
+    self.CoinChange = { old = old, new = new }
 end
 
 function ENT:OnGameChange(name, old, new)
@@ -606,16 +649,19 @@ function ENT:SetGame(game, forceLibLoad)
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         else
             LoadedLibs[game] = {
                 COLLISION = include("arcademachine_lib/collision.lua"),
                 IMAGE = include("arcademachine_lib/image.lua"),
-                FONT = include("arcademachine_lib/font.lua")
+                FONT = include("arcademachine_lib/font.lua"),
+                FILE = include("arcademachine_lib/file.lua")
             }
 
             upvalues.COLLISION = LoadedLibs[game].COLLISION
             upvalues.IMAGE = LoadedLibs[game].IMAGE
             upvalues.FONT = LoadedLibs[game].FONT
+            upvalues.FILE = LoadedLibs[game].FILE
         end
 
         -- Allow each instance to have its own copy of sound library in case they want to
@@ -623,13 +669,6 @@ function ENT:SetGame(game, forceLibLoad)
         upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
 
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
-
-        if self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-            timer.Simple(1, function() -- Thanks gmod
-                self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-                self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
-            end)
-        end
 
         if self.Game.Init then
             self.Game:Init()
@@ -722,6 +761,11 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 end)
 
 hook.Add("Think", "arcademachine_think", function()
+    -- In case the player gets pulled out of the machine somehow
+    if IsValid(AMCurrentMachine) and AMCurrentMachine:GetPlayer() ~= LocalPlayer() then
+        AMCurrentMachine = nil
+    end
+
     if not IsValid(AMCurrentMachine) then
         local tr = util.TraceLine(util.GetPlayerTrace(LocalPlayer(), EyeAngles():Forward()))
 

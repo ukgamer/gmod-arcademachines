@@ -16,7 +16,7 @@
 --   Fonts
 --
 
---FB = function()
+-- FB = function()
 
 --------------------------------------------------
 local function NewBoxCollisionObject()
@@ -397,10 +397,8 @@ function GAME:Update()
 					self:SetState(GAME_STATE_ATTRACT)
 					MACHINE:UpdateMarquee()
 				end
-			else
-				self:SetFlag("ProcessingSprite", false)
-				error("Image library isn't working", cool_name)
 			end
+			-- dont do anything if the image hasn't loaded
 		end
 
 	-- attracting players
@@ -517,8 +515,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
 	if new > 0 and self:GetState() == GAME_STATE_WAITCOIN then
 		self:Reset()
 		self:SetState(GAME_STATE_STARTING)
@@ -773,4 +769,4 @@ return GAME
 
 
 
---end
+-- end
