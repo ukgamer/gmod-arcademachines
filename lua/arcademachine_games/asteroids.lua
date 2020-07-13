@@ -202,6 +202,8 @@ function GAME:Start()
 
     gameState = GAME_STATE_PLAYING
 
+    table.Empty(objects.ufos)
+
     nextUfo = now + math.random(20, 40)
 end
 
