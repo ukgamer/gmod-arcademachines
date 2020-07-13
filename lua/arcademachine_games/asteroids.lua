@@ -193,6 +193,21 @@ function GAME:Destroy()
     
 end
 
+function GAME:PlaySound(snd, looping)
+    if SOUND.Sounds[snd] and IsValid(SOUND.Sounds[snd].sound) then
+        if not looping then
+            SOUND.Sounds[snd].sound:SetTime(0)
+        end
+        SOUND.Sounds[snd].sound:Play()
+    end
+end
+
+function GAME:PauseSound(snd)
+    if SOUND.Sounds[snd] and IsValid(SOUND.Sounds[snd].sound) then
+        SOUND.Sounds[snd].sound:Pause()
+    end
+end
+
 function GAME:Start()
     lives = 3
 
@@ -212,12 +227,8 @@ function GAME:Stop()
         objects.player = nil
     end
 
-    if IsValid(SOUND.Sounds.saucerSmall.sound) then
-        SOUND.Sounds.saucerSmall.sound:Pause()
-    end
-    if IsValid(SOUND.Sounds.saucerBig.sound) then
-        SOUND.Sounds.saucerBig.sound:Pause()
-    end
+    self:PauseSound("saucerSmall")
+    self:PauseSound("saucerBig")
 
     table.Empty(objects.bullets)
     table.Empty(objects.explosions)
@@ -245,6 +256,16 @@ function GAME:SpawnPlayer()
             }
         }
     }
+end
+
+function GAME:DestroyPlayer()
+    self:SpawnExplosion(objects.player.pos, "bangsmall")
+
+    self:PauseSound("thrust")
+    objects.player = nil
+
+    gameState = GAME_STATE_DYING
+    respawnAt = now + 2
 end
 
 function GAME:WrapPos(pos)
@@ -282,9 +303,8 @@ function GAME:SpawnExplosion(pos, sound)
         dieTime = now + 1
     })
 
-    if gameState ~= GAME_STATE_ATTRACT and sound and IsValid(SOUND.Sounds[sound].sound) then
-        SOUND.Sounds[sound].sound:SetTime(0)
-        SOUND.Sounds[sound].sound:Play()
+    if gameState ~= GAME_STATE_ATTRACT and sound then
+        self:PlaySound(sound)
     end
 end
 
@@ -326,11 +346,7 @@ function GAME:SpawnUfo()
     })
 
     if gameState ~= GAME_STATE_ATTRACT then
-        local snd = type.name == "small" and "saucerSmall" or "saucerBig"
-
-        if IsValid(SOUND.Sounds[snd].sound) then
-            SOUND.Sounds[snd].sound:Play()
-        end
+        self:PlaySound(type.name == "small" and "saucerSmall" or "saucerBig", true)
     end
 end
 
@@ -384,10 +400,7 @@ function GAME:DestroyUfo(key, obj, byPlayer)
     table.remove(objects.ufos, key)
 
     local snd = obj.type.name == "small" and "saucerSmall" or "saucerBig"
-
-    if IsValid(SOUND.Sounds[snd].sound) then
-        SOUND.Sounds[snd].sound:Pause()
-    end
+    self:PauseSound(snd)
 end
 
 function GAME:SpawnAsteroids()
@@ -421,6 +434,10 @@ function GAME:Update()
     for _, v in ipairs(objects.ufos) do
         v.pos:Add(v.vel * 25 * FrameTime())
         self:WrapPos(v.pos)
+
+        if objects.player and COLLISION:IsColliding(v, objects.player) then
+            self:DestroyPlayer()
+        end
     end
 
     if now >= nextUfo then
@@ -453,19 +470,12 @@ function GAME:Update()
         if extraLifeScore >= 10000 then
             lives = lives + 1
             extraLifeScore = 0
-    
-            if IsValid(SOUND.Sounds.extraShip.sound) then
-                SOUND.Sounds.extraShip.sound:SetTime(0)
-                SOUND.Sounds.extraShip.sound:Play()
-            end
+
+            self:PlaySound("extraShip")
         end
 
         if now >= nextBeepAt then
-            local snd = highBeep and "beat2" or "beat1"
-            if IsValid(SOUND.Sounds[snd].sound) then
-                SOUND.Sounds[snd].sound:SetTime(0)
-                SOUND.Sounds[snd].sound:Play()
-            end
+            self:PlaySound(highBeep and "beat2" or "beat1")
 
             local t = fastBeep and 0.3 or 0.8
 
@@ -484,21 +494,14 @@ function GAME:Update()
         if thePlayer:KeyDown(IN_FORWARD) then
             objects.player.vel:Add(objects.player.ang:Forward() * 10 * FrameTime())
             
-            if IsValid(SOUND.Sounds.thrust.sound) then
-                SOUND.Sounds.thrust.sound:Play()
-            end
+            self:PlaySound("thrust", true)
         else
-            if IsValid(SOUND.Sounds.thrust.sound) then
-                SOUND.Sounds.thrust.sound:Pause()
-            end
+            self:PauseSound("thrust")
         end
 
         if thePlayer:KeyDown(IN_JUMP) then
             if now >= nextFire and #objects.bullets < 4 then
-                if IsValid(SOUND.Sounds.fire.sound) then
-                    SOUND.Sounds.fire.sound:SetTime(0)
-                    SOUND.Sounds.fire.sound:Play()
-                end
+                self:PlaySound("fire")
 
                 local pos = Vector()
                 pos:Set(objects.player.pos)
@@ -537,16 +540,7 @@ function GAME:Update()
         end
 
         if gameState == GAME_STATE_PLAYING and COLLISION:IsColliding(av, objects.player) then
-            self:SpawnExplosion(objects.player.pos, "bangsmall")
-
-            if IsValid(SOUND.Sounds.thrust.sound) then
-                SOUND.Sounds.thrust.sound:Pause()
-            end
-            objects.player = nil
-
-            gameState = GAME_STATE_DYING
-            respawnAt = now + 2
-            return
+            self:DestroyPlayer()
         end
     end
 
