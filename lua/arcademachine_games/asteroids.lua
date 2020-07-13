@@ -7,13 +7,13 @@
     All trademarks are property of their respective owners
 ]]
 
---TESTGAME = function()
+TESTGAME = function()
 local GAME = {}
 
 GAME.Name = "Asteroids"
-GAME.Description = "Blast the asteroids for points! Press W to move your ship forward, and A/D to turn. Press SPACE to fire. Be careful with your velocity!"
+GAME.Description = [[Blast the asteroids for points! Watch out for UFOs and be careful with your velocity.
 
-local yawVector = Vector(0, 0, 1)
+Press W to move your ship forward, and A/D to turn. Press SPACE to fire.]]
 
 local thePlayer = nil
 
@@ -35,8 +35,9 @@ local livesOffset = Vector(10, 0)
 local livesAngle = Angle(0, -90, 0)
 local nextFire = 0
 local respawnAt = 0
+local nextUfo = 0
 local fastBeep = false
-local types = {
+local asteroidTypes = {
     {
         name = "small",
         vertices = {
@@ -116,14 +117,71 @@ local types = {
         }
     }
 }
+local ufoTypes = {
+    {
+        name = "small",
+        vertices = {
+            Vector(-5, 0),
+            Vector(-2, 2),
+            Vector(-1, 4),
+            Vector(1, 4),
+            Vector(2, 2),
+            Vector(5, 0),
+            Vector(3, -2),
+            Vector(-2, -2)
+        },
+        collisionVertices = {
+            Vector(-5, 0),
+            Vector(-2, 2),
+            Vector(-1, 4),
+            Vector(1, 4),
+            Vector(2, 2),
+            Vector(5, 0),
+            Vector(3, -2),
+            Vector(-2, -2)
+        }
+    },
+    {
+        name = "large",
+        vertices = {
+            Vector(-10, 0),
+            Vector(-4, 4),
+            Vector(-2, 8),
+            Vector(2, 8),
+            Vector(4, 4),
+            Vector(10, 0),
+            Vector(6, -4),
+            Vector(-4, -4)
+        },
+        collisionVertices = {
+            Vector(-10, 0),
+            Vector(-4, 4),
+            Vector(-2, 8),
+            Vector(2, 8),
+            Vector(4, 4),
+            Vector(10, 0),
+            Vector(6, -4),
+            Vector(-4, -4)
+        }
+    }
+}
 local objects = {
     bullets = {},
     asteroids = {},
-    explosions = {}
+    explosions = {},
+    ufos = {}
 }
 
 local highBeep = false
 local nextBeepAt = 0
+
+-- Optimise rendering by reusing matrix
+local mat = Matrix()
+local zeroVec = Vector()
+local zeroAng = Angle()
+local scaleVec = Vector(1, 1, 1)
+
+local yawVec = Vector(0, 0, 1)
 
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee")
@@ -143,6 +201,8 @@ function GAME:Start()
     self:SpawnPlayer()
 
     gameState = GAME_STATE_PLAYING
+
+    nextUfo = now + math.random(20, 40)
 end
 
 function GAME:Stop()
@@ -150,8 +210,16 @@ function GAME:Stop()
         objects.player = nil
     end
 
+    if IsValid(SOUND.Sounds.saucerSmall.sound) then
+        SOUND.Sounds.saucerSmall.sound:Pause()
+    end
+    if IsValid(SOUND.Sounds.saucerBig.sound) then
+        SOUND.Sounds.saucerBig.sound:Pause()
+    end
+
     table.Empty(objects.bullets)
     table.Empty(objects.explosions)
+    table.Empty(objects.ufos)
 
     score = 0
     extraLifeScore = 0
@@ -203,7 +271,7 @@ function GAME:GenerateVelocity()
     return Vector(velX, velY)
 end
 
-function GAME:SpawnExplosion(pos)
+function GAME:SpawnExplosion(pos, sound)
     local p = Vector()
     p:Set(pos)
 
@@ -211,6 +279,11 @@ function GAME:SpawnExplosion(pos)
         pos = p,
         dieTime = now + 1
     })
+
+    if gameState ~= GAME_STATE_ATTRACT and sound and IsValid(SOUND.Sounds[sound].sound) then
+        SOUND.Sounds[sound].sound:SetTime(0)
+        SOUND.Sounds[sound].sound:Play()
+    end
 end
 
 function GAME:SpawnAsteroid(pos, type)
@@ -219,7 +292,7 @@ function GAME:SpawnAsteroid(pos, type)
 
     table.insert(objects.asteroids, {
         pos = p,
-        ang = Angle(0, math.random(0, 90)),
+        ang = Angle(0, math.random(90)),
         vel = self:GenerateVelocity(),
         type = type,
         collision = {
@@ -229,22 +302,46 @@ function GAME:SpawnAsteroid(pos, type)
     })
 end
 
+function GAME:SpawnUfo()
+    local type = ufoTypes[2]
+    if score >= 10000 and math.random() > 0.5 then
+        type = ufoTypes[1]
+    end
+
+    local velX = 3
+
+    if math.random(0, 1) == 0 then velX = -velX end
+
+    table.insert(objects.ufos, {
+        pos = Vector(20, math.random(SCREEN_HEIGHT - 20)),
+        ang = Angle(0, 180),
+        vel = Vector(velX, 0),
+        type = type,
+        collision = {
+            type = COLLISION.types.POLY,
+            vertices = type.collisionVertices
+        }
+    })
+
+    if gameState ~= GAME_STATE_ATTRACT then
+        local snd = type.name == "small" and "saucerSmall" or "saucerBig"
+
+        if IsValid(SOUND.Sounds[snd].sound) then
+            SOUND.Sounds[snd].sound:Play()
+        end
+    end
+end
+
 function GAME:BreakAsteroid(key, obj)
-    self:SpawnExplosion(obj.pos)
+    local snd = "bang" .. obj.type.name
+    self:SpawnExplosion(obj.pos, snd)
 
     if obj.type.name ~= "small" then
         for i = 1, 2 do
-            local type = obj.type.name == "large" and types[2] or types[1]
+            local type = obj.type.name == "large" and asteroidTypes[2] or asteroidTypes[1]
 
             self:SpawnAsteroid(obj.pos, type)
         end
-    end
-
-    local snd = "bang" .. obj.type.name
-
-    if IsValid(SOUND.Sounds[snd].sound) then
-        SOUND.Sounds[snd].sound:SetTime(0)
-        SOUND.Sounds[snd].sound:Play()
     end
 
     if obj.type.name == "large" then
@@ -256,16 +353,6 @@ function GAME:BreakAsteroid(key, obj)
     else
         score = score + 100
         extraLifeScore = extraLifeScore + 100
-    end
-
-    if extraLifeScore >= 10000 then
-        lives = lives + 1
-        extraLifeScore = 0
-
-        if IsValid(SOUND.Sounds.extraShip.sound) then
-            SOUND.Sounds.extraShip.sound:SetTime(0)
-            SOUND.Sounds.extraShip.sound:Play()
-        end
     end
 
     table.remove(objects.asteroids, key)
@@ -284,6 +371,23 @@ function GAME:BreakAsteroid(key, obj)
     end
 end
 
+function GAME:DestroyUfo(key, obj, byPlayer)
+    if byPlayer then
+        local points = obj.type.name == "small" and 1000 or 200
+        score = score + points
+        extraLifeScore = extraLifeScore + points
+    end
+    
+    self:SpawnExplosion(obj.pos, "bangsmall")
+    table.remove(objects.ufos, key)
+
+    local snd = obj.type.name == "small" and "saucerSmall" or "saucerBig"
+
+    if IsValid(SOUND.Sounds[snd].sound) then
+        SOUND.Sounds[snd].sound:Pause()
+    end
+end
+
 function GAME:SpawnAsteroids()
     table.Empty(objects.asteroids)
 
@@ -294,7 +398,7 @@ function GAME:SpawnAsteroids()
     local count = math.random(4, 6)
 
     for i = 1, count do
-        self:SpawnAsteroid(Vector(math.random(0, SCREEN_WIDTH), 0), types[3])
+        self:SpawnAsteroid(Vector(math.random(0, SCREEN_WIDTH), 0), asteroidTypes[3])
     end
 end
 
@@ -308,12 +412,24 @@ function GAME:Update()
 
     for _, v in ipairs(objects.asteroids) do
         v.pos:Add(v.vel * 25 * FrameTime())
-        v.ang:RotateAroundAxis(yawVector, FrameTime() * 10)
+        v.ang:RotateAroundAxis(yawVec, FrameTime() * 10)
         self:WrapPos(v.pos)
     end
 
-    if gameState == GAME_STATE_ATTRACT then return end
-    if not IsValid(thePlayer) then
+    for _, v in ipairs(objects.ufos) do
+        v.pos:Add(v.vel * 25 * FrameTime())
+        self:WrapPos(v.pos)
+    end
+
+    if now >= nextUfo then
+        if #objects.ufos == 0 then
+            self:SpawnUfo()
+        end
+
+        nextUfo = now + math.random(20, 40)
+    end
+
+    if gameState ~= GAME_STATE_ATTRACT and not IsValid(thePlayer) then
         self:Stop()
         return
     end
@@ -332,6 +448,16 @@ function GAME:Update()
     end
 
     if gameState == GAME_STATE_PLAYING then
+        if extraLifeScore >= 10000 then
+            lives = lives + 1
+            extraLifeScore = 0
+    
+            if IsValid(SOUND.Sounds.extraShip.sound) then
+                SOUND.Sounds.extraShip.sound:SetTime(0)
+                SOUND.Sounds.extraShip.sound:Play()
+            end
+        end
+
         if now >= nextBeepAt then
             local snd = highBeep and "beat2" or "beat1"
             if IsValid(SOUND.Sounds[snd].sound) then
@@ -346,11 +472,11 @@ function GAME:Update()
         end
 
         if thePlayer:KeyDown(IN_MOVELEFT) then
-            objects.player.ang:RotateAroundAxis(yawVector, -(150 * FrameTime()))
+            objects.player.ang:RotateAroundAxis(yawVec, -(150 * FrameTime()))
         end
 
         if thePlayer:KeyDown(IN_MOVERIGHT) then
-            objects.player.ang:RotateAroundAxis(yawVector, 150 * FrameTime())
+            objects.player.ang:RotateAroundAxis(yawVec, 150 * FrameTime())
         end
 
         if thePlayer:KeyDown(IN_FORWARD) then
@@ -399,24 +525,26 @@ function GAME:Update()
 
         objects.player.vel.x = math.Approach(objects.player.vel.x, 0, 2 * FrameTime())
         objects.player.vel.y = math.Approach(objects.player.vel.y, 0, 2 * FrameTime())
+    end
 
-        for ak, av in ipairs(objects.asteroids) do
-            if COLLISION:IsColliding(av, objects.player) then
-                self:SpawnExplosion(objects.player.pos)
-
-                if IsValid(SOUND.Sounds.bangsmall.sound) then
-                    SOUND.Sounds.bangsmall.sound:Play()
-                end
-
-                if IsValid(SOUND.Sounds.thrust.sound) then
-                    SOUND.Sounds.thrust.sound:Pause()
-                end
-                objects.player = nil
-
-                gameState = GAME_STATE_DYING
-                respawnAt = now + 2
-                return
+    for ak, av in ipairs(objects.asteroids) do
+        for uk, uv in ipairs(objects.ufos) do
+            if COLLISION:IsColliding(av, uv) then
+                self:DestroyUfo(uk, uv)
             end
+        end
+
+        if gameState == GAME_STATE_PLAYING and COLLISION:IsColliding(av, objects.player) then
+            self:SpawnExplosion(objects.player.pos, "bangsmall")
+
+            if IsValid(SOUND.Sounds.thrust.sound) then
+                SOUND.Sounds.thrust.sound:Pause()
+            end
+            objects.player = nil
+
+            gameState = GAME_STATE_DYING
+            respawnAt = now + 2
+            return
         end
     end
 
@@ -434,12 +562,17 @@ function GAME:Update()
             table.remove(objects.bullets, k)
             self:BreakAsteroid(ak, av)
         end
+
+        for uk, uv in ipairs(objects.ufos) do
+            if not COLLISION:IsColliding(v, uv) then continue end
+            table.remove(objects.bullets, k)
+            self:DestroyUfo(uk, uv, true)
+        end
     end
 
     for k, v in ipairs(objects.explosions) do
         if now >= v.dieTime then
             table.remove(objects.explosions, k)
-            continue
         end
     end
 end
@@ -457,7 +590,11 @@ end
 
 function GAME:DrawPlayerTriangle(pos, ang, thrusting)
     if not ang then ang = Angle() end
-    local mat = Matrix()
+
+    mat:SetTranslation(zeroVec)
+    mat:SetAngles(zeroAng)
+    mat:SetScale(scaleVec)
+
     mat:Translate(pos)
     mat:Rotate(ang)
     mat:Translate(-pos)
@@ -474,7 +611,10 @@ function GAME:DrawPlayerTriangle(pos, ang, thrusting)
 end
 
 function GAME:DrawAsteroid(asteroid)
-    local mat = Matrix()
+    mat:SetTranslation(zeroVec)
+    mat:SetAngles(zeroAng)
+    mat:SetScale(scaleVec)
+
     mat:Translate(asteroid.pos)
     mat:Rotate(asteroid.ang)
     cam.PushModelMatrix(mat)
@@ -487,9 +627,34 @@ function GAME:DrawAsteroid(asteroid)
     cam.PopModelMatrix()
 end
 
+function GAME:DrawUfo(ufo)
+    mat:SetTranslation(zeroVec)
+    mat:SetAngles(zeroAng)
+    mat:SetScale(scaleVec)
+
+    mat:Translate(ufo.pos)
+    mat:Rotate(ufo.ang)
+    cam.PushModelMatrix(mat)
+        surface.SetDrawColor(255, 255, 255, 255)
+        for i = 1, #ufo.type.vertices do
+            local s = ufo.type.vertices[i]
+            local e = ufo.type.vertices[i + 1 == #ufo.type.vertices + 1 and 1 or i + 1]
+            surface.DrawLine(s.x, s.y, e.x, e.y)
+            -- Top "glass"
+            surface.DrawLine(ufo.type.vertices[2].x, ufo.type.vertices[2].y, ufo.type.vertices[5].x, ufo.type.vertices[5].y)
+            -- Body "middle"
+            surface.DrawLine(ufo.type.vertices[1].x, ufo.type.vertices[1].y, ufo.type.vertices[6].x, ufo.type.vertices[6].y)
+        end
+    cam.PopModelMatrix()
+end
+
 function GAME:DrawObjects()
     for _, v in ipairs(objects.asteroids) do
         self:DrawAsteroid(v)
+    end
+
+    for _, v in ipairs(objects.ufos) do
+        self:DrawUfo(v)
     end
 
     for _, v in ipairs(objects.bullets) do
@@ -558,6 +723,12 @@ function GAME:OnStartPlaying(ply)
         SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/thrust.ogg", "thrust", function(snd)
             snd:EnableLooping(true)
         end)
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/saucerSmall.ogg", "saucerSmall", function(snd)
+            snd:EnableLooping(true)
+        end)
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/saucerBig.ogg", "saucerBig", function(snd)
+            snd:EnableLooping(true)
+        end)
         SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat1.ogg", "beat1")
         SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/sounds/beat2.ogg", "beat2")
     end
@@ -590,4 +761,4 @@ function GAME:OnCoinsLost(ply, old, new)
 end
 
 return GAME
---end
+end
