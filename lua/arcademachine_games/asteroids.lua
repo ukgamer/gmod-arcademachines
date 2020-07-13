@@ -7,7 +7,7 @@
     All trademarks are property of their respective owners
 ]]
 
-TESTGAME = function()
+--TESTGAME = function()
 local GAME = {}
 
 GAME.Name = "Asteroids"
@@ -761,4 +761,4 @@ function GAME:OnCoinsLost(ply, old, new)
 end
 
 return GAME
-end
+--end
