@@ -351,8 +351,7 @@ function GAME:SpawnUfo()
 end
 
 function GAME:BreakAsteroid(key, obj)
-    local snd = "bang" .. obj.type.name
-    self:SpawnExplosion(obj.pos, snd)
+    self:SpawnExplosion(obj.pos, "bang" .. obj.type.name)
 
     if obj.type.name ~= "small" then
         for i = 1, 2 do

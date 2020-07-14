@@ -187,7 +187,8 @@ Objects passed to `IsColliding` must look like:
 
 * Robro - for the model
 * Sera - for help with environment wrapping stuff
-* Python1320 - for help with clientside material override workaround
+* Python1320 - for help various things
 * Twistalicky - various ideas/suggestions
-* All the people who have made/are making games for the machine e.g. twentysix, Cynthia
+* Xayr - For letting me ~~steal~~ use his HTTP cache stuff
+* All the people who have made/are making games for the machine
 * Anyone else I forgot

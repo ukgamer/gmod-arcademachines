@@ -7,20 +7,20 @@ local COLLISION = {
 }
 
 function COLLISION:RotateAndTranslateVerts(poly)
-    local vertices = {}
+    if not poly.collision.actualVertices then
+        poly.collision.actualVertices = {}
+    end
 
     for i = 1, #poly.collision.vertices do
-        local rotated = Vector()
+        local rotated = poly.collision.actualVertices[i] or Vector()
         rotated:Set(poly.collision.vertices[i])
         rotated:Rotate(poly.ang)
 
-        vertices[i] = poly.pos + rotated
+        poly.collision.actualVertices[i] = poly.pos + rotated
     end
-
-    poly.collision.actualVertices = vertices
 end
 
-function COLLISION:GetAxes(poly, faces_mod)
+function COLLISION:GetAxes(poly, includeFaces)
     local v1 = nil
     local v2 = nil
     local normal = nil
@@ -44,7 +44,7 @@ function COLLISION:GetAxes(poly, faces_mod)
         table.insert(faces, { v1, v2 })
     end
 
-    if faces_mod then
+    if includeFaces then
         return axes, faces
     end
 
@@ -93,10 +93,7 @@ function COLLISION:Projection(obj, axis)
 end
 
 function COLLISION:LineOverlap(aMin, aMax, bMin, bMax)
-    local min1 = math.min(aMax, bMax)
-    local max1 = math.max(aMin, bMin)
-
-    return math.max(0, math.floor(min1 - max1))
+    return math.max(0, math.floor(math.min(aMax, bMax) - math.max(aMin, bMin)))
 end
 
 function COLLISION:CirclePolyCollision(objA, objB)
@@ -209,9 +206,8 @@ function COLLISION:BoxCollision(objA, objB)
 end
 
 function COLLISION:CircleCollision(objA, objB)
-    local dist = objA.pos:DistToSqr(objB.pos)
     local rad = objA.collision.radius + objB.collision.radius
-    return dist < rad * rad
+    return objA.pos:DistToSqr(objB.pos) < rad * rad
 end
 
 function COLLISION:IsColliding(objA, objB)
@@ -234,7 +230,7 @@ function COLLISION:IsColliding(objA, objB)
         return self:CirclePolyCollision(objA, objB)
     end
 
-    Error(
+    error(
         "Unsupported collision type combination: "
         .. table.KeyFromValue(self.types, objA.collision.type) .. " "
         .. table.KeyFromValue(self.types, objB.collision.type)
