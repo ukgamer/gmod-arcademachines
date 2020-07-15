@@ -521,7 +521,7 @@ function GAME:OnCoinsInserted(ply, old, new)
 	-- print(ply,self.CurrentPlayer,LocalPlayer())
 	if ply ~= LocalPlayer() then return end
 
-	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
+	-- MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
 
 	if new > 0 and self:GetState() == GAME_STATE_WAITCOIN then
 		self:Reset()
