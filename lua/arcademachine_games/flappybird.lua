@@ -13,9 +13,11 @@
 --   Fix: Lag spikes kill your run
 --   Fix: Lag spikes can allow you to bypass the pipe, not giving score.
 --   Fix: Full updating kills the game
+--   Fix: You can play other people's flappy bird game
 --   Fonts
 --
 
+-- if SERVER then return end
 -- FB = function()
 
 --------------------------------------------------
@@ -395,6 +397,7 @@ function GAME:Update()
 
 				if self:GetFlag("SpriteIndex") > self:GetFlag("AmountOfSprites") then
 					self:SetState(GAME_STATE_ATTRACT)
+					self:ResetPipes()
 					MACHINE:UpdateMarquee()
 				end
 			end
@@ -515,6 +518,11 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
+	-- print(ply,self.CurrentPlayer,LocalPlayer())
+	if ply ~= LocalPlayer() then return end
+
+	MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
+
 	if new > 0 and self:GetState() == GAME_STATE_WAITCOIN then
 		self:Reset()
 		self:SetState(GAME_STATE_STARTING)
@@ -522,6 +530,9 @@ function GAME:OnCoinsInserted(ply, old, new)
 end
 
 function GAME:OnCoinsLost(ply, old, new)
+	-- print(ply,self.CurrentPlayer,LocalPlayer())
+	if ply ~= LocalPlayer() then return end
+
 	if new < 1 then
 		self:SetState(GAME_STATE_WAITCOIN)
 	end
@@ -769,4 +780,4 @@ return GAME
 
 
 
--- end
+-- end 
