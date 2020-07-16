@@ -418,7 +418,9 @@ function GAME:UfoFire(ufo)
     })
 
     -- TODO: Find a good quality recording of the UFO fire sound
-    self:PlaySound("fire")
+    if gameState ~= GAME_STATE_ATTRACT then
+        self:PlaySound("fire")
+    end
 
     ufo.nextShot = now + 0.8
 end
