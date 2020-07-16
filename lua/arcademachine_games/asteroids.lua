@@ -281,12 +281,12 @@ function GAME:SpawnBullet()
     table.insert(objects.bullets, {
         pos = pos,
         ang = ang,
-        vel = objects.player.vel + objects.player.ang:Forward() * 15,
-        size = 2,
-        dieTime = now + 3,
+        vel = objects.player.vel + objects.player.ang:Forward() * 20,
+        size = 1,
+        dieTime = now + 2,
         collision = {
             type = COLLISION.types.CIRCLE,
-            radius = 2
+            radius = 1
         }
     })
 
