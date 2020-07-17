@@ -53,6 +53,8 @@ local GAME = {
 	SX = 500,
 	SY = 500,
 
+	marquee_char_index = 0,
+
 	state = STATE_MENU,
 
 	check_mode = false,
@@ -233,7 +235,14 @@ local KANJI do
 end
 
 function GAME:UpdateAttract()
-	if CurTime() > (self.next_attract_tick or 0) then
+	local curtime = CurTime()
+
+	if math.floor(curtime) > (self.last_marquee_tick or 0) then
+		MACHINE:UpdateMarquee()
+		self.last_marquee_tick = curtime
+	end
+
+	if curtime > (self.last_attract_tick or 0)+0.2 then
 		for _, col in next, self.game_data do
 			local overflow = col[9]
 			for line = 9, 2, -1 do
@@ -247,7 +256,7 @@ function GAME:UpdateAttract()
 				col[1] = overflow
 			end
 		end
-		self.next_attract_tick = CurTime()+0.2
+		self.last_attract_tick = curtime
 	end
 
 	if math.random()>0.8 then
@@ -270,6 +279,40 @@ function GAME:UpdateAttract()
 		self.game_data[x][1] = self.game_data[x][1] or {}
 		self.game_data[x][1].digit = KANJI()
 	end
+end
+
+function GAME:DrawMarquee()
+	surface.SetDrawColor(math.random(100,255),math.random(100,255),math.random(100,255),255)
+	local length = {x = 50, y = 50}
+	for x = 0, 2 do
+		local offset_x = x*(length.x-width.x)
+		for y = 0, 2 do
+			local offset_y = y*(length.y-width.y)
+			surface.DrawRect(offset_x + border.x, offset_y + border.y, length.x, width.y)
+			surface.DrawRect(offset_x + border.x+length.x-width.x + 1, offset_y + border.y, width.x, length.y)
+			surface.DrawRect(offset_x + border.x, offset_y + border.y+length.y-width.y + 1, length.x, width.y)
+			surface.DrawRect(offset_x + border.x, offset_y + border.y, width.x, length.y)
+		end
+	end
+
+	surface.SetTextColor(255, 255, 255, 255)
+	surface.SetFont("DermaLarge")
+
+	surface.SetTextPos(300,83)
+	surface.DrawText("S U D O K U")
+
+	local initial_marquee_char_index = self.marquee_char_index
+
+	for char in string.gmatch("SUDOKU", ".") do
+		if self.marquee_char_index > initial_marquee_char_index + 8 then
+			break
+		end
+		surface.SetTextPos(self:GetDigitPos((self.marquee_char_index % 3)+1, math.floor((self.marquee_char_index%9)/3)+1))
+		surface.DrawText(char)
+		self.marquee_char_index = self.marquee_char_index + math.random(1,2)
+	end
+
+	self.marquee_char_index = self.marquee_char_index + 1
 end
 
 function GAME:DrawAttract()
