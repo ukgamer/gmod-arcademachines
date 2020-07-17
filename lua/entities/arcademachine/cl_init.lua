@@ -513,7 +513,7 @@ function ENT:OnLocalPlayerEntered()
         BloomWasDisabled = true
     end
 
-    if DisablePAC:GetBool() and pac then
+    if DisablePAC:GetBool() and pac and pac.IsEnabled then
         pac.Disable()
         PACWasDisabled = true
     else
