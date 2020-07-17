@@ -68,6 +68,10 @@ Similarly, when a coin is "used" the method `OnCoinsLost` will be called with th
 
 You can take a given number of coins from the machine using `MACHINE:TakeCoins(amount)`. Be aware that because this sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
 
+### The Marquee
+
+The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists. If your marquee requires external images to be loaded before drawing, you can manually call `UpdateMarquee` on the machine after you have checked your assets have loaded which will cause `DrawMarquee` to be called once more. Do not repeatedly redraw the marquee - it is designed to be static. See the Asteroids game's marquee for an example implementation.
+
 ### Helper libraries
 
 Each instance of the same game will receive the same copy of libraries, so that things such as assets
