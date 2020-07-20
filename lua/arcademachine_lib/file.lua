@@ -11,7 +11,7 @@ FILE.Files = {}
 local path = "arcademachines/cache/files"
 file.CreateDir(path)
 
-function FILE:LoadFromURL(url, key, noCache)
+function FILE:LoadFromURL(url, key, callback, noCache)
     if self.Files[key] and not noCache then return end
     
     local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
@@ -22,6 +22,9 @@ function FILE:LoadFromURL(url, key, noCache)
                 status = self.STATUS_LOADED,
                 path = filename
             }
+            if callback then
+                callback(self.Files[key])
+            end
             return
         end
     end
@@ -36,6 +39,10 @@ function FILE:LoadFromURL(url, key, noCache)
             file.Write(filename, body)
             self.Files[key].status = self.STATUS_LOADED
             self.Files[key].path = filename
+
+            if callback then
+                callback(self.Files[key])
+            end
         end,
         function(err, body)
             self.Files[key].status = self.STATUS_ERROR
