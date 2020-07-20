@@ -91,9 +91,11 @@ Used to check if a font has already been created. Do not use `surface.CreateFont
 
 Creates a copy of the given material and registers it with your game. Use this to avoid unnecessary duplicate material loading and to allow materials to use alpha if they do not allow it already.
 
-`IMAGE:LoadFromURL(url, key, noCache = false)`
+`IMAGE:LoadFromURL(url, key, callback = nil, noCache = false)`
 
 Used for loading images dynamically from the web as usable `Material`s.
+
+If defined, `callback` will be called on successful load with the below table.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 
@@ -109,9 +111,9 @@ Access your image with `IMAGE.Images[key]`, which will look like
 
 #### Sounds
 
-`SOUND:LoadFromURL(url, key, callback)`
+`SOUND:LoadFromURL(url, key, callback = nil)`
 
-`callback`, if defined, is passed the created `IGModAudioChannel`. This can be used for example to enable looping.
+If defined, `callback`, is called on successful load with the created `IGModAudioChannel`. This can be used for example to enable looping.
 
 To access your sound use `SOUND.Sounds[key]`, which will look like
 
@@ -127,9 +129,9 @@ Sounds that are loaded via `LoadFromURL` are queued in order to prevent performa
 
 #### Files
 
-`FILE:LoadFromURL(url, key, noCache = false)`
+`FILE:LoadFromURL(url, key, callback = nil, noCache = false)`
 
-Used for loading arbitrary files from the web.
+Used for loading arbitrary files from the web. If defined, `callback` will be called on successful load with the below table.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 

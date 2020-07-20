@@ -11,7 +11,7 @@ IMAGE.Images = {}
 local path = "arcademachines/cache/images"
 file.CreateDir(path)
 
-function IMAGE:LoadFromURL(url, key, noCache)
+function IMAGE:LoadFromURL(url, key, callback, noCache)
     if self.Images[key] and not noCache then return end
     
     local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
@@ -22,6 +22,9 @@ function IMAGE:LoadFromURL(url, key, noCache)
                 status = self.STATUS_LOADED,
                 mat = Material("../data/" .. filename)
             }
+            if callback then
+                callback(self.Images[key])
+            end
             return
         end
     end
@@ -37,6 +40,10 @@ function IMAGE:LoadFromURL(url, key, noCache)
             file.Write(filename, body)
             self.Images[key].status = self.STATUS_LOADED
             self.Images[key].mat = Material("../data/" .. filename)
+            
+            if callback then
+                callback(self.Images[key])
+            end
         end,
         function(err, body)
             self.Images[key].status = self.STATUS_ERROR
