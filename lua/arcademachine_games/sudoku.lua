@@ -55,8 +55,9 @@ local GAME = {
 
 	state = STATE_MENU,
 
-	check_mode = false,
+	game_data_url = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/sudoku/games.txt",
 
+	check_mode = false,
 	cursor = {x = 5, y = 5},
 
 	key_handlers = {},
@@ -97,6 +98,11 @@ function GAME:GetGuessDigitPos (digit_x, digit_y, guess_digit)
 	local guess_y = guess_digit == 9 and 16 or math.floor(guess_digit/5) * 32
 	return border.x + (math.floor(digit_x/3)-1)*(length.x-width.x) + (digit_x%3 + 2) * (length.x-width.x)/3 -4 + guess_x,
 		border.y + (math.floor(digit_y/3)-1)*(length.y-width.y) + (digit_y%3 + 2) * (length.y-width.y)/3 + 2 + guess_y
+end
+
+function GAME:DrawTextXCentered (y, text)
+	surface.SetTextPos((self.SX-surface.GetTextSize(text))/2, y)
+	return surface.DrawText(text)
 end
 
 function GAME:DrawGrid()
@@ -374,15 +380,41 @@ function GAME:DrawWin()
 	end
 end
 
-function GAME:InitGameData ()
+function GAME:DrawError()
+	surface.SetDrawColor(0,0,0,255)
+	surface.DrawRect(0, self.SY/3, self.SY, self.SY/3)
+	surface.SetDrawColor(255,0,0,255)
+	surface.DrawRect(0, self.SY/3, self.SY, width.y)
+	surface.DrawRect(0, self.SY*2/3-4, self.SY, width.y)
+
+	surface.SetFont("DermaLarge")
+	surface.SetTextColor(255, 255, 255, 255)
+	self:DrawTextXCentered(0, "ERROR")
+	local sw, sh = surface.GetTextSize("GURU MEDITATION")
+	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
+	surface.DrawText("GURU MEDITATION")
+	surface.SetFont("DermaDefault")
+
+	self:DrawTextXCentered(270, "There was an error loading the game data.")
+	self:DrawTextXCentered(290, "This is a bug. Please report it.")
+end
+
+function GAME:InitData (seed)
 	table.Empty (self.game_data)
+
+	if not isstring(seed) or #seed ~= 9*9 then
+		self.error = "Could not load game data."
+		return false, self.error
+	end
+
+	self.error = nil -- clear error because the seed is okay and we're initializing now
 
 	for x = 1, 10 do
 		self.game_data[x] = {}
 	end
 
 	local x, y = 1, 1
-	for digit in self.active_game:gmatch(".") do
+	for digit in seed:gmatch(".") do
 		digit = tonumber(digit)
 		if digit == 0 then digit = nil end
 		self.game_data[x][y] = {
@@ -400,15 +432,29 @@ function GAME:InitGameData ()
 	end
 end
 
-function GAME:Init()
+function GAME:InitGameData (prevent_load_call)
 	if not self.game_repository or #self.game_repository == 0 then
 		if FILE.Files.sudokugames and FILE.Files.sudokugames.path then
 			local games = file.Read(FILE.Files.sudokugames.path)
 			self.game_repository = string.Split(games, "\n")
+		elseif not prevent_load_call then
+			FILE:LoadFromURL(
+				self.game_data_url,
+				"sudokugames",
+				function() self.post_data_load_attempt = true return self:InitGameData(true) end
+			)
 		end
 	end
-	self.active_game = self.game_repository[math.random(1, #self.game_repository)] or "004300209005009001070060043006002087190007400050083000600000105003508690042910300"
-	self:InitGameData ()
+
+	return self:InitData (self.game_repository[math.random(1, #self.game_repository)])
+end
+
+function GAME:InitAttractGameData ()
+	return self:InitData ("004300209005009001070060043006002087190007400050083000600000105003508690042910300")
+end
+
+function GAME:Init()
+	return self:InitAttractGameData ()
 end
 
 function GAME:Draw()
@@ -416,6 +462,8 @@ function GAME:Draw()
 		self:DrawAttract()
 		return
 	end
+
+	if self.error and self.post_data_load_attempt then return self:DrawError() end
 
 	self:DrawUI()
 	if self.state == STATE_MENU then
@@ -527,7 +575,7 @@ function GAME:SetWinStateFromGameData()
 	if self.state == STATE_WON then
 		if COINS:GetCoins() > 0 then
 			self:RegisterAltKeyHandler(KEY_ENTER, function()
-				self:Init()
+				self:InitGameData()
 				self:Start()
 				self.state = STATE_GAME
 			end)
@@ -543,7 +591,7 @@ function GAME:SetWinStateFromGameData()
 				self.state = STATE_GAME
 			end)
 			self:RegisterAltKeyHandler(KEY_ENTER, function()
-				self:Init()
+				self:InitGameData()
 				self:Start()
 				self.state = STATE_GAME
 			end)
@@ -588,6 +636,8 @@ end
 
 function GAME:Start()
 	self:UnregisterAllKeyHandlers()
+
+	if self.error then return end
 
 	self:RegisterKeyHandler(IN_MOVELEFT,  function()
 		if self.cursor.go_mode then return end
@@ -689,11 +739,9 @@ end
 function GAME:OnStartPlaying(ply)
 	if ply ~= LocalPlayer() then return end
 
-	FILE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/sudoku/games.txt", "sudokugames")
-
 	self.player = ply
 	self.state = STATE_MENU
-	self:Init()
+	self:InitGameData()
 	self:Start()
 end
 
@@ -701,12 +749,13 @@ function GAME:OnStopPlaying(ply)
 	if ply ~= LocalPlayer() then return end
 	self.player = nil
 	self:Stop()
+	self:InitAttractGameData()
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
 	if ply ~= LocalPlayer() then return end
 	if self.state == STATE_MENU then
-		self:Init()
+		self:InitGameData()
 	end
 	if self.state == STATE_MENU or self.state == STATE_LOST then
 		self.state = STATE_GAME
