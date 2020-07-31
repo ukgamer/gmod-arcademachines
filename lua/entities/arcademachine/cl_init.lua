@@ -276,6 +276,7 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
+    self.MarqueeHasDrawn = false
 
     local num = math.random(9999)
 
@@ -547,6 +548,8 @@ function ENT:OnLocalPlayerLeft()
 end
 
 function ENT:UpdateMarquee()
+    if self.MarqueeHasDrawn then return end
+
     render.PushRenderTarget(self.MarqueeTexture)
         cam.Start2D()
             surface.SetDrawColor(0, 0, 0, 255)
@@ -554,6 +557,7 @@ function ENT:UpdateMarquee()
 
             if self.Game and self.Game.DrawMarquee then
                 self.Game:DrawMarquee()
+                self.MarqueeHasDrawn = true
             else
                 surface.SetFont("DermaLarge")
                 local w, h = surface.GetTextSize(self.Game and self.Game.Name or "Arcade Machine")
@@ -622,6 +626,47 @@ function ENT:StopSounds()
     end
 end
 
+function ENT:GetUpvalues(game)
+    local upvalues = {
+        SCREEN_WIDTH = ScreenWidth,
+        SCREEN_HEIGHT = ScreenHeight,
+        MARQUEE_WIDTH = MarqueeWidth,
+        MARQUEE_HEIGHT = MarqueeHeight
+    }
+
+    for k, v in pairs(BG) do
+        upvalues[k] = v
+    end
+
+    if LoadedLibs[game] and not forceLibLoad then
+        upvalues.COLLISION = LoadedLibs[game].COLLISION
+        upvalues.IMAGE = LoadedLibs[game].IMAGE
+        upvalues.FONT = LoadedLibs[game].FONT
+        upvalues.FILE = LoadedLibs[game].FILE
+    else
+        LoadedLibs[game] = {
+            COLLISION = include("arcademachine_lib/collision.lua"),
+            IMAGE = include("arcademachine_lib/image.lua"),
+            FONT = include("arcademachine_lib/font.lua"),
+            FILE = include("arcademachine_lib/file.lua")
+        }
+
+        upvalues.COLLISION = LoadedLibs[game].COLLISION
+        upvalues.IMAGE = LoadedLibs[game].IMAGE
+        upvalues.FONT = LoadedLibs[game].FONT
+        upvalues.FILE = LoadedLibs[game].FILE
+    end
+
+    -- Allow each instance to have its own copy of sound library in case they want to
+    -- play the same sound at the same time (needs to emit from the machine)
+    upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
+
+    upvalues.COINS = WrappedInclusion("arcademachine_lib/coins.lua", { MACHINE = self })
+    upvalues.MARQUEE = WrappedInclusion("arcademachine_lib/marquee.lua", { MACHINE = self })
+
+    return upvalues
+end
+
 function ENT:SetGame(game, forceLibLoad)
     if self.Game then
         if self.Game.Destroy then
@@ -633,42 +678,7 @@ function ENT:SetGame(game, forceLibLoad)
     self:StopSounds()
 
     if game and game ~= "" then
-        local upvalues = {
-            MACHINE = self,
-            SCREEN_WIDTH = ScreenWidth,
-            SCREEN_HEIGHT = ScreenHeight,
-            MARQUEE_WIDTH = MarqueeWidth,
-            MARQUEE_HEIGHT = MarqueeHeight
-        }
-
-        for k, v in pairs(BG) do
-            upvalues[k] = v
-        end
-
-        if LoadedLibs[game] and not forceLibLoad then
-            upvalues.COLLISION = LoadedLibs[game].COLLISION
-            upvalues.IMAGE = LoadedLibs[game].IMAGE
-            upvalues.FONT = LoadedLibs[game].FONT
-            upvalues.FILE = LoadedLibs[game].FILE
-        else
-            LoadedLibs[game] = {
-                COLLISION = include("arcademachine_lib/collision.lua"),
-                IMAGE = include("arcademachine_lib/image.lua"),
-                FONT = include("arcademachine_lib/font.lua"),
-                FILE = include("arcademachine_lib/file.lua")
-            }
-
-            upvalues.COLLISION = LoadedLibs[game].COLLISION
-            upvalues.IMAGE = LoadedLibs[game].IMAGE
-            upvalues.FONT = LoadedLibs[game].FONT
-            upvalues.FILE = LoadedLibs[game].FILE
-        end
-
-        -- Allow each instance to have its own copy of sound library in case they want to
-        -- play the same sound at the same time (needs to emit from the machine)
-        upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
-
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
 
         if self.Game.Init then
             self.Game:Init()
@@ -679,16 +689,11 @@ function ENT:SetGame(game, forceLibLoad)
         end
     end
 
-    self:UpdateMarquee()
+    self.MarqueeHasDrawn = false
+    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
+        self:UpdateMarquee()
+    end
     self:UpdateScreen()
-end
-
-function ENT:TakeCoins(amount)
-    if not amount or amount > self:GetCoins() then return end
-
-    net.Start("arcademachine_takecoins")
-        net.WriteInt(amount, 16)
-    net.SendToServer()
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)

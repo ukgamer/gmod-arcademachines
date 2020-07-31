@@ -14,6 +14,7 @@ GAME.Name = "Asteroids"
 GAME.Description = [[Blast the asteroids for points! Watch out for UFOs and be careful with your velocity.
 
 Press W to move your ship forward, and A/D to turn. Press SPACE to fire.]]
+GAME.LateUpdateMarquee = true
 
 local function map(s, a1, a2, b1, b2)
     return b1 + (s - a1) * (b2 - b1) / (a2 - a1)
@@ -29,8 +30,6 @@ local GAME_STATE_WAITINGCOINS = 3
 local gameState = GAME_STATE_ATTRACT
 
 local now = RealTime()
-
-local marqueeLoaded = false
 
 local score, extraLifeScore = 0, 0
 local lives = 3
@@ -181,7 +180,6 @@ local levelStartedAt = 0
 local highBeep = false
 local nextBeepAt = 0
 
--- Optimise rendering by reusing matrix
 local mat = Matrix()
 local zeroVec = Vector()
 local zeroAng = Angle()
@@ -190,7 +188,9 @@ local scaleVec = Vector(1, 1, 1)
 local yawVec = Vector(0, 0, 1)
 
 function GAME:Init()
-    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee")
+    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee", function(image)
+        MARQUEE:UpdateMarquee()
+    end)
 
     self:SpawnAsteroids()
 end
@@ -479,11 +479,6 @@ function GAME:SpawnAsteroids()
 end
 
 function GAME:Update()
-    if not marqueeLoaded and IMAGE.Images.marquee and IMAGE.Images.marquee.status == IMAGE.STATUS_LOADED then
-        marqueeLoaded = true
-        MACHINE:UpdateMarquee()
-    end
-
     now = RealTime()
 
     for _, v in ipairs(objects.asteroids) do
@@ -518,7 +513,7 @@ function GAME:Update()
         lives = lives - 1
 
         if lives == 0 then
-            MACHINE:TakeCoins(1)
+            COINS:TakeCoins(1)
             gameState = GAME_STATE_WAITINGCOINS
             return
         else
@@ -648,11 +643,9 @@ function GAME:DrawMarquee()
     surface.SetDrawColor(0, 0, 0, 255)
     surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 
-    if marqueeLoaded then
-        surface.SetDrawColor(255, 255, 255, 255)
-        surface.SetMaterial(IMAGE.Images.marquee.mat)
-        surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-    end
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(IMAGE.Images.marquee.mat)
+    surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 end
 
 function GAME:DrawPlayerTriangle(pos, ang, thrusting)
@@ -783,10 +776,10 @@ function GAME:Draw()
         end
 
         surface.SetFont("DermaDefault")
-        local tw, th = surface.GetTextSize(MACHINE:GetCoins() .. " COIN(S)")
+        local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
         surface.SetTextColor(255, 255, 255, 255)
         surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
-        surface.DrawText(MACHINE:GetCoins() .. " COIN(S)")
+        surface.DrawText(COINS:GetCoins() .. " COIN(S)")
     else
         surface.SetFont("DermaLarge")
         local tw, th = surface.GetTextSize("INSERT COIN")

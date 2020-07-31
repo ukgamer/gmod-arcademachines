@@ -326,7 +326,7 @@ end
     local function Gameover()
         state = 1
         can_continue_time = RealTime()
-        MACHINE:EmitSound("ambient/explosions/exp3.wav", 100)
+        SOUND:EmitSound("ambient/explosions/exp3.wav", 100)
     end
 
     local function CheckLevelComplete()
@@ -580,7 +580,7 @@ end
             if cars[i].destroyed == 0 then
                 cars[i].destroyed = 1
                 points = points + 500
-                MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
+                SOUND:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
             end
         end
         for i = 1,#building_parts do
@@ -639,7 +639,7 @@ end
         bomb_explode_time = 340
         local random_sound = math.random(2)
 
-            MACHINE:EmitSound("ambient/explosions/exp1.wav", 80)
+            SOUND:EmitSound("ambient/explosions/exp1.wav", 80)
 
     end 
 --count = 3 ambient/alarms/siren.wav
@@ -718,7 +718,7 @@ end
                 if CheckCollision(cars[i].x+20,cars[i].y,x1-40,y1-40,80,80) then
                     cars[i].destroyed = 1
                     points = points + 500
-                    MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
+                    SOUND:EmitSound("ambient/office/tech_oneshot_08.wav", 40)
                 end
             end
         end
@@ -740,9 +740,9 @@ end
 
         local random_sound = math.random(2)
         if random_sound == 1 then
-            MACHINE:EmitSound("ambient/explosions/exp4.wav", 50)
+            SOUND:EmitSound("ambient/explosions/exp4.wav", 50)
         else
-            MACHINE:EmitSound("ambient/explosions/exp2.wav", 50)
+            SOUND:EmitSound("ambient/explosions/exp2.wav", 50)
         end
 
     end
@@ -836,7 +836,7 @@ end
                     if building_parts[i].collapsed == 0 then
                         building_parts[i].collapsed = 1
                         points = points + 100
-                        MACHINE:EmitSound("ambient/office/tech_oneshot_08.wav", 35)
+                        SOUND:EmitSound("ambient/office/tech_oneshot_08.wav", 35)
                     end
                 end
             end
@@ -1018,7 +1018,7 @@ function GAME:Start()
     x, y = SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
     gameOverAt = now + 10
     gameState = 1
-    MACHINE:EmitSound("ambient/office/coinslot1.wav", 50)
+    SOUND:EmitSound("ambient/office/coinslot1.wav", 50)
     GameReset()
     state = 0
     nuke.count = 3
@@ -1074,7 +1074,7 @@ function GAME:Update()
             if thePlayer:KeyDown(IN_JUMP) and not thePlayer:KeyDown(IN_BACK) and nuke.levels == 0 and nuke.alive == 0 then
                 if bomb.alive == 0 then
                     DropBomb()
-                    MACHINE:EmitSound("ambient/office/slidechange.wav", 40)
+                    SOUND:EmitSound("ambient/office/slidechange.wav", 40)
                 end
             end
 
@@ -1083,18 +1083,18 @@ function GAME:Update()
                 if nuke.can_drop == 1 then
                     if nuke.count > 0 then
                     DropNuke()
-                    MACHINE:EmitSound("ambient/alarms/siren.wav", 50)
-                    MACHINE:EmitSound("ambient/office/tech_oneshot_06.wav", 50)
+                    SOUND:EmitSound("ambient/alarms/siren.wav", 50)
+                    SOUND:EmitSound("ambient/office/tech_oneshot_06.wav", 50)
                     nuke.count = nuke.count -1 
                     else
-                        MACHINE:EmitSound("ambient/alarms/klaxon1.wav", 30)
+                        SOUND:EmitSound("ambient/alarms/klaxon1.wav", 30)
                     end
                 end
             end
             
             if level_start == 1 then
-                MACHINE:StopSound("ambient/atmosphere/city_tone.wav")
-                MACHINE:EmitSound("ambient/atmosphere/city_tone.wav", 40)
+                SOUND:StopSound("ambient/atmosphere/city_tone.wav")
+                SOUND:EmitSound("ambient/atmosphere/city_tone.wav", 40)
                 level_start = 0
                 GenerateBuildingParts()
                 SpawnCars()
@@ -1109,7 +1109,7 @@ function GAME:Update()
             UpdateNuke()
             
             if nuke.levels == 1 then
-                MACHINE:StopSound("ambient/alarms/siren.wav")
+                SOUND:StopSound("ambient/alarms/siren.wav")
             elseif nuke.levels == 0 and nuke.alive == 0  then
                 nuke.can_drop = 1
             end
@@ -1131,11 +1131,11 @@ function GAME:Update()
         end
     elseif state == 1 then --gameover
         if thePlayer:KeyDown(IN_JUMP) then
-            if MACHINE:GetCoins() > 0 then
+            if COINS:GetCoins() > 0 then
                 if can_continue_time + 2 < RealTime() then
                     --GameReset()
                     plane.y = -200
-                    MACHINE:TakeCoins(1)
+                    COINS:TakeCoins(1)
                     can_continue_time = RealTime()
                     --state = 0
                 end
@@ -1340,10 +1340,10 @@ function GAME:Draw()
 
     --Coins
     surface.SetFont("DermaDefault")
-    local tw, th = surface.GetTextSize(MACHINE:GetCoins() .. " COIN(S)")
+    local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
     surface.SetTextColor(255, 255, 255, 255)
     surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
-    surface.DrawText(MACHINE:GetCoins() .. " COIN(S)")
+    surface.DrawText(COINS:GetCoins() .. " COIN(S)")
 
 end
 
@@ -1354,15 +1354,15 @@ function GAME:OnStartPlaying(ply)
 end
 function GAME:OnStopPlaying(ply)
     if ply == thePlayer then
-        MACHINE:StopSound("ambient/atmosphere/city_tone.wav")
-        MACHINE:StopSound("ambient/alarms/siren.wav")
+        SOUND:StopSound("ambient/atmosphere/city_tone.wav")
+        SOUND:StopSound("ambient/alarms/siren.wav")
         thePlayer = nil
         GameReset()
         state = 9 -- wait
     end
 end
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
+    SOUND:EmitSound("garrysmod/content_downloaded.wav", 50)
     if ply ~= LocalPlayer() then 
         return 
     end
