@@ -287,7 +287,7 @@ function GAME:DrawUI ()
 
 	surface.SetFont("DermaDefault")
 	surface.SetTextPos(400,10)
-	surface.DrawText("COINS: " .. MACHINE:GetCoins())
+	surface.DrawText("COINS: " .. COINS:GetCoins())
 
 	surface.SetTextPos(10,self.SY-30)
 	surface.DrawText("Usage:    WASD to move the cursor    NUMPAD 1-9 to enter a number    NUMPAD 0 to unset")
@@ -341,7 +341,7 @@ function GAME:DrawGameOver()
 	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
 	surface.DrawText("YOU LOST")
 	surface.SetFont("DermaDefault")
-	if MACHINE:GetCoins() > 0 then
+	if COINS:GetCoins() > 0 then
 		surface.SetTextPos(100,270)
 		surface.DrawText("You can press SPACE to try again with you remaining coins")
 		surface.SetTextPos(120,290)
@@ -365,7 +365,7 @@ function GAME:DrawWin()
 	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
 	surface.DrawText("YOU WON")
 	surface.SetFont("DermaDefault")
-	if MACHINE:GetCoins() > 0 then
+	if COINS:GetCoins() > 0 then
 		surface.SetTextPos(30,270)
 		surface.DrawText("Amazing! You did it! You can press ENTER to start a new game with your remaining coins.")
 	else
@@ -525,7 +525,7 @@ function GAME:SetWinStateFromGameData()
 	self:Stop()
 
 	if self.state == STATE_WON then
-		if MACHINE:GetCoins() > 0 then
+		if COINS:GetCoins() > 0 then
 			self:RegisterAltKeyHandler(KEY_ENTER, function()
 				self:Init()
 				self:Start()
@@ -537,7 +537,7 @@ function GAME:SetWinStateFromGameData()
 			end)
 		end
 	elseif self.state == STATE_LOST then
-		if MACHINE:GetCoins() > 0 then
+		if COINS:GetCoins() > 0 then
 			self:RegisterKeyHandler(IN_JUMP, function()
 				self:Start()
 				self.state = STATE_GAME
@@ -676,7 +676,7 @@ function GAME:Start()
 
 	self:RegisterAltKeyHandler(KEY_ENTER, function()
 		if self:IsComplete() then
-			MACHINE:TakeCoins(1)
+			COINS:TakeCoins(1)
 			self.check_mode = true
 		end
 	end)

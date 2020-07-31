@@ -129,7 +129,7 @@
             SNAKE.GoalReached = true
         end
 
-        MACHINE:EmitSound( "garrysmod/save_load3.wav" )
+        SOUND:EmitSound( "garrysmod/save_load3.wav" )
     end
 
     function APPLE_TYPE_BOOST.OnEaten()
@@ -159,7 +159,7 @@
         SNAKE.x, SNAKE.y = SNAKE.x + self.MoveX, SNAKE.y + self.MoveY
 
         if self.MoveX ~= 0 or self.MoveY ~= 0 then
-            MACHINE:EmitSound( "garrysmod/ui_hover.wav" )
+            SOUND:EmitSound( "garrysmod/ui_hover.wav" )
         end
 
         for _, TailPart in ipairs( SNAKE.Tail ) do
@@ -236,7 +236,7 @@
             end
         else
             if SNAKE.DiedAt + 7 <= RealTime() and not CoinsTaken then
-                MACHINE:TakeCoins( 1 )
+                COINS:TakeCoins( 1 )
                 CoinsTaken = true -- :woozy_face:
             end
         end
@@ -412,7 +412,7 @@
     end
 
     function GAME:Draw()
-        draw.SimpleText( MACHINE:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, Color( 255, 255, 255 ) )
+        draw.SimpleText( COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, Color( 255, 255, 255 ) )
 
         if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
             draw.SimpleText(

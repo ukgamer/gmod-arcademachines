@@ -509,7 +509,7 @@ function GAME:Update()
         -- Taking coins takes time to be processed by the server and for
         -- OnCoinsLost to be called, so wait until the coin amount has changed
         -- to know whether to end the game/lose a life/etc.
-        MACHINE:TakeCoins(1)
+        COINS:TakeCoins(1)
         gameState = 2
         return
     end
@@ -653,10 +653,10 @@ function GAME:Draw()
     surface.SetTextPos(SCREEN_WIDTH / 2 - cw / 2, 14)
     surface.DrawText("COINS")
 
-    local cvw = surface.GetTextSize(MACHINE:GetCoins())
+    local cvw = surface.GetTextSize(COINS:GetCoins())
     surface.SetTextColor(255, 255, 255)
     surface.SetTextPos(SCREEN_WIDTH / 2 - cvw / 2, 12 + ch)
-    surface.DrawText(MACHINE:GetCoins())
+    surface.DrawText(COINS:GetCoins())
 
     local pw, ph = surface.GetTextSize("SCORE")
     draw.RoundedBox(4, 12, 12, pw + 8, ph * 2, grid_background)

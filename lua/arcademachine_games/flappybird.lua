@@ -54,6 +54,7 @@ local HCSS = {
 local GAME = {}
 GAME.Name = "Flappy Bird"
 GAME.Description = "Avoid the pipes! Use your spacebar to make the bird flap, pushing it up a bit.\nFYI: You can't go over the pipes, so don't even try."
+GAME.LateUpdateMarquee = true
 
 --------------------------------------------------
 local GAME_STATE_SPRITEDL     = -1
@@ -317,7 +318,7 @@ function GAME:Die()
 		PlaySound("die")
 	end)
 
-	MACHINE:TakeCoins(1)
+	COINS:TakeCoins(1)
 end
 
 function GAME:MovePipes()
@@ -398,7 +399,7 @@ function GAME:Update()
 				if self:GetFlag("SpriteIndex") > self:GetFlag("AmountOfSprites") then
 					self:SetState(GAME_STATE_ATTRACT)
 					self:ResetPipes()
-					MACHINE:UpdateMarquee()
+					MARQUEE:UpdateMarquee()
 				end
 			end
 			-- dont do anything if the image hasn't loaded
@@ -413,7 +414,7 @@ function GAME:Update()
 	elseif self:GetState() == GAME_STATE_WAITCOIN then
 		self:SetFlag("BackgroundMoving", true)
 		self:MovePipes()
-		if MACHINE:GetCoins() > 0 and IsValid(self.CurrentPlayer) then
+		if COINS:GetCoins() > 0 and IsValid(self.CurrentPlayer) then
 			self:SetState(GAME_STATE_STARTING)
 		end
 
@@ -520,8 +521,6 @@ end
 function GAME:OnCoinsInserted(ply, old, new)
 	-- print(ply,self.CurrentPlayer,LocalPlayer())
 	if ply ~= LocalPlayer() then return end
-
-	-- MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
 
 	if new > 0 and self:GetState() == GAME_STATE_WAITCOIN then
 		self:Reset()
@@ -759,7 +758,7 @@ function GAME:Draw()
 	end
 
 	surface.SetFont("TargetID")
-	local t = MACHINE:GetCoins() .. " COIN(S)"
+	local t = COINS:GetCoins() .. " COIN(S)"
 	local tw, th = surface.GetTextSize(t)
 	surface.SetTextColor(255, 255, 255, 255)
 	surface.SetTextPos(10, h - th - 10)

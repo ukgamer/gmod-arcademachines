@@ -13,7 +13,7 @@ Before submitting a pull request, please check the following:
 
 See `lua/arcademachine_games/test/testgame.lua` for an example minimal game implementation.
 
-For development your script must return a function to prevent errors when running via luadev. Once ready for release, your script must return the game table.
+For development your script must return a function that returns the game table to prevent errors when running via luadev. Once ready for release, your script must return the game table directly.
 
 You can assign the function to a global variable (e.g. `TESTGAME`) and call `machine:SetGame(TESTGAME)` on the client to test your game.
 
@@ -34,11 +34,11 @@ Your game table can implement the `Description` property. This will be shown whe
 
 Your game table can implement the `Bodygroup` property. This will control the physical appearance of the cabinet. Available bodygroups are:
 
-* BG_GENERIC_JOYSTICK
-* BG_GENERIC_TRACKBALL
-* BG_GENERIC_RECESSED_JOYSTICK
-* BG_GENERIC_RECESSED_TRACKBALL
-* BG_DRIVING
+* `BG_GENERIC_JOYSTICK`
+* `BG_GENERIC_TRACKBALL`
+* `BG_GENERIC_RECESSED_JOYSTICK`
+* `BG_GENERIC_RECESSED_TRACKBALL`
+* `BG_DRIVING`
 
 Your game can implement the following methods:
 
@@ -50,7 +50,6 @@ Your game can implement the following methods:
 
 ### Available globals
 
-* `MACHINE`
 * `SCREEN_WIDTH`
 * `SCREEN_HEIGHT`
 * `MARQUEE_WIDTH`
@@ -58,19 +57,25 @@ Your game can implement the following methods:
 
 ### Coins
 
-The machine has its own internal coin count. You can query this count with `MACHINE:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
+The machine has its own internal coin count. You can query this count with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
 
-When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player whenever they enter the machine.
+When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player before they enter the machine.
 
 Your `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
 
-Similarly, when a coin is "used" the method `OnCoinsLost` will be called with the same arguments.
+You can take a given number of coins from the machine using `COINS:TakeCoins(amount)`.
 
-You can take a given number of coins from the machine using `MACHINE:TakeCoins(amount)`. Be aware that because this sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
+When a coin is "used" the method `OnCoinsLost` will be called with the same arguments as `OnCoinsInserted`.
+
+Be aware that because `TakeCoins` sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
 
 ### The Marquee
 
-The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists. If your marquee requires external images to be loaded before drawing, you can manually call `UpdateMarquee` on the machine after you have checked your assets have loaded which will cause `DrawMarquee` to be called once more. Do not repeatedly redraw the marquee - it is designed to be static. See the Asteroids game's marquee for an example implementation.
+The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists.
+
+If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then manually call `UpdateMarquee` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
+
+**The marquee can only be drawn once per game load as it is designed to be static for performance reasons.** See the Asteroids game's marquee for an example implementation.
 
 ### Helper libraries
 
@@ -126,6 +131,8 @@ To access your sound use `SOUND.Sounds[key]`, which will look like
 ```
 
 Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+
+`SOUND:EmitSound` and `SOUND:StopSound` are also available and have the same signatures the entity methods. `SOUND:Play(name, level, pitch, volume)` is available as an alternative to `sound.Play`.
 
 #### Files
 

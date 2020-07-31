@@ -89,12 +89,11 @@ function ENT:Initialize()
     self:DeleteOnRemove(seat)
 
     if FindMetaTable("Player").TakeCoins then
-        self:SetMSCoinCost(100)
+        self:SetMSCoinCost(1000)
     end
 
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
-        self:SetOwner(nil)
         seat:SetOwner(self:GetOwner())
     end)
 

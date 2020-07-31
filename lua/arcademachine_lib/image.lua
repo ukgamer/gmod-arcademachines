@@ -12,7 +12,12 @@ local path = "arcademachines/cache/images"
 file.CreateDir(path)
 
 function IMAGE:LoadFromURL(url, key, callback, noCache)
-    if self.Images[key] and not noCache then return end
+    if self.Images[key] and not noCache then
+        if self.Images[key].status == self.STATUS_LOADED and callback then
+            callback(self.Images[key])
+        end
+        return
+    end
     
     local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
     

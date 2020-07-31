@@ -128,7 +128,7 @@ local function MakeSound(soundPath, pitch, level)
 	end
 
 	soundTimesTable[soundPath] = CurTime()
-	sound.Play(soundPath, MACHINE:GetPos(), 75, pitch, level)
+	SOUND:Play(soundPath, 75, pitch, level)
 end
 
 local function PlayMusic()
@@ -146,7 +146,7 @@ local function PlayMusic()
 
 		local playTime = dur / (rng / 100)
 		curSongLen = playTime
-		MACHINE:EmitSound(currentSong, 75, rng, 0.1)
+		SOUND:EmitSound(currentSong, 75, rng, 0.1)
 		nextMusicPlay = CurTime() + playTime + 1 --1s delay just give some space
 	end
 end
@@ -540,7 +540,6 @@ local function UpdateBallObject()
 					end
 
 					ob.destroyed = true
-					local pos = MACHINE:GetPos()
 					local len = ballObject.vel:Length()
 					len = math.Clamp(len, 100, 230)
 
@@ -746,7 +745,7 @@ function GAME:GameOver()
 
 		MakeSound("weapons/physcannon/energy_disintegrate4.wav", 150, 0.5)
 		MakeSound("npc/combine_gunship/gunship_ping_search.wav", 150, 0.25)
-		if MACHINE:GetCoins() > 1 then
+		if COINS:GetCoins() > 1 then
 			self:Continue()
 			return
 		end
@@ -777,7 +776,7 @@ function GAME:Continue()
 	shouldRespawnBall = true
 	nextBallSpawn = CurTime() + 1
 	--RespawnBall()
-	MACHINE:TakeCoins(1)
+	COINS:TakeCoins(1)
 
 	--Continue the game with the same time they had when it paused
 	for name, powerUp in pairs(currentPowerUps) do
@@ -807,7 +806,7 @@ function GAME:Update()
 		-- Taking coins takes time to be processed by the server and for
 		-- OnCoinsLost to be called, so wait until the coin amount has changed
 		-- to know whether to end the game/lose a life/etc.
-		MACHINE:TakeCoins(1)
+		COINS:TakeCoins(1)
 		gameState = 2
 		return
 	end
@@ -845,7 +844,7 @@ function GAME:Update()
 			isMusicMuted = not isMusicMuted
 
 			if isMusicMuted then
-				MACHINE:StopSound(currentSong)
+				SOUND:StopSound(currentSong)
 			else
 				nextMusicPlay = 0
 			end
@@ -1084,7 +1083,7 @@ function GAME:Draw()
 	currentBgColor = Color(colorR, colorG, colorB)
 
 	local margin = 10
-	local text = "Coins left: " .. MACHINE:GetCoins() - 1
+	local text = "Coins left: " .. COINS:GetCoins() - 1
 	surface.SetFont("GModNotify")
 	local tW, tH = surface.GetTextSize(text)
 
@@ -1176,7 +1175,7 @@ function GAME:OnStopPlaying(ply)
 	end
 
 	nextMusicPlay = 0
-	MACHINE:StopSound(currentSong)
+	SOUND:StopSound(currentSong)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
