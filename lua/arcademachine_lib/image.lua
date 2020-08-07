@@ -1,3 +1,5 @@
+local HTTP = include("http.lua")
+
 local IMAGE = {}
 
 IMAGE.STATUS_LOADING = 0
@@ -9,72 +11,70 @@ IMAGE.Images = {}
 local path = "arcademachines/cache/images"
 file.CreateDir(path)
 
-local function urlhash(str)
-    local strlen = #str
-    local blocks = 4
-    local hash = ""
-    local memblock = {}
-    
-    if strlen < blocks then
-        blocks = 1
+function IMAGE:LoadFromURL(url, key, callback, noCache)
+    if self.Images[key] and not noCache then
+        if self.Images[key].status == self.STATUS_LOADED and callback then
+            callback(self.Images[key])
+        end
+        return
     end
     
-    local lastInc = 0
-    
-    for i = 1, blocks do
-        local pos = math.floor((i / blocks) * strlen)
-        memblock[i] = util.CRC(string.sub(str, lastInc + 1, pos))
-        lastInc = pos
-    end
-    
-    for _, v in ipairs(memblock) do
-        hash = hash .. string.format("%x", v)
-    end
-    
-    hash = string.upper(hash)
-    return hash
-end
-
-function IMAGE:ClearCache()
-    self.Images = {}
-
-    for _, v in ipairs(file.Find(path .. "/*", "DATA")) do
-        file.Delete(path .. "/" .. v)
-    end
-end
-
-function IMAGE:LoadFromURL(url, name, noCache)
-    if self.Images[name] and not noCache then return end
-    
-    local filename = path .. "/" .. urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
+    local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
     
     if not noCache then
         if file.Exists(filename, "DATA") then
-            self.Images[name] = {
+            self.Images[key] = {
                 status = self.STATUS_LOADED,
                 mat = Material("../data/" .. filename)
             }
+            if callback then
+                callback(self.Images[key])
+            end
             return
         end
     end
     
-    self.Images[name] = {
+    self.Images[key] = {
         status = self.STATUS_LOADING,
         mat = Material("error")
     }
-    
-    http.Fetch(
+
+    HTTP:Fetch(
         url,
         function(body, size, headers, code)
             file.Write(filename, body)
-            self.Images[name].status = self.STATUS_LOADED
-            self.Images[name].mat = Material("../data/" .. filename)
+            self.Images[key].status = self.STATUS_LOADED
+            self.Images[key].mat = Material("../data/" .. filename)
+            
+            if callback then
+                callback(self.Images[key])
+            end
         end,
-        function(err)
-            self.Images[name].status = self.STATUS_ERROR
-            Error("Failed to load image:" .. err)
+        function(err, body)
+            self.Images[key].status = self.STATUS_ERROR
+            self.Images[key].err = body and err .. ":" .. body or err
         end
     )
+end
+
+function IMAGE:LoadFromMaterial(name, key)
+    if self.Images[key] then return end
+
+    self.Images[key] = {
+        status = self.STATUS_LOADED,
+        mat = CreateMaterial(
+            "arcademachines_" .. key .. "_" .. math.random(9999),
+            "UnlitGeneric",
+            {
+                ["$basetexture"] = name,
+                ["$vertexcolor"] = 1,
+                ["$vertexalpha"] = 1,
+                ["$additive"] = 1,
+                ["$ignorez"] = 1,
+                ["$nolod"] = 1
+            }
+        )
+    }
 end
 
 return IMAGE

@@ -1,10 +1,19 @@
 # Arcade Machines
 
+## Submission guidelines
+
+Before submitting a pull request, please check the following:
+
+* Ensure your game has an attract mode. A blank screen is pretty boring.
+* If you are developing on Metastruct, ensure your game does not depend on any MS-specific functionality. Test your game in vanilla GMod.
+* If your game uses custom assets, submit a pull request to the [assets repo](https://github.com/ukgamer/gmod-arcademachines-assets) and update your URLs before submitting a pull request to this repo.
+* Ensure your game functions correctly at different framerates. Use `FrameTime()` to scale animations correctly.
+
 ## Developer information
 
 See `lua/arcademachine_games/test/testgame.lua` for an example minimal game implementation.
 
-For development your script must return a function to prevent errors when running via luadev. Once ready for release, your script must return the game table.
+For development your script must return a function that returns the game table to prevent errors when running via luadev. Once ready for release, your script must return the game table directly.
 
 You can assign the function to a global variable (e.g. `TESTGAME`) and call `machine:SetGame(TESTGAME)` on the client to test your game.
 
@@ -19,17 +28,28 @@ Your game must implement the following methods:
 * `OnStartPlaying(ply)`
 * `OnStopPlaying(ply)`
 
-### Optional methods
+### Optional methods/properties
+
+Your game table can implement the `Description` property. This will be shown when the player looks at the machine before entering. You should tell the player how to play your game here.
+
+Your game table can implement the `Bodygroup` property. This will control the physical appearance of the cabinet. Available bodygroups are:
+
+* `BG_GENERIC_JOYSTICK`
+* `BG_GENERIC_TRACKBALL`
+* `BG_GENERIC_RECESSED_JOYSTICK`
+* `BG_GENERIC_RECESSED_TRACKBALL`
+* `BG_DRIVING`
+
+Your game can implement the following methods:
 
 * `Init()`
 * `Destroy()`
 * `DrawMarquee()`
 * `OnCoinsInserted(ply, old, new)`
 * `OnCoinsLost(ply, old, new)`
-    
+
 ### Available globals
 
-* `MACHINE`
 * `SCREEN_WIDTH`
 * `SCREEN_HEIGHT`
 * `MARQUEE_WIDTH`
@@ -37,15 +57,25 @@ Your game must implement the following methods:
 
 ### Coins
 
-The machine has its own internal coin count. You can query this count with `MACHINE:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
+The machine has its own internal coin count. You can query this count with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
 
-When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player whenever they enter the machine.
+When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player before they enter the machine.
 
 Your `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
 
-Similarly, when a coin is "used" the method `OnCoinsLost` will be called with the same arguments.
+You can take a given number of coins from the machine using `COINS:TakeCoins(amount)`.
 
-You can take a given number of coins from the machine using `MACHINE:TakeCoins(amount)`. Be aware that because this sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
+When a coin is "used" the method `OnCoinsLost` will be called with the same arguments as `OnCoinsInserted`.
+
+Be aware that because `TakeCoins` sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
+
+### The Marquee
+
+The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists.
+
+If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then manually call `UpdateMarquee` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
+
+**The marquee can only be drawn once per game load as it is designed to be static for performance reasons.** See the Asteroids game's marquee for an example implementation.
 
 ### Helper libraries
 
@@ -62,30 +92,35 @@ Used to check if a font has already been created. Do not use `surface.CreateFont
 
 #### Images
 
+`IMAGE:LoadFromMaterial(name, key)`
+
+Creates a copy of the given material and registers it with your game. Use this to avoid unnecessary duplicate material loading and to allow materials to use alpha if they do not allow it already.
+
+`IMAGE:LoadFromURL(url, key, callback = nil, noCache = false)`
+
 Used for loading images dynamically from the web as usable `Material`s.
 
-`IMAGE:LoadFromURL(url, name, noCache = false)`
+If defined, `callback` will be called on successful load with the below table.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
 
-Access your image with `IMAGE.Images[name]`, which will look like
+Access your image with `IMAGE.Images[key]`, which will look like
 
 ```lua
 {
     status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "Some error", -- if status == STATUS_ERROR
     mat = Material -- if not yet loaded then error material is used
 }
 ```
 
 #### Sounds
 
-`SOUND:LoadFromURL(url, name, callback)`
+`SOUND:LoadFromURL(url, key, callback = nil)`
 
-`callback`, if defined, is passed the created `IGModAudioChannel`. This can be used for example to enable looping.
+If defined, `callback`, is called on successful load with the created `IGModAudioChannel`. This can be used for example to enable looping.
 
-To access your sound use `SOUND.Sounds[name]`, which will look like
-
-Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+To access your sound use `SOUND.Sounds[key]`, which will look like
 
 ```lua
 {
@@ -94,6 +129,30 @@ Sounds that are loaded via `LoadFromURL` are queued in order to prevent performa
     sound = IGModAudioChannel -- if status == STATUS_LOADED
 }
 ```
+
+Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+
+`SOUND:EmitSound` and `SOUND:StopSound` are also available and have the same signatures the entity methods. `SOUND:Play(name, level, pitch, volume)` is available as an alternative to `sound.Play`.
+
+#### Files
+
+`FILE:LoadFromURL(url, key, callback = nil, noCache = false)`
+
+Used for loading arbitrary files from the web. If defined, `callback` will be called on successful load with the below table.
+
+`noCache` can be used during development to bypass the built in caching mechanism.
+
+Access your file with `FILE.Files[key]`, which will look like
+
+```lua
+{
+    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
+    err = "Some error", -- if status == STATUS_ERROR
+    path = "somepath" -- if status == STATUS_LOADED
+}
+```
+
+The path is returned so that you can use GMod's usual file methods on it.
 
 #### Collisions
 
@@ -141,7 +200,8 @@ Objects passed to `IsColliding` must look like:
 
 * Robro - for the model
 * Sera - for help with environment wrapping stuff
-* Python1320 - for help with clientside material override workaround
+* Python1320 - for help various things
 * Twistalicky - various ideas/suggestions
-* All the people who have made/are making games for the machine e.g. twentysix, Cynthia
+* Xayr - For letting me ~~steal~~ use his HTTP cache stuff
+* All the people who have made/are making games for the machine
 * Anyone else I forgot

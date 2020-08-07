@@ -1,4 +1,5 @@
 AddCSLuaFile("cl_init.lua")
+AddCSLuaFile("cl_hooks.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
@@ -6,20 +7,28 @@ if SERVERID ~= nil then
     include("ms_specific.lua")
 end
 
-resource.AddSingleFile("models/metastruct/ms_acabinet.mdl")
-resource.AddSingleFile("models/metastruct/ms_acabinet.phy")
-resource.AddSingleFile("models/metastruct/ms_acabinet.sw.vtx")
-resource.AddSingleFile("models/metastruct/ms_acabinet.vvd")
-resource.AddSingleFile("models/metastruct/ms_acabinet.dx80.vtx")
-resource.AddSingleFile("models/metastruct/ms_acabinet.dx90.vtx")
-resource.AddFile("materials/models/ms_acabinet/ms_acabinet.vmt")
-resource.AddFile("materials/models/ms_acabinet/ms_acabinet_artwork.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet/ms_acabinet_artwork_normal.vtf")
-resource.AddFile("materials/models/ms_acabinet/ms_acabinet_buttons.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet/ms_acabinet_buttons_normal.vtf")
-resource.AddFile("materials/models/ms_acabinet/ms_acabinet_marque.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet/ms_acabinet_outerglass.vmt")
-resource.AddFile("materials/models/ms_acabinet/ms_acabinet_screen.vmt")
+resource.AddSingleFile("materials/icon64/arcademachine.png")
+
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.mdl")
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.phy")
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.sw.vtx")
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.vvd")
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.dx80.vtx")
+resource.AddSingleFile("models/metastruct/ms_acabinet_v2.dx90.vtx")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_driving.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_driving.vmt")
+resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_normal.vtf")
+resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_driving_normal.vtf")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_buttons.vmt")
+resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_buttons_normal.vtf")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_marque.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_marque_driving.vmt")
+resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_outerglass.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_screen.vmt")
+resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel.vmt")
+resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel_normal.vtf")
 
 local function AddCSGameFiles()
     local ext = "arcademachine_games/"
@@ -32,7 +41,6 @@ local function AddCSGameFiles()
         AddCSLuaFile(ext .. file)
     end
 end
-concommand.Add("arcademachine_addcsgamefiles", AddCSGameFiles)
 AddCSGameFiles()
 
 function ENT:SpawnFunction(ply, tr)
@@ -54,11 +62,9 @@ function ENT:SpawnFunction(ply, tr)
 end
 
 function ENT:Initialize()
-    self.Entity:SetModel("models/metastruct/ms_acabinet.mdl")
+    self.Entity:SetModel("models/metastruct/ms_acabinet_v2.mdl")
     
     self:SetUseType(SIMPLE_USE)
-
-    self.Entity:SetBodygroup(0, math.random(0, 1))
 
     self.Entity:SetMoveType(MOVETYPE_VPHYSICS)
     self.Entity:SetSolid(SOLID_VPHYSICS)
@@ -83,13 +89,12 @@ function ENT:Initialize()
     seat:SetNotSolid(true)
     self:DeleteOnRemove(seat)
 
-    if _R.Player.TakeCoins then
-        self:SetMSCoinCost(100)
+    if FindMetaTable("Player").TakeCoins then
+        self:SetMSCoinCost(1000)
     end
 
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
-        self:SetOwner(nil)
         seat:SetOwner(self:GetOwner())
     end)
 

@@ -2,6 +2,7 @@
 local GAME = {}
 
 GAME.Name = "Test Game"
+GAME.Description = "Here's a test game. WASD to move the box!"
 
 local thePlayer = nil
 local x, y = 0, 0
@@ -42,7 +43,7 @@ function GAME:Update()
         -- Taking coins takes time to be processed by the server and for
         -- OnCoinsLost to be called, so wait until the coin amount has changed
         -- to know whether to end the game/lose a life/etc.
-        MACHINE:TakeCoins(1)
+        COINS:TakeCoins(1)
         gameState = 2
         return
     end
@@ -103,10 +104,10 @@ function GAME:Draw()
     surface.DrawText(txt)
 
     surface.SetFont("DermaDefault")
-    local tw, th = surface.GetTextSize(MACHINE:GetCoins() .. " COIN(S)")
+    local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
     surface.SetTextColor(255, 255, 255, 255)
     surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
-    surface.DrawText(MACHINE:GetCoins() .. " COIN(S)")
+    surface.DrawText(COINS:GetCoins() .. " COIN(S)")
 end
 
 -- Called when someone sits in the seat
@@ -124,8 +125,6 @@ function GAME:OnStopPlaying(ply)
 end
 
 function GAME:OnCoinsInserted(ply, old, new)
-    MACHINE:EmitSound("garrysmod/content_downloaded.wav", 50)
-
     if ply ~= LocalPlayer() then return end
 
     -- If a fullupdate occurs then the game will be reset, so when the player inserts a coin again

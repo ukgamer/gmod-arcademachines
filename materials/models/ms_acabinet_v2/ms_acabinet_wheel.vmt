@@ -1,7 +1,7 @@
 VertexLitGeneric
 {
-	$basetexture "models/ms_acabinet/ms_acabinet_buttons"
-	$bumpmap "models/ms_acabinet/ms_acabinet_buttons_normal"
+	$basetexture "models/ms_acabinet_v2/ms_acabinet_wheel"
+	$bumpmap "models/ms_acabinet_v2/ms_acabinet_wheel_normal"
 
 	$phong 1
 	$phongfresnelranges "[0.5 0.75 1]"

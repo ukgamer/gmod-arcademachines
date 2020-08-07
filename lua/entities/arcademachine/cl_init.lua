@@ -1,29 +1,98 @@
-include("shared.lua")
+AM = AM or {
+    QueuedSounds = {}
+}
 
-local FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
-local DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
---local DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
-local ShowIntro = CreateClientConVar("arcademachine_show_intro", 1, true, false)
-local DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
+include("shared.lua")
+include("cl_hooks.lua")
+
+local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
+AM.FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
+AM.DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false)
+AM.DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
+--AM.DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
+AM.DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
+
+local MaxDist = 200
 
 local ScreenWidth = 512
 local ScreenHeight = 512
-local MarqueeWidth = 256
-local MarqueeHeight = 89
+local MarqueeWidth = 512
+local MarqueeHeight = 179
 
 local PressedWalk = false
 local PressedUse = false
 local PressedUseAt = 0
 
+local BloomWasDisabled = false
 local PACWasDisabled = false
 --local OutfitterWasDisabled = false
 
 local LoadedLibs = {}
 
-local QueuedSounds = {}
-local NextQueueAt = 0
+surface.CreateFont("AMInfoFont", {
+    font = "Tahoma",
+    extended = true,
+    size = 16
+})
 
-CurrentMachine = CurrentMachine or nil
+surface.CreateFont("AMInfoFontBold", {
+    font = "Tahoma",
+    extended = true,
+    size = 16,
+    weight = 1000
+})
+
+local function DebugPrint(...)
+    if Debug:GetBool() then
+        print("[ARCADE]", ...)
+    end
+end
+
+concommand.Add("arcademachine_reload_machines", function()
+    for _, v in ipairs(ents.FindByClass("arcademachine")) do
+        if v:GetCurrentGame() then
+            v:SetGame(v:GetCurrentGame())
+        elseif v.Game then
+            if v.Game.Destroy then
+                v.Game:Destroy()
+            end
+            if v.Game.Init then
+                v.Game:Init()
+            end
+        end
+    end
+end)
+
+concommand.Add("arcademachine_clear_cache", function()
+    local paths = {
+        "images",
+        "files"
+    }
+
+    local base = "arcademachines/cache/"
+
+    for _, v in ipairs(paths) do
+        for _, fv in ipairs(file.Find(base .. v .. "/*", "DATA")) do
+            file.Delete(base .. v .. "/" .. fv)
+        end
+    end
+end)
+
+local BG = {
+    BG_GENERIC_JOYSTICK = 0,
+    BG_GENERIC_TRACKBALL = 1,
+    BG_GENERIC_RECESSED_JOYSTICK = 2,
+    BG_GENERIC_RECESSED_TRACKBALL = 3,
+    BG_DRIVING = 4
+}
+
+local Bodygroups = {
+    [BG.BG_GENERIC_JOYSTICK] = { 0, 0 },
+    [BG.BG_GENERIC_TRACKBALL] = { 0, 2 },
+    [BG.BG_GENERIC_RECESSED_JOYSTICK] = { 1, 0 },
+    [BG.BG_GENERIC_RECESSED_TRACKBALL] = { 1, 2 },
+    [BG.BG_DRIVING] = { 2, 3 }
+}
 
 local function WrappedInclusion(path, upvalues)
     local gameMeta = setmetatable(upvalues, { __index = _G, __newindex = _G })
@@ -33,15 +102,16 @@ local function WrappedInclusion(path, upvalues)
     return gameFunc()
 end
 
-ENT.MaxDist = 200
-ENT.HidePlayerDist = 30
 ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
+    self.MarqueeHasDrawn = false
+
+    local num = math.random(9999)
 
     self.ScreenTexture = GetRenderTargetEx(
-        "ArcadeMachine_Screen_" .. self:EntIndex(),
+        "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
         RT_SIZE_DEFAULT,
@@ -51,16 +121,18 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.ScreenMaterial = CreateMaterial(
-        "ArcadeMachine_Screen_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.ScreenTexture:GetName(),
-            ["$model"] = 1
+            ["$model"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
     self.MarqueeTexture = GetRenderTargetEx(
-        "ArcadeMachine_Marquee_" .. self:EntIndex(),
+        "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
         RT_SIZE_DEFAULT,
@@ -70,18 +142,24 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.MarqueeMaterial = CreateMaterial(
-        "ArcadeMachine_Marquee_Material_" .. self:EntIndex(),
-        "UnlitGeneric",
+        "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
             ["$model"] = 1,
-            ["$nodecal"] = 1
+            ["$nodecal"] = 1,
+            ["$selfillum"] = 1,
+            ["$selfillummask"] = "dev/reflectivity_30b"
         }
     )
 
     self.InRange = self.InRange or false
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
+    
+    -- Used to work around network variable spamming being changed from
+    -- empty to a game and back again when loaded into room on MS
+    self.AllowGameChangeAt = 0
 
     if self:GetCurrentGame() and not self.Game then
         self:SetGame(self:GetCurrentGame())
@@ -116,11 +194,40 @@ function ENT:Think()
         self:OnSeatCreated("Seat", nil, self:GetSeat())
     end
 
-    if DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self then
+    if self.LastGameNWVar ~= nil and self.AllowGameChangeAt - RealTime() <= 0 then
+        DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
+        self:SetGame(self.LastGameNWVar)
+        self.LastGameNWVar = nil
+        self.AllowGameChangeAt = RealTime() + 1
+    end
+
+    -- Used to work around GetCoins not returning the correct value after the
+    -- network var notify was called
+    if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
+        if self.Game then
+            if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
+                self.Entity:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
+                self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        
+            if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
+                self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
+            end
+        end
+        
+        self.CoinChange = nil
+    end
+
+    if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
+        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+    end
+
+    if AM.DisableOthers:GetBool() and AM.CurrentMachine and AM.CurrentMachine ~= self then
         return
     end
 
-    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > self.MaxDist * self.MaxDist then
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > MaxDist * MaxDist then
         if self.InRange then
             self.InRange = false
             self:OnLeftRange()
@@ -174,14 +281,24 @@ function ENT:OnLeftRange()
 end
 
 function ENT:Draw()
+    local marqueeIndex = self.Entity:GetBodygroup(0)
+
+    if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(true)
+    end
+
     -- To prevent using string table slots, don't set the submaterial on the server
     -- and just override it here
-    render.MaterialOverrideByIndex(3, self.MarqueeMaterial)
+    render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if not self.InRange or not self.Game or (DisableOthers:GetBool() and CurrentMachine and CurrentMachine ~= self) then
+    if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+        cam.IgnoreZ(false)
+    end
+
+    if not self.InRange or not self.Game or (AM.DisableOthers:GetBool() and AM.CurrentMachine and AM.CurrentMachine ~= self) then
         return
     end
 
@@ -220,103 +337,21 @@ function ENT:OnPlayerChange(name, old, new)
 end
 
 function ENT:OnLocalPlayerEntered()
-    CurrentMachine = self
+    AM.CurrentMachine = self
 
-    local cost = self:GetMSCoinCost()
-
-    if cost > 0 then
-        local msg = "This machine takes " .. cost .. " Metastruct coin(s) at a time."
-        LocalPlayer():ChatPrint(msg)
-        notification.AddLegacy(msg, NOTIFY_HINT, 10)
+    if AM.DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
+        LocalPlayer():ConCommand("mat_disable_bloom 1")
+        BloomWasDisabled = true
     end
 
-    if ShowIntro:GetBool() then
-        local frame = vgui.Create("DFrame")
-
-        frame:SetSize(ScrW() * 0.25, ScrH() * 0.35)
-        frame:Center()
-        frame:SetTitle("Arcade Machines")
-        frame:SetDraggable(false)
-        frame:ShowCloseButton(false)
-        frame:DockPadding(10, 30, 10, 10)
-        frame:MakePopup()
-
-        local scroll = vgui.Create("DScrollPanel", frame)
-        scroll:Dock(FILL)
-
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("ScoreboardDefaultTitle")
-        label:SetText("Instructions/Controls")
-
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("ScoreboardDefault")
-        label:SetText("Press your WALK key (ALT by default) to insert coins. Use scroll wheel to zoom. Hold USE to exit (you will lose any ununsed coins!).")
-
-        if DisablePAC:GetBool() and pac then
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefaultTitle")
-            label:SetText("WARNING: PAC Disabled")
-
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefault")
-            label:SetText("PAC has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_pac 0.")
-        end
-
-        --[[if DisableOutfitter:GetBool() and outfitter then
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefaultTitle")
-            label:SetText("WARNING: Outfitter Disabled")
-
-            local label = vgui.Create("DLabel", scroll)
-            label:Dock(TOP)
-            label:SetWrap(true)
-            label:SetAutoStretchVertical(true)
-            label:DockMargin(0, 0, 0, 15)
-            label:SetFont("ScoreboardDefault")
-            label:SetText("Outfitter has been temporarily disabled to help with performance while playing. It will be re-enabled when you exit the machine. This functionality can be disabled in the console with arcademachine_disable_outfitter 0.")
-        end--]]
-
-        local button = vgui.Create("DButton", frame)
-        button:SetText("OK, don't show me this again")
-        button:Dock(BOTTOM)
-        button:SetEnabled(false)
-        timer.Simple(5, function()
-            button:SetEnabled(true)
-        end)
-        button.DoClick = function()
-            ShowIntro:SetBool(false)
-            frame:Remove()
-        end
-    end
-
-    if DisablePAC:GetBool() and pac then
+    if AM.DisablePAC:GetBool() and pac and pac.IsEnabled() then
         pac.Disable()
         PACWasDisabled = true
     else
         PACWasDisabled = false
     end
 
-    --[[if DisableOutfitter:GetBool() and outfitter then
+    --[[if AM.DisableOutfitter:GetBool() and outfitter then
         outfitter.SetHighPerf(true, true)
         outfitter.DisableEverything()
         OutfitterWasDisabled = true
@@ -326,19 +361,25 @@ function ENT:OnLocalPlayerEntered()
 end
 
 function ENT:OnLocalPlayerLeft()
-    CurrentMachine = nil
+    AM.CurrentMachine = nil
 
-    if DisablePAC:GetBool() and PACWasDisabled then
+    if AM.DisableBloom:GetBool() and BloomWasDisabled then
+        LocalPlayer():ConCommand("mat_disable_bloom 0")
+    end
+
+    if AM.DisablePAC:GetBool() and PACWasDisabled then
         pac.Enable()
     end
 
-    --[[if DisableOutfitter:GetBool() and OutfitterWasDisabled then
+    --[[if AM.DisableOutfitter:GetBool() and OutfitterWasDisabled then
         outfitter.SetHighPerf(false, true)
         outfitter.EnableEverything()
     end--]]
 end
 
 function ENT:UpdateMarquee()
+    if self.MarqueeHasDrawn then return end
+
     render.PushRenderTarget(self.MarqueeTexture)
         cam.Start2D()
             surface.SetDrawColor(0, 0, 0, 255)
@@ -346,6 +387,7 @@ function ENT:UpdateMarquee()
 
             if self.Game and self.Game.DrawMarquee then
                 self.Game:DrawMarquee()
+                self.MarqueeHasDrawn = true
             else
                 surface.SetFont("DermaLarge")
                 local w, h = surface.GetTextSize(self.Game and self.Game.Name or "Arcade Machine")
@@ -379,19 +421,26 @@ function ENT:UpdateScreen()
 end
 
 function ENT:OnCoinsChange(name, old, new)
-    if new > old and self.Game and self.Game.OnCoinsInserted then
-        self.Game:OnCoinsInserted(self:GetPlayer(), old, new)
-    end
-
-    if new < old and self.Game and self.Game.OnCoinsLost then
-        self.Game:OnCoinsLost(self:GetPlayer(), old, new)
-    end
+    self.CoinChange = { old = old, new = new }
 end
 
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    self:SetGame(new)
+    DebugPrint(
+        self:EntIndex(),
+        "new", new,
+        "old", old,
+        "at", RealTime(),
+        "remain", self.AllowGameChangeAt ~= 0 and self.AllowGameChangeAt - RealTime() or "(first load)"
+    )
+
+    self.LastGameNWVar = new
+
+    if self.AllowGameChangeAt == 0 or self.AllowGameChangeAt - RealTime() > 0 then
+        self.AllowGameChangeAt = RealTime() + 1
+        DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
+    end
 end
 
 function ENT:StopSounds()
@@ -402,9 +451,50 @@ function ENT:StopSounds()
     end
 
     table.Empty(self.LoadedSounds)
-    if QueuedSounds[self:EntIndex()] then
-        QueuedSounds[self:EntIndex()] = nil
+    if AM.QueuedSounds[self:EntIndex()] then
+        AM.QueuedSounds[self:EntIndex()] = nil
     end
+end
+
+function ENT:GetUpvalues(game)
+    local upvalues = {
+        SCREEN_WIDTH = ScreenWidth,
+        SCREEN_HEIGHT = ScreenHeight,
+        MARQUEE_WIDTH = MarqueeWidth,
+        MARQUEE_HEIGHT = MarqueeHeight
+    }
+
+    for k, v in pairs(BG) do
+        upvalues[k] = v
+    end
+
+    if LoadedLibs[game] and not forceLibLoad then
+        upvalues.COLLISION = LoadedLibs[game].COLLISION
+        upvalues.IMAGE = LoadedLibs[game].IMAGE
+        upvalues.FONT = LoadedLibs[game].FONT
+        upvalues.FILE = LoadedLibs[game].FILE
+    else
+        LoadedLibs[game] = {
+            COLLISION = include("arcademachine_lib/collision.lua"),
+            IMAGE = include("arcademachine_lib/image.lua"),
+            FONT = include("arcademachine_lib/font.lua"),
+            FILE = include("arcademachine_lib/file.lua")
+        }
+
+        upvalues.COLLISION = LoadedLibs[game].COLLISION
+        upvalues.IMAGE = LoadedLibs[game].IMAGE
+        upvalues.FONT = LoadedLibs[game].FONT
+        upvalues.FILE = LoadedLibs[game].FILE
+    end
+
+    -- Allow each instance to have its own copy of sound library in case they want to
+    -- play the same sound at the same time (needs to emit from the machine)
+    upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = AM.QueuedSounds })
+
+    upvalues.COINS = WrappedInclusion("arcademachine_lib/coins.lua", { MACHINE = self })
+    upvalues.MARQUEE = WrappedInclusion("arcademachine_lib/marquee.lua", { MACHINE = self })
+
+    return upvalues
 end
 
 function ENT:SetGame(game, forceLibLoad)
@@ -418,145 +508,20 @@ function ENT:SetGame(game, forceLibLoad)
     self:StopSounds()
 
     if game and game ~= "" then
-        local upvalues = {
-            MACHINE = self,
-            SCREEN_WIDTH = ScreenWidth,
-            SCREEN_HEIGHT = ScreenHeight,
-            MARQUEE_WIDTH = MarqueeWidth,
-            MARQUEE_HEIGHT = MarqueeHeight
-        }
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
 
-        if LoadedLibs[game] and not forceLibLoad then
-            upvalues.COLLISION = LoadedLibs[game].COLLISION
-            upvalues.IMAGE = LoadedLibs[game].IMAGE
-            upvalues.FONT = LoadedLibs[game].FONT
-        else
-            LoadedLibs[game] = {
-                COLLISION = include("arcademachine_lib/collision.lua"),
-                IMAGE = include("arcademachine_lib/image.lua"),
-                FONT = include("arcademachine_lib/font.lua")
-            }
-
-            upvalues.COLLISION = LoadedLibs[game].COLLISION
-            upvalues.IMAGE = LoadedLibs[game].IMAGE
-            upvalues.FONT = LoadedLibs[game].FONT
-        end
-
-        -- Allow each instance to have its own copy of sound library in case they want to
-        -- play the same sound at the same time (needs to emit from the machine)
-        upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = QueuedSounds })
-
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", upvalues)
         if self.Game.Init then
             self.Game:Init()
         end
 
-        if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
+        if IsValid(self:GetPlayer()) then
             self.Game:OnStartPlaying(self:GetPlayer())
         end
     end
 
-    self:UpdateMarquee()
+    self.MarqueeHasDrawn = false
+    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
+        self:UpdateMarquee()
+    end
     self:UpdateScreen()
 end
-
-function ENT:TakeCoins(amount)
-    if not amount or amount > self:GetCoins() then return end
-
-    net.Start("arcademachine_takecoins")
-        net.WriteInt(amount, 16)
-    net.SendToServer()
-end
-
-hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
-    if not IsValid(CurrentMachine) then
-        return
-    end
-
-    local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
-
-    if tp then return end
-
-    if CurrentMachine:GetBodygroup(0) == 1 then
-        view.origin = veh:GetPos() + veh:GetRight() * -8 + veh:GetUp() * 72
-    else
-        view.origin = veh:GetPos() + veh:GetUp() * 64
-    end
-
-    view.fov = FOV:GetInt()
-
-    return view
-end)
-
-hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
-    if not IsValid(CurrentMachine) then
-        PressedUse = false
-        return
-    end
-
-    local fov = FOV:GetInt()
-
-    if cmd:GetMouseWheel() < 0 and fov < 100 then
-        FOV:SetInt(fov + 2)
-    end
-    if cmd:GetMouseWheel() > 0 and fov > 40 then
-        FOV:SetInt(fov - 2)
-    end
-
-    if bit.band(cmd:GetButtons(), IN_USE) ~= 0 then
-        if not PressedUse then
-            PressedUse = true
-            PressedUseAt = RealTime()
-        elseif RealTime() >= PressedUseAt + 0.8 then
-            net.Start("arcademachine_leave")
-            net.SendToServer()
-            PressedUse = false
-        end
-    else
-        PressedUse = false
-    end
-end)
-
-hook.Add("ScoreboardShow", "arcademachine_scoreboard", function()
-    if not IsValid(CurrentMachine) then return end
-
-    return false
-end)
-
-local notificationColor = Color(255, 255, 255)
-hook.Add("HUDPaint", "arcademachine_hud", function()
-    if PressedUse then
-        notificationColor.a = 50 + math.abs(math.sin(RealTime() * 10) * 205)
-
-        draw.DrawText("Keep holding USE to exit the machine!", "DermaLarge", ScrW() * 0.5, ScrH() * 0.3, notificationColor, TEXT_ALIGN_CENTER)
-    end
-end)
-
-hook.Add("Think", "arcademachine_queue", function()
-    if RealTime() < NextQueueAt then return end
-
-    local k, v = next(QueuedSounds)
-
-    if k then
-        if #v > 0 then
-            v[1].context:LoadQueued(v[1])
-            table.remove(v, 1)
-        else
-            QueuedSounds[k] = nil
-        end
-    end
-
-    NextQueueAt = RealTime() + 0.05
-end)
-
-hook.Add("PrePlayerDraw", "arcademachine_hideplayers", function(ply)
-    if not IsValid(CurrentMachine) then return end
-
-    return ply:GetPos():DistToSqr(LocalPlayer():GetPos()) < CurrentMachine.HidePlayerDist * CurrentMachine.HidePlayerDist
-end)
-
-hook.Add("HUDDrawTargetID", "arcademachine_hideplayers", function()
-    if not IsValid(CurrentMachine) then return end
-
-    return false
-end)

@@ -7,7 +7,12 @@ local SOUND = {
 }
 
 function SOUND:LoadFromURL(url, key, callback)
-    if self.Sounds[key] then return end
+    if self.Sounds[key] then
+        if self.Sounds[key].status == self.STATUS_LOADED and callback then
+            callback(self.Sounds[key].sound)
+        end
+        return
+    end
 
     self.Sounds[key] = {
         status = self.STATUS_QUEUED
@@ -43,6 +48,18 @@ function SOUND:LoadQueued(tbl)
 
         if tbl.callback then tbl.callback(snd) end
     end)
+end
+
+function SOUND:Play(name, level, pitch, volume)
+    sound.Play(name, MACHINE:GetPos(), level, pitch, volume)
+end
+
+function SOUND:EmitSound(...)
+    MACHINE:EmitSound(...)
+end
+
+function SOUND:StopSound(...)
+    MACHINE:StopSound(...)
 end
 
 return SOUND
