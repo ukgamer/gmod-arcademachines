@@ -6,6 +6,8 @@ local COLLISION = {
     }
 }
 
+local axisRotateAng = Angle(0, 90, 0)
+
 function COLLISION:RotateAndTranslateVerts(poly)
     if not poly.collision.actualVertices then
         poly.collision.actualVertices = {}
@@ -21,24 +23,23 @@ function COLLISION:RotateAndTranslateVerts(poly)
 end
 
 function COLLISION:GetAxes(poly, includeFaces)
-    local v1 = nil
-    local v2 = nil
-    local normal = nil
-    local axis = nil
-
     local axes = {}
     local faces = {}
 
-    for i = 1, #poly.collision.actualVertices do
-        v1 = poly.collision.actualVertices[i]
-        v2 = poly.collision.actualVertices[i + 1 == #poly.collision.actualVertices + 1 and 1 or i + 1]
+    if not poly.collision.axes then
+        poly.collision.axes = {}
+    end
 
-        normal = v2 - v1
+    for i = 1, #poly.collision.actualVertices do
+        local v1 = poly.collision.actualVertices[i]
+        local v2 = poly.collision.actualVertices[i + 1 == #poly.collision.actualVertices + 1 and 1 or i + 1]
+
+        local normal = v2 - v1
         normal:Normalize()
 
-        axis = Vector()
+        local axis = poly.collision.axes[i] or Vector()
         axis:Set(normal)
-        axis:Rotate(Angle(0, 90, 0))
+        axis:Rotate(axisRotateAng)
 
         table.insert(axes, axis)
         table.insert(faces, { v1, v2 })
