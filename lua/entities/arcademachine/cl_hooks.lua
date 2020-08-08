@@ -2,26 +2,8 @@ local NextQueueAt = 0
 
 local LookDist = 100
 
-local OldRes = { w = ScrW(), h = ScrH() }
-
 local ControlsBgCol = Color(0, 0, 0, 200)
 local ControlsTextCol = Color(255, 255, 255, 200)
-local ControlsTextWidth = 0
-local ControlsTexts = {}
-local function ControlsTextCalc()
-    ControlsTexts = {
-        ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,
-        ["[SCROLL] Zoom"] = 0,
-        ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
-    }
-
-    surface.SetFont("DermaLarge")
-    for k, _ in pairs(ControlsTexts) do
-        ControlsTexts[k] = (surface.GetTextSize(k) + 8 * 2 + 10)
-        ControlsTextWidth = ControlsTextWidth + ControlsTexts[k]
-    end
-end
-ControlsTextCalc()
 
 AMSettingsPanel = AMSettingsPanel or nil
 local function ShowSettingsPanel()
@@ -262,9 +244,22 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
     end
 
     if IsValid(AM.CurrentMachine) then
-        local x = ScrW() * 0.5 - (ControlsTextWidth * 0.5)
+        local strings = {
+            ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,
+            ["[SCROLL] Zoom"] = 0,
+            ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
+        }
+        local width = 0
 
-        for k, v in pairs(ControlsTexts) do
+        surface.SetFont("DermaLarge")
+        for k, _ in pairs(strings) do
+            strings[k] = (surface.GetTextSize(k) + 8 * 2 + 10)
+            width = width + strings[k]
+        end
+
+        local x = ScrW() * 0.5 - (width * 0.5)
+
+        for k, v in pairs(strings) do
             draw.WordBox(
                 8,
                 x,
@@ -281,13 +276,6 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 end)
 
 hook.Add("Think", "arcademachine_think", function()
-    if OldRes.w ~= ScrW() or OldRes.h ~= ScrH() then
-        ControlsTextCalc()
-
-        OldRes.w = ScrW()
-        OldRes.h = ScrH()
-    end
-
     -- In case the player gets pulled out of the machine somehow
     if IsValid(AM.CurrentMachine) and AM.CurrentMachine:GetPlayer() ~= LocalPlayer() then
         AM.CurrentMachine = nil
