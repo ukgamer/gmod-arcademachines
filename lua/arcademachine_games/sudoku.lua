@@ -196,7 +196,7 @@ function GAME:DrawGridContent(attract_mode)
 						end
 					end
 				end
-				surface.SetTextPos(self:GetDigitPos(x, y))
+				surface.SetTextPos(self:GetDigitPos(x-(attract_mode and 0.1 or 0), y))
 				surface.DrawText(entry.digit)
 			end
 			if entry.guesses then
