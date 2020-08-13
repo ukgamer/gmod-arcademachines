@@ -190,7 +190,16 @@ end
 -- player inserts coins into the machine
 function GAME:OnCoinsInserted(ply, old, new)
 	has_paid = true
-	next_coins_request = CurTime() + (60 * 5) -- request a coin every 5 mins
+
+	local cur_time, time_to_next_coins = CurTime(), 60 * 5
+	if next_coins_request > cur_time then
+		-- add time to what we already have (+5mins)
+		next_coins_request = next_coins_request + cur_time + time_to_next_coins
+	else
+		-- request coins in 5 mins
+		next_coins_request = cur_time + time_to_next_coins
+	end
+
 	self:UnPause()
 end
 
