@@ -47,6 +47,8 @@ Your game can implement the following methods:
 * `DrawMarquee()`
 * `OnCoinsInserted(ply, old, new)`
 * `OnCoinsLost(ply, old, new)`
+* `OnLocalPlayerNearby()`
+* `OnLocalPlayerAway()`
 
 ### Available globals
 
