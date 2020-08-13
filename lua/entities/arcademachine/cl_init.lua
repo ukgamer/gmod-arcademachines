@@ -274,10 +274,18 @@ end
 
 function ENT:OnEnteredRange()
     self:UpdateScreen()
+
+    if self.Game and self.Game.OnLocalPlayerNearby then
+        self.Game:OnLocalPlayerNearby()
+    end
 end
 
 function ENT:OnLeftRange()
     self:UpdateScreen()
+
+    if self.Game and self.Game.OnLocalPlayerAway then
+        self.Game:OnLocalPlayerAway()
+    end
 end
 
 function ENT:Draw()
