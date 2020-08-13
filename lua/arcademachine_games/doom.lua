@@ -11,7 +11,7 @@ local function is_chromium()
 end
 
 function GAME:Init()
-	IMAGE:LoadFromURL("https://dl.dropboxusercontent.com/s/dw9cvgbjj68nr85/doom_guy_logo.png", "doom_guy_logo", function(image)
+	IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/doom/logo.png", "doom_guy_logo", function(image)
 		MARQUEE:UpdateMarquee()
 	end)
 
