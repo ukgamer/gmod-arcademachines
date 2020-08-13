@@ -2,7 +2,14 @@ local GAME = {}
 local DOOM_URL = "https://www.playdosgames.com/play/doom/"
 
 GAME.Name = "DOOM"
-GAME.Description = "The original DOOM game. WASD to move, TAB to interact, SPACE to shoot, SHIFT to press enter"
+GAME.Description = [[The original DOOM game.
+WASD to move,
+R to interact,
+SPACE to shoot,
+SHIFT to strafe left and right,
+Numerical keys to switch weapons,
+M to show the map]]
+
 GAME.LateUpdateMarquee = true
 
 local function is_chromium()
@@ -10,14 +17,10 @@ local function is_chromium()
 	return jit.arch == "x64" -- when x64 and chromium are finally pushed to stable
 end
 
-function GAME:Init()
-	IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/doom/logo.png", "doom_guy_logo", function(image)
-		MARQUEE:UpdateMarquee()
-	end)
-
-	if not is_chromium() then return end
-
-	self.Ready = false
+function GAME:InitializeEmulator()
+	if IsValid(self.Panel) then
+		self.Panel:Remove()
+	end
 
 	local html = vgui.Create("DHTML")
 	html:SetPaintedManually(true)
@@ -68,6 +71,17 @@ function GAME:Init()
 	self.Panel = html
 end
 
+
+function GAME:Init()
+	IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/doom/logo.png", "doom_guy_logo", function(image)
+		MARQUEE:UpdateMarquee()
+	end)
+
+	if not is_chromium() then return end
+	self.Ready = false
+	self:InitializeEmulator()
+end
+
 function GAME:Destroy()
 	if not is_chromium() then return end
 	self.Panel:Remove()
@@ -79,33 +93,41 @@ local next_coins_request = 0
 
 local keys_down = {}
 function GAME:HandleKey(game_key, key_code, key_char)
-	if current_player:KeyDown(game_key) then
+	if input.IsKeyDown(game_key) then
 		if not keys_down[game_key] then
-			self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+			if IsValid(self.Panel) then
+				self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+			end
 			keys_down[game_key] = true
 		end
 	else
 		if keys_down[game_key] then
-			self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+			if IsValid(self.Panel) then
+				self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+			end
 			keys_down[game_key] = false
 		end
 	end
 end
 
-local escape_key_code = 27
-local escape_key_char = "Escape"
+local pause_key_code = 19
+local pause_key_name = "Pause"
 local paused = false
 function GAME:Pause()
 	if paused then return end
-	self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. escape_key_code .. [[, ']] .. escape_key_char .. [[');]])
-	self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. escape_key_code .. [[, ']] .. escape_key_char .. [[');]])
+	if IsValid(self.Panel) then
+		self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+		self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+	end
 	paused = true
 end
 
 function GAME:UnPause()
 	if not paused then return end
-	self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. escape_key_code .. [[, ']] .. escape_key_char .. [[');]])
-	self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. escape_key_code .. [[, ']] .. escape_key_char .. [[');]])
+	if IsValid(self.Panel) then
+		self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+		self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+	end
 	paused = false
 end
 
@@ -119,16 +141,60 @@ function GAME:Update()
 
 	if not has_paid then return end
 
-	self:HandleKey(IN_FORWARD, 38, "ArrowUp")
-	self:HandleKey(IN_BACK, 40, "ArrowDown")
-	self:HandleKey(IN_MOVELEFT, 37, "ArrowLeft")
-	self:HandleKey(IN_MOVERIGHT, 39, "ArrowRight")
+	-- move forward
+	local forward_key = input.LookupBinding("+forward", true)
+	if forward_key then
+		self:HandleKey(input.GetKeyCode(forward_key), 38, "ArrowUp")
+	end
 
-	self:HandleKey(IN_SCORE, 32, " ")
+	-- move back
+	local back_key = input.LookupBinding("+back", true)
+	if back_key then
+		self:HandleKey(input.GetKeyCode(back_key), 40, "ArrowDown")
+	end
 
-	self:HandleKey(IN_JUMP, 17, "ControlLeft")
+	-- rotate left
+	local left_key = input.LookupBinding("+moveleft", true)
+	if left_key then
+		self:HandleKey(input.GetKeyCode(left_key), 37, "ArrowLeft")
+	end
 
-	self:HandleKey(IN_SPEED, 13, "Enter")
+	-- rotate right
+	local right_key = input.LookupBinding("+moveright", true)
+	if right_key then
+		self:HandleKey(input.GetKeyCode(right_key), 39, "ArrowRight")
+	end
+
+	-- interact
+	local interact_key = input.LookupBinding("+reload", true)
+	if interact_key then
+		self:HandleKey(input.GetKeyCode(interact_key), 32, " ")
+	end
+
+	-- shoot
+	local space_key = input.LookupBinding("+jump", true)
+	if space_key then
+		self:HandleKey(input.GetKeyCode(space_key), 17, "ControlLeft")
+	end
+
+	-- strafe
+	local speed_key = input.LookupBinding("+speed", true)
+	if speed_key then
+		self:HandleKey(input.GetKeyCode(speed_key), 18, "Alt")
+	end
+
+	-- enter
+	self:HandleKey(KEY_ENTER, 13, "Enter")
+
+	-- map
+	self:HandleKey(KEY_M, 9, "Tab")
+
+	self:HandleKey(KEY_P, pause_key_code, pause_key_name)
+
+	-- weapon selection
+	for i=1, 9 do
+		self:HandleKey(1 + i, 48 + i, i)
+	end
 end
 
 function GAME:DrawMarquee()
@@ -162,7 +228,10 @@ function GAME:Draw()
 	if not is_chromium() then
 		draw_text(warn_text, color_white, red_bg_color)
 	else
-		self.Panel:PaintManual()
+		if IsValid(self.Panel) then
+			self.Panel:PaintManual()
+		end
+
 		if not has_paid then
 			draw_text(pay_text, red_color, black_bg_color)
 		end
@@ -183,7 +252,8 @@ function GAME:OnStopPlaying(ply)
 		has_paid = false
 		next_coins_request = 0
 		paused = false
-		self.Panel:OpenURL(DOOM_URL)
+
+		self:InitializeEmulator()
 	end
 end
 
@@ -205,5 +275,15 @@ end
 
 -- player coin change was networked, we're ready
 function GAME:OnCoinsLost(ply, old, new) end
+
+function GAME:OnLocalPlayerNearby()
+	self:InitializeEmulator()
+end
+
+function GAME:OnLocalPlayerAway()
+	if IsValid(self.Panel) then
+		self.Panel:Remove()
+	end
+end
 
 return GAME
