@@ -130,7 +130,7 @@ local ufoTypes = {
             Vector(1, 4),
             Vector(2, 2),
             Vector(5, 0),
-            Vector(3, -2),
+            Vector(2, -2),
             Vector(-2, -2)
         },
         collisionVertices = {
@@ -153,7 +153,7 @@ local ufoTypes = {
             Vector(2, 8),
             Vector(4, 4),
             Vector(10, 0),
-            Vector(6, -4),
+            Vector(4, -4),
             Vector(-4, -4)
         },
         collisionVertices = {
@@ -662,10 +662,10 @@ function GAME:DrawPlayerTriangle(pos, ang, thrusting)
         surface.SetDrawColor(255, 255, 255, 255)
         surface.DrawLine(pos.x - 5, pos.y + 5, pos.x + 10, pos.y)
         surface.DrawLine(pos.x + 10, pos.y, pos.x - 5, pos.y - 5)
-        surface.DrawLine(pos.x - 3, pos.y - 4, pos.x - 3, pos.y + 4) -- back of the ship
+        surface.DrawLine(pos.x - 2, pos.y - 4, pos.x - 2, pos.y + 4) -- back of the ship
         if thrusting and now % 0.1 > 0.05 then
-            surface.DrawLine(pos.x - 3, pos.y - 2, pos.x - 8, pos.y)
-            surface.DrawLine(pos.x - 8, pos.y, pos.x - 3, pos.y + 2)
+            surface.DrawLine(pos.x - 2, pos.y - 2, pos.x - 8, pos.y)
+            surface.DrawLine(pos.x - 8, pos.y, pos.x - 2, pos.y + 2)
         end
     cam.PopModelMatrix()
 end
