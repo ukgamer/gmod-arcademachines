@@ -18,6 +18,8 @@ local ScreenWidth = 512
 local ScreenHeight = 512
 local MarqueeWidth = 512
 local MarqueeHeight = 179
+local CabinetArtWidth = 1024
+local CabinetArtHeight = 1024
 
 local PressedWalk = false
 local PressedUse = false
@@ -106,11 +108,12 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
-    self.MarqueeHasDrawn = false
+    self.MarqueeHasDrawn = self.MarqueeHasDrawn or false
+    self.CabinetArtHasDrawn = self.CabinetArtHasDrawn or false
 
     local num = math.random(9999)
 
-    self.ScreenTexture = GetRenderTargetEx(
+    self.ScreenTexture = self.ScreenTexture or GetRenderTargetEx(
         "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
@@ -120,7 +123,7 @@ function ENT:Initialize()
         CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
-    self.ScreenMaterial = CreateMaterial(
+    self.ScreenMaterial = self.ScreenMaterial or CreateMaterial(
         "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
@@ -131,7 +134,7 @@ function ENT:Initialize()
         }
     )
 
-    self.MarqueeTexture = GetRenderTargetEx(
+    self.MarqueeTexture = self.MarqueeTexture or GetRenderTargetEx(
         "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
@@ -141,7 +144,7 @@ function ENT:Initialize()
         CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
-    self.MarqueeMaterial = CreateMaterial(
+    self.MarqueeMaterial = self.MarqueeMaterial or CreateMaterial(
         "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
@@ -150,6 +153,26 @@ function ENT:Initialize()
             ["$nodecal"] = 1,
             ["$selfillum"] = 1,
             ["$selfillummask"] = "dev/reflectivity_30b"
+        }
+    )
+
+    self.CabinetArtTexture = self.CabinetArtTexture or GetRenderTargetEx(
+        "ArcadeMachine_CabinetArt_" .. self:EntIndex() .. "_" .. num,
+        CabinetArtWidth,
+        CabinetArtHeight,
+        RT_SIZE_DEFAULT,
+        MATERIAL_RT_DEPTH_NONE,
+        16,
+        CREATERENDERTARGETFLAGS_HDR,
+        IMAGE_FORMAT_DEFAULT
+    )
+    self.CabinetArtMaterial = self.CabinetArtMaterial or CreateMaterial(
+        "ArcadeMachine_CabinetArt_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
+        {
+            ["$basetexture"] = self.CabinetArtTexture:GetName(),
+            ["$model"] = 1,
+            ["$nodecal"] = 1
         }
     )
 
@@ -299,6 +322,9 @@ function ENT:Draw()
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
+    if self.CabinetArtHasDrawn then
+        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, self.CabinetArtMaterial)
+    end
     self.Entity:DrawModel()
     render.MaterialOverrideByIndex()
 
@@ -407,6 +433,22 @@ function ENT:UpdateMarquee()
     render.PopRenderTarget()
 end
 
+function ENT:UpdateCabinetArt()
+    if self.CabinetArtHasDrawn then return end
+
+    render.PushRenderTarget(self.CabinetArtTexture)
+        cam.Start2D()
+            surface.SetDrawColor(0, 0, 0, 255)
+            surface.DrawRect(0, 0, CabinetArtWidth, CabinetArtHeight)
+
+            if self.Game and self.Game.DrawCabinetArt then
+                self.Game:DrawCabinetArt()
+                self.CabinetArtHasDrawn = true
+            end
+        cam.End2D()
+    render.PopRenderTarget()
+end
+
 function ENT:UpdateScreen()
     render.PushRenderTarget(self.ScreenTexture)
         cam.Start2D()
@@ -469,7 +511,9 @@ function ENT:GetUpvalues(game)
         SCREEN_WIDTH = ScreenWidth,
         SCREEN_HEIGHT = ScreenHeight,
         MARQUEE_WIDTH = MarqueeWidth,
-        MARQUEE_HEIGHT = MarqueeHeight
+        MARQUEE_HEIGHT = MarqueeHeight,
+        CABINET_ART_WIDTH = CabinetArtWidth,
+        CABINET_ART_HEIGHT = CabinetArtHeight
     }
 
     for k, v in pairs(BG) do
@@ -500,7 +544,7 @@ function ENT:GetUpvalues(game)
     upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = AM.QueuedSounds })
 
     upvalues.COINS = WrappedInclusion("arcademachine_lib/coins.lua", { MACHINE = self })
-    upvalues.MARQUEE = WrappedInclusion("arcademachine_lib/marquee.lua", { MACHINE = self })
+    upvalues.CABINET = WrappedInclusion("arcademachine_lib/cabinet.lua", { MACHINE = self })
 
     return upvalues
 end
@@ -515,6 +559,9 @@ function ENT:SetGame(game, forceLibLoad)
 
     self:StopSounds()
 
+    self.MarqueeHasDrawn = false
+    self.CabinetArtHasDrawn = false
+
     if game and game ~= "" then
         self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
 
@@ -527,7 +574,6 @@ function ENT:SetGame(game, forceLibLoad)
         end
     end
 
-    self.MarqueeHasDrawn = false
     if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
         self:UpdateMarquee()
     end

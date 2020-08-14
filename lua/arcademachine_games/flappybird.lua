@@ -399,7 +399,7 @@ function GAME:Update()
 				if self:GetFlag("SpriteIndex") > self:GetFlag("AmountOfSprites") then
 					self:SetState(GAME_STATE_ATTRACT)
 					self:ResetPipes()
-					MARQUEE:UpdateMarquee()
+					CABINET:UpdateMarquee()
 				end
 			end
 			-- dont do anything if the image hasn't loaded

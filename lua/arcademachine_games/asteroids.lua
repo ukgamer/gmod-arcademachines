@@ -189,7 +189,7 @@ local yawVec = Vector(0, 0, 1)
 
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee", function(image)
-        MARQUEE:UpdateMarquee()
+        CABINET:UpdateMarquee()
     end)
 
     self:SpawnAsteroids()

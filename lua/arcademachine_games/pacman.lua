@@ -29,7 +29,7 @@ end
 
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/pacman/images/marquee.jpg", "marquee", function(image)
-        MARQUEE:UpdateMarquee()
+        CABINET:UpdateMarquee()
     end)
 
     if not is_chromium() then return end
