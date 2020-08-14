@@ -183,9 +183,7 @@ local function ShowInfoPanel(machine)
 end
 
 hook.Add("CalcVehicleView", "arcademachine_view", function(veh, ply, view)
-    if not IsValid(AM.CurrentMachine) then
-        return
-    end
+    if not IsValid(AM.CurrentMachine) then return end
 
     local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
 

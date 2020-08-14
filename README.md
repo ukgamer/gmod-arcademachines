@@ -45,6 +45,7 @@ Your game can implement the following methods:
 * `Init()`
 * `Destroy()`
 * `DrawMarquee()`
+* `DrawCabinetArt()`
 * `OnCoinsInserted(ply, old, new)`
 * `OnCoinsLost(ply, old, new)`
 * `OnLocalPlayerNearby()`
@@ -56,6 +57,8 @@ Your game can implement the following methods:
 * `SCREEN_HEIGHT`
 * `MARQUEE_WIDTH`
 * `MARQUEE_HEIGHT`
+* `CABINET_ART_WIDTH`
+* `CABINET_ART_HEIGHT`
 
 ### Coins
 
@@ -71,13 +74,15 @@ When a coin is "used" the method `OnCoinsLost` will be called with the same argu
 
 Be aware that because `TakeCoins` sends a netmessage to the server to update the networked variable it takes time for the coin amount to actually change and for `OnCoinsLost` to be called, so do not call `TakeCoins` and then immediately check to see if the player can play - do this check in `OnCoinsLost`.
 
-### The Marquee
+### The Cabinet
 
 The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists.
 
-If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then manually call `UpdateMarquee` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
+If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then call `CABINET:UpdateMarquee()` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
 
-**The marquee can only be drawn once per game load as it is designed to be static for performance reasons.** See the Asteroids game's marquee for an example implementation.
+The machine can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcademachines-model/tree/master/matsrc)) that can be drawn to using the `DrawCabinetArt` method. Once any assets you need have loaded and you are ready to draw the cabinet art, call `CABINET:UpdateCabinetArt()`.
+
+**The marquee and cabinet artwork can only be drawn once per game load as they are designed to be static for performance reasons.**
 
 ### Helper libraries
 
