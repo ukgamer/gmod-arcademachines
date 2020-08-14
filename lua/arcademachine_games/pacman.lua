@@ -9,6 +9,7 @@ Movement = WASD
 ]]
 
 GAME.LateUpdateMarquee = true
+GAME.Bodygroup = BG_GENERIC_RECESSED_JOYSTICK
 
 local function is_chromium()
     if BRANCH == "x86-64" or BRANCH == "chromium" then return true end -- chromium also exists in x86 and on the chromium branch
@@ -30,6 +31,10 @@ end
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/pacman/images/marquee.jpg", "marquee", function(image)
         CABINET:UpdateMarquee()
+    end)
+
+    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/pacman/images/cabinet.png", "cabinet", function(image)
+        CABINET:UpdateCabinetArt()
     end)
 
     if not is_chromium() then return end
@@ -92,6 +97,12 @@ function GAME:DrawMarquee()
     surface.SetMaterial(IMAGE.Images["marquee"].mat)
     surface.SetDrawColor(255, 255, 255)
     surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+end
+
+function GAME:DrawCabinetArt()
+    surface.SetMaterial(IMAGE.Images["cabinet"].mat)
+    surface.SetDrawColor(255, 255, 255)
+    surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 local warn_text = "Sorry! This only works on the x64 branch of Garry's Mod."
