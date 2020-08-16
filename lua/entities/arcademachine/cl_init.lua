@@ -1,16 +1,7 @@
-AM = AM or {
-    QueuedSounds = {}
-}
-
 include("shared.lua")
 include("cl_hooks.lua")
 
 local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
-AM.FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
-AM.DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false)
-AM.DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
---AM.DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
-AM.DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
 
 local MaxDist = 200
 
@@ -24,10 +15,6 @@ local CabinetArtHeight = 1024
 local PressedWalk = false
 local PressedUse = false
 local PressedUseAt = 0
-
-local BloomWasDisabled = false
-local PACWasDisabled = false
---local OutfitterWasDisabled = false
 
 local LoadedLibs = {}
 
@@ -365,7 +352,7 @@ function ENT:OnPlayerChange(name, old, new)
         self.LastPlayer = nil
 
         if old == LocalPlayer() then
-            self:OnLocalPlayerLeft()
+            AM:OnLocalPlayerLeft()
         end
     end
 end
@@ -375,39 +362,22 @@ function ENT:OnLocalPlayerEntered()
 
     if AM.DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
         LocalPlayer():ConCommand("mat_disable_bloom 1")
-        BloomWasDisabled = true
+        AM.BloomWasDisabled = true
     end
 
     if AM.DisablePAC:GetBool() and pac and pac.IsEnabled() then
         pac.Disable()
-        PACWasDisabled = true
+        AM.PACWasDisabled = true
     else
-        PACWasDisabled = false
+        AM.PACWasDisabled = false
     end
 
     --[[if AM.DisableOutfitter:GetBool() and outfitter then
         outfitter.SetHighPerf(true, true)
         outfitter.DisableEverything()
-        OutfitterWasDisabled = true
+        AM.OutfitterWasDisabled = true
     else
-        OutfitterWasDisabled = false
-    end--]]
-end
-
-function ENT:OnLocalPlayerLeft()
-    AM.CurrentMachine = nil
-
-    if AM.DisableBloom:GetBool() and BloomWasDisabled then
-        LocalPlayer():ConCommand("mat_disable_bloom 0")
-    end
-
-    if AM.DisablePAC:GetBool() and PACWasDisabled then
-        pac.Enable()
-    end
-
-    --[[if AM.DisableOutfitter:GetBool() and OutfitterWasDisabled then
-        outfitter.SetHighPerf(false, true)
-        outfitter.EnableEverything()
+        AM.OutfitterWasDisabled = false
     end--]]
 end
 

@@ -22,6 +22,8 @@ function GAME:InitializeEmulator()
 		self.Panel:Remove()
 	end
 
+	self.Ready = false
+
 	local html = vgui.Create("DHTML")
 	html:SetPaintedManually(true)
 	html:OpenURL(DOOM_URL)
@@ -78,13 +80,13 @@ function GAME:Init()
 	end)
 
 	if not is_chromium() then return end
-	self.Ready = false
-	self:InitializeEmulator()
 end
 
 function GAME:Destroy()
 	if not is_chromium() then return end
-	self.Panel:Remove()
+	if IsValid(self.Panel) then
+		self.Panel:Remove()
+	end
 end
 
 local current_player = nil
@@ -208,6 +210,14 @@ function GAME:DrawMarquee()
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 end
 
+local warn_text = "Sorry! DOOM only works on the x64 branch of Garry's Mod."
+local pay_text = "Please insert coins to play / continue playing."
+local play_text = "Press USE to play!"
+local red_bg_color = Color(155, 0, 0)
+local black_bg_color = Color(0, 0, 0, 200)
+local red_color = Color(255, 0, 0)
+local white_color = Color(255, 255, 255)
+
 local function draw_text(text, col_text, col_bg)
 	surface.SetDrawColor(col_bg)
 	surface.DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -219,21 +229,25 @@ local function draw_text(text, col_text, col_bg)
 	surface.DrawText(text)
 end
 
-local warn_text = "Sorry! DOOM only works on the x64 branch of Garry's Mod."
-local pay_text = "Please insert coins to play / continue playing."
-local red_bg_color = Color(155, 0, 0)
-local black_bg_color = Color(0, 0, 0, 200)
-local red_color = Color(255, 0, 0)
+local function draw_play_text()
+	surface.SetTextColor(white_color)
+	surface.SetFont("DermaLarge")
+	local tw, th = surface.GetTextSize(play_text)
+	surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 2 - th - 2)
+	surface.DrawText(play_text)
+end
+
 function GAME:Draw()
 	if not is_chromium() then
 		draw_text(warn_text, color_white, red_bg_color)
 	else
 		if IsValid(self.Panel) then
 			self.Panel:PaintManual()
-		end
-
-		if not has_paid then
-			draw_text(pay_text, red_color, black_bg_color)
+			if not has_paid then
+				draw_text(pay_text, red_color, black_bg_color)
+			end
+		else
+			draw_play_text()
 		end
 	end
 end
@@ -242,6 +256,8 @@ end
 function GAME:OnStartPlaying(ply)
 	if ply == LocalPlayer() then
 		current_player = ply
+
+		self:InitializeEmulator()
 	end
 end
 
@@ -253,7 +269,9 @@ function GAME:OnStopPlaying(ply)
 		next_coins_request = 0
 		paused = false
 
-		self:InitializeEmulator()
+		if IsValid(self.Panel) then
+			self.Panel:Remove()
+		end
 	end
 end
 
@@ -275,15 +293,5 @@ end
 
 -- player coin change was networked, we're ready
 function GAME:OnCoinsLost(ply, old, new) end
-
-function GAME:OnLocalPlayerNearby()
-	self:InitializeEmulator()
-end
-
-function GAME:OnLocalPlayerAway()
-	if IsValid(self.Panel) then
-		self.Panel:Remove()
-	end
-end
 
 return GAME

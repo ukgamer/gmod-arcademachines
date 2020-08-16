@@ -1,3 +1,32 @@
+AM = AM or {
+    QueuedSounds = {},
+    FOV = CreateClientConVar("arcademachine_fov", 70, true, false),
+    DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false),
+    DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false),
+    DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false),
+    DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false),
+    BloomWasDisabled = false,
+    PACWasDisabled = false,
+    OutfitterWasDisabled = false
+}
+
+function AM:OnLocalPlayerLeft()
+    self.CurrentMachine = nil
+
+    if self.DisableBloom:GetBool() and self.BloomWasDisabled then
+        LocalPlayer():ConCommand("mat_disable_bloom 0")
+    end
+
+    if self.DisablePAC:GetBool() and self.PACWasDisabled then
+        pac.Enable()
+    end
+
+    --[[if self.DisableOutfitter:GetBool() and OutfitterWasDisabled then
+        outfitter.SetHighPerf(false, true)
+        outfitter.EnableEverything()
+    end--]]
+end
+
 local NextQueueAt = 0
 
 local LookDist = 100
@@ -274,9 +303,11 @@ hook.Add("HUDPaint", "arcademachine_hud", function()
 end)
 
 hook.Add("Think", "arcademachine_think", function()
-    -- In case the player gets pulled out of the machine somehow
-    if IsValid(AM.CurrentMachine) and AM.CurrentMachine:GetPlayer() ~= LocalPlayer() then
-        AM.CurrentMachine = nil
+    if
+        (IsValid(AM.CurrentMachine) and AM.CurrentMachine:GetPlayer() ~= LocalPlayer()) or -- The player was pulled out of the machine somehow
+        (AM.CurrentMachine and not IsValid(AM.CurrentMachine)) -- The machine was removed while we were in it
+    then
+        AM:OnLocalPlayerLeft()
     end
 
     if not IsValid(AM.CurrentMachine) then
