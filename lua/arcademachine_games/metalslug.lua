@@ -4,11 +4,11 @@ local URL = "https://ukgamer.github.io/gmod-arcademachines-assets/metalslug/meta
 GAME.Name = "Metal Slug"
 GAME.Description = [[Metal Slug arcade game.
 
-Start = ENTER
+Start = SHIFT
 Movement = WASD
 Jump = SPACE
-Fire = SHIFT
-Grenade = G
+Fire = MOUSE1
+Grenade = MOUSE2
 ]]
 
 GAME.LateUpdateMarquee = true
@@ -48,7 +48,7 @@ local current_player = nil
 
 local keys_down = {}
 function GAME:HandleKey(game_key, key_code, key_char)
-    if input.IsKeyDown(game_key) then
+    if current_player:KeyDown(game_key) then
         if not keys_down[game_key] then
             if IsValid(self.Panel) then
                 self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
@@ -68,31 +68,15 @@ end
 function GAME:Update()
     if not IsValid(current_player) or not IsValid(self.Panel) then return end
 
-    local forward_key = input.LookupBinding("+forward", true)
-    if forward_key then
-        self:HandleKey(input.GetKeyCode(forward_key), 38, "ArrowUp")
-    end
+    self:HandleKey(IN_FORWARD, 38, "ArrowUp")
+    self:HandleKey(IN_BACK, 40, "ArrowDown")
+    self:HandleKey(IN_MOVELEFT, 37, "ArrowLeft")
+    self:HandleKey(IN_MOVERIGHT, 39, "ArrowRight")
 
-    local back_key = input.LookupBinding("+back", true)
-    if back_key then
-        self:HandleKey(input.GetKeyCode(back_key), 40, "ArrowDown")
-    end
-
-    local left_key = input.LookupBinding("+moveleft", true)
-    if left_key then
-        self:HandleKey(input.GetKeyCode(left_key), 37, "ArrowLeft")
-    end
-
-    local right_key = input.LookupBinding("+moveright", true)
-    if right_key then
-        self:HandleKey(input.GetKeyCode(right_key), 39, "ArrowRight")
-    end
-
-    self:HandleKey(KEY_ENTER, 49, "Digit1")
-
-    self:HandleKey(KEY_LSHIFT, 17, "ControlLeft") -- Fire
-    self:HandleKey(KEY_G, 32, "Space") -- Grenade
-    self:HandleKey(KEY_SPACE, 18, "AltLeft") -- Jump
+    self:HandleKey(IN_ATTACK, 17, "ControlLeft")
+    self:HandleKey(IN_ATTACK2, 32, "Space")
+    self:HandleKey(IN_SPEED, 49, "Digit1")
+    self:HandleKey(IN_JUMP, 18, "AltLeft")
 end
 
 function GAME:DrawMarquee()
