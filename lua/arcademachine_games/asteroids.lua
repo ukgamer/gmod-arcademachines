@@ -39,7 +39,6 @@ local livesAngle = Angle(0, -90, 0)
 local nextFire = 0
 local respawnAt = 0
 local nextUfo = 0
-local fastBeep = false
 local asteroidTypes = {
     {
         name = "small",
@@ -196,7 +195,7 @@ function GAME:Init()
 end
 
 function GAME:Destroy()
-    
+
 end
 
 function GAME:PlaySound(snd, looping)
@@ -248,7 +247,7 @@ function GAME:Stop()
 
     score = 0
     extraLifeScore = 0
-    
+
     gameState = GAME_STATE_ATTRACT
 
     self:SpawnAsteroids()
@@ -456,7 +455,7 @@ function GAME:DestroyUfo(key, obj, byPlayer)
         score = score + points
         extraLifeScore = extraLifeScore + points
     end
-    
+
     self:SpawnExplosion(obj.pos, "bangsmall")
     table.remove(objects.ufos, key)
 
@@ -553,16 +552,14 @@ function GAME:Update()
 
         if thePlayer:KeyDown(IN_FORWARD) then
             objects.player.vel:Add(objects.player.ang:Forward() * 10 * FrameTime())
-            
+
             self:PlaySound("thrust", true)
         else
             self:PauseSound("thrust")
         end
 
-        if thePlayer:KeyDown(IN_JUMP) then
-            if now >= nextFire and #objects.bullets < 4 then
-                self:SpawnBullet()
-            end
+        if thePlayer:KeyDown(IN_JUMP) and now >= nextFire and #objects.bullets < 4 then
+            self:SpawnBullet()
         end
 
         objects.player.pos:Add(objects.player.vel * 25 * FrameTime())
@@ -764,7 +761,6 @@ function GAME:Draw()
 
     if gameState ~= GAME_STATE_ATTRACT then
         surface.SetFont("DermaLarge")
-        local tw, th = surface.GetTextSize(score)
         surface.SetTextColor(255, 255, 255, 255)
         surface.SetTextPos(10, 0)
         surface.DrawText(score)

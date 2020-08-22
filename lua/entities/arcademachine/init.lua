@@ -31,45 +31,46 @@ resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel.vmt")
 resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel_normal.vtf")
 
 local function AddCSGameFiles()
-    local ext = "arcademachine_games/"
-    for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
-        AddCSLuaFile(ext .. file)
-    end
+    local paths = {
+        "arcademachine_games/",
+        "arcademachine_lib/"
+    }
 
-    ext = "arcademachine_lib/"
-    for _, file in pairs(file.Find(ext .. "*.lua", "LUA")) do
-        AddCSLuaFile(ext .. file)
+    for _, p in ipairs(paths) do
+        for _, f in pairs(file.Find(p .. "*.lua", "LUA")) do
+            AddCSLuaFile(p .. f)
+        end
     end
 end
 AddCSGameFiles()
 
 function ENT:SpawnFunction(ply, tr)
-    if (!tr.Hit) then return end
-    
+    if not tr.Hit then return end
+
     local ent = ents.Create(self.Class)
     ent:SetPos(tr.HitPos)
     ent:Spawn()
     ent:SetAngles(Angle(0, (ply:GetPos() - tr.HitPos):Angle().y, 0))
     ent:Activate()
-    
+
     ent.Owner = ply
     undo.Create(self.Class)
         undo.AddEntity(ent)
         undo.SetPlayer(ply)
     undo.Finish()
-    
+
     return ent
 end
 
 function ENT:Initialize()
-    self.Entity:SetModel("models/metastruct/ms_acabinet_v2.mdl")
-    
+    self:SetModel("models/metastruct/ms_acabinet_v2.mdl")
+
     self:SetUseType(SIMPLE_USE)
 
-    self.Entity:SetMoveType(MOVETYPE_VPHYSICS)
-    self.Entity:SetSolid(SOLID_VPHYSICS)
-    self.Entity:PhysicsInit(SOLID_VPHYSICS)
-    local phys = self.Entity:GetPhysicsObject()
+    self:SetMoveType(MOVETYPE_VPHYSICS)
+    self:SetSolid(SOLID_VPHYSICS)
+    self:PhysicsInit(SOLID_VPHYSICS)
+    local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:EnableMotion(false)
     end

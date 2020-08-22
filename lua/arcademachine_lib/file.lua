@@ -13,22 +13,20 @@ file.CreateDir(path)
 
 function FILE:LoadFromURL(url, key, callback, noCache)
     if self.Files[key] and not noCache then return end
-    
+
     local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. string.GetExtensionFromFilename(url)
-    
-    if not noCache then
-        if file.Exists(filename, "DATA") then
-            self.Files[key] = {
-                status = self.STATUS_LOADED,
-                path = filename
-            }
-            if callback then
-                callback(self.Files[key])
-            end
-            return
+
+    if not noCache and file.Exists(filename, "DATA") then
+        self.Files[key] = {
+            status = self.STATUS_LOADED,
+            path = filename
+        }
+        if callback then
+            callback(self.Files[key])
         end
+        return
     end
-    
+
     self.Files[key] = {
         status = self.STATUS_LOADING
     }

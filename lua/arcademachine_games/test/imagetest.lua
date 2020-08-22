@@ -22,7 +22,7 @@ function GAME:DrawMarquee()
 end
 
 function GAME:Update()
-    
+
 end
 
 function GAME:Draw()
@@ -38,7 +38,7 @@ function GAME:OnStartPlaying(ply)
 end
 
 function GAME:OnStopPlaying(ply)
-    
+
 end
 
 return GAME

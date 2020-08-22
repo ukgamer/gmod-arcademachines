@@ -112,7 +112,7 @@ function COLLISION:CirclePolyCollision(objA, objB)
     self:RotateAndTranslateVerts(poly)
 
     local axes = self:GetAxes(poly)
-    local vertex, index = self:GetNearestVertex(circle, poly)
+    local vertex = self:GetNearestVertex(circle, poly)
     local lastAxis = vertex - circle.pos
     lastAxis:Normalize()
     table.insert(axes, lastAxis)
@@ -125,7 +125,7 @@ function COLLISION:CirclePolyCollision(objA, objB)
         local minA, maxA = self:Projection(circle, axes[i])
         local minB, maxB = self:Projection(poly, axes[i])
         overlap = self:LineOverlap(minA, maxA, minB, maxB)
-    
+
         if overlap == 0 then
             return false
         end
