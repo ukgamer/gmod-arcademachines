@@ -194,7 +194,7 @@ function GAME:Update()
 	self:HandleKey(KEY_P, pause_key_code, pause_key_name)
 
 	-- weapon selection
-	for i=1, 9 do
+	for i = 1, 9 do
 		self:HandleKey(1 + i, 48 + i, i)
 	end
 end

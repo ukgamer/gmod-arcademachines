@@ -119,7 +119,7 @@ GAME.ScoredPipes = {
 --------------------------------------------------
 local function GetSound(snd)
 	snd = SOUND.Sounds[snd]
-	
+
 	if snd and snd.status == SOUND.STATUS_LOADED then
 		return snd.sound
 	end
@@ -273,7 +273,7 @@ local function InitFlagIfNotExists(flag, val)
 end
 
 local function LoadSound(snd, cb)
-	SOUND:LoadFromURL(Sound_BaseURL .. snd, (snd:gsub("%.ogg", "")), cb or function() end)
+	SOUND:LoadFromURL(Sound_BaseURL .. snd, snd:gsub("%.ogg", ""), cb or function() end)
 end
 
 -- flappy bird specific stuff
@@ -297,7 +297,7 @@ function GAME:Start()
 	self:SetState(GAME_STATE_PLAYING)
 
 	PlaySound("swoosh")
-		
+
 	FLAPPY.pos = Vector(SCREEN_HEIGHT / 2 - BIRD_WIDTH / 2, SCREEN_HEIGHT / 8 - BIRD_HEIGHT / 2)
 	FLAPPY.collision.width = BIRD_WIDTH
 	FLAPPY.collision.height = BIRD_HEIGHT
@@ -365,7 +365,6 @@ function GAME:Update()
 	local bgsprite = IMAGE.Images["background_day"]
 	if bgsprite and bgsprite.status == IMAGE.STATUS_LOADED and self:GetFlag("BackgroundMoving", false) then
 		for i = 1, #self.Backgrounds do
-			local bg_pos_x = self.Backgrounds[i]
 			local _bg = HCSS.background_day
 			self.Backgrounds[i] = self.Backgrounds[i] - FrameTime() * 75
 
@@ -422,7 +421,7 @@ function GAME:Update()
 	elseif self:GetState() == GAME_STATE_DEAD then
 		InitFlagIfNotExists("WhenNextStart", SysTime() + 1)
 		self:SetFlag("BackgroundMoving", false)
-		
+
 		if input.IsKeyDown(KEY_SPACE) and SysTime() > self:GetFlag("WhenNextStart") then
 			self:SetState(GAME_STATE_STARTING)
 			self:ClearFlag("WhenNextStart")
@@ -449,7 +448,7 @@ function GAME:Update()
 		-- modify flappy velocity and y value
 		self:SetFlag("FlappyVel", self:GetFlag("FlappyVel") + self:GetFlag("Gravity") * FrameTime())
 		FLAPPY.pos.y = FLAPPY.pos.y - (self:GetFlag("FlappyVel") * FrameTime())
-		
+
 		-- pipe moving routine
 		self:MovePipes()
 
@@ -457,7 +456,7 @@ function GAME:Update()
 			-- sending flappy into the air
 			if not self:GetFlag("LastSpace") then
 				self:SetFlag("LastSpace", 0)
-				
+
 				PlaySound("swoosh")
 			end
 
@@ -488,16 +487,14 @@ function GAME:Update()
 		end
 
 		local closest_pipe, closest_dist = self:GetClosestPipe()
-		if closest_pipe and closest_dist < 100000 then
-			if closest_dist > FLAPPY.collision.width and not self.ScoredPipes[closest_pipe] then
-				self.ScoredPipes[closest_pipe] = true
-				self:SetFlag("Score", self:GetFlag("Score") + 1)
-				
-				PlaySound("point")
-					
-				if self:GetFlag("Score") > self:GetFlag("BestScore") then
-					self:SetFlag("BestScore", self:GetFlag("Score"))
-				end
+		if closest_pipe and closest_dist < 100000 and closest_dist > FLAPPY.collision.width and not self.ScoredPipes[closest_pipe] then
+			self.ScoredPipes[closest_pipe] = true
+			self:SetFlag("Score", self:GetFlag("Score") + 1)
+
+			PlaySound("point")
+
+			if self:GetFlag("Score") > self:GetFlag("BestScore") then
+				self:SetFlag("BestScore", self:GetFlag("Score"))
 			end
 		end
 
@@ -548,7 +545,6 @@ function GAME:DrawMarquee()
 
 	local num = 3
 	local multw = mw / bg_data.w
-	local multh = mh / bg_data.h
 
 	local perw = bg_data.w / (multw * .9)
 	local perh = bg_data.w / (multw * .9)
@@ -584,8 +580,8 @@ function GAME:DrawPipes(w, h)
 	if pipe and pipe.status == IMAGE.STATUS_LOADED and self.Pipes and #self.Pipes > 0 then
 		for i = 1, #self.Pipes do
 			local pipe_obj = self.Pipes[i]
-			local low, up = pipe_obj[1], pipe_obj[2]
-			
+			local _, up = pipe_obj[1], pipe_obj[2]
+
 			surface.SetDrawColor(255, 255, 255)
 			surface.SetMaterial(pipe.mat)
 			surface.DrawTexturedRect(up.pos.x, up.pos.y, up.collision.width, up.collision.height)
@@ -642,7 +638,7 @@ function GAME:DrawFlappy(w, h)
 	if birdsprite and birdsprite.status == IMAGE.STATUS_LOADED and not (self.GameEnded or self.Dead) then
 		local bird = self.TheFlappy
 		local tw, th = bird.collision.width * 1.25, bird.collision.height * 1.25
-		local x = SCREEN_WIDTH / 2 
+		local x = SCREEN_WIDTH / 2
 		local y = SCREEN_HEIGHT / 2 - th / 2 + bird.pos.y
 
 		surface.SetMaterial(birdsprite.mat)
@@ -686,7 +682,7 @@ function GAME:Draw()
 		end
 	end
 
-	
+
 
 	-- we're downloading sprites
 	if self:GetState() == GAME_STATE_SPRITEDL then
@@ -712,8 +708,8 @@ function GAME:Draw()
 		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 2 - th / 2)
 		surface.DrawText(text)
 
-		local text = "TO PLAY"
-		local tw, th = surface.GetTextSize(text)
+		text = "TO PLAY"
+		tw, th = surface.GetTextSize(text)
 		surface.SetTextColor(255, 255, math.sin(CurTime() * 5) * 255, 255)
 		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, SCREEN_HEIGHT / 2 - th / 2 + th)
 		surface.DrawText(text)
@@ -731,23 +727,23 @@ function GAME:Draw()
 		surface.DrawText(text)
 
 		text = "PRESS SPACE TO RESET"
-		local h = SCREEN_HEIGHT / 2 + SCREEN_HEIGHT / 4 - th / 2
-		local tw, _ = surface.GetTextSize(text)
+		local y = SCREEN_HEIGHT / 2 + SCREEN_HEIGHT / 4 - th / 2
+		tw, _ = surface.GetTextSize(text)
 		surface.SetTextColor(255, 255, 255, 255)
-		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, h)
+		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, y)
 		surface.DrawText(text)
 
 	-- we're about to start the game
 	elseif self:GetState() == GAME_STATE_STARTING then
 		surface.SetFont("DermaLarge")
-	
+
 		local text = "PRESS SPACE TO START"
 		local tw, th = surface.GetTextSize(text)
-		local h = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT / 4 - th / 2
+		local y = SCREEN_HEIGHT / 2 - SCREEN_HEIGHT / 4 - th / 2
 		surface.SetTextColor(255, 255, 255, 255)
-		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, h)
+		surface.SetTextPos(SCREEN_WIDTH / 2 - tw / 2, y)
 		surface.DrawText(text)
-		self:DrawFlappy(w, h)
+		self:DrawFlappy(w, y)
 
 	-- we're playing, do game logic here
 	elseif self:GetState() == GAME_STATE_PLAYING then
@@ -765,8 +761,8 @@ function GAME:Draw()
 	surface.DrawText(t)
 
 	-- best score
-	local t = "BEST SCORE: " .. self:GetFlag("BestScore", 0)
-	local tw, th = surface.GetTextSize(t)
+	t = "BEST SCORE: " .. self:GetFlag("BestScore", 0)
+	tw = surface.GetTextSize(t)
 	surface.SetTextColor(255, 255, 255, 255)
 	surface.SetTextPos(SCREEN_HEIGHT - tw - 10, 10)
 	surface.DrawText(t)
