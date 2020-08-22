@@ -1,0 +1,22 @@
+name: glualint
+
+on:
+  pull_request:
+    paths: 
+      - '**.lua'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install essentials
+      run: apt update && apt install curl unzip git -y
+    
+    - name: Get glualint
+      run: curl -s https://api.github.com/repos/FPtje/GLuaFixer/releases/latest | grep -oP 'browser_download_url.+\K(https:\/\/.+glualint-\d\.\d+\.\d-linux-stripped\.zip)' | xargs curl -L -o latest && unzip latest
+    
+    - name: Run linter
+      run: ./glualint `git diff-tree --no-commit-id --name-only -r ${GITHUB_SHA}`
