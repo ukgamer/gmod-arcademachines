@@ -772,7 +772,7 @@ function GAME:Draw()
         end
 
         surface.SetFont("DermaDefault")
-        local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
+        local _, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
         surface.SetTextColor(255, 255, 255, 255)
         surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
         surface.DrawText(COINS:GetCoins() .. " COIN(S)")
