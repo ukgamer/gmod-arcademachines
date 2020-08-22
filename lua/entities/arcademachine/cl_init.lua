@@ -13,8 +13,6 @@ local CabinetArtWidth = 1024
 local CabinetArtHeight = 1024
 
 local PressedWalk = false
-local PressedUse = false
-local PressedUseAt = 0
 
 local LoadedLibs = {}
 
@@ -166,7 +164,7 @@ function ENT:Initialize()
     self.InRange = self.InRange or false
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
-    
+
     -- Used to work around network variable spamming being changed from
     -- empty to a game and back again when loaded into room on MS
     self.AllowGameChangeAt = 0
@@ -216,28 +214,28 @@ function ENT:Think()
     if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
         if self.Game then
             if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
-                self.Entity:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
+                self:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
                 self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
             end
-        
+
             if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
                 self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
             end
         end
-        
+
         self.CoinChange = nil
     end
 
     if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+        self:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
     end
 
     if AM.DisableOthers:GetBool() and AM.CurrentMachine and AM.CurrentMachine ~= self then
         return
     end
 
-    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > MaxDist * MaxDist then
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self:GetPos()) > MaxDist * MaxDist then
         if self.InRange then
             self.InRange = false
             self:OnLeftRange()
@@ -274,7 +272,7 @@ function ENT:Think()
 
         for _, v in pairs(self.LoadedSounds) do
             if IsValid(v) then
-                v:SetPos(self.Entity:GetPos())
+                v:SetPos(self:GetPos())
             end
         end
 
@@ -299,7 +297,7 @@ function ENT:OnLeftRange()
 end
 
 function ENT:Draw()
-    local marqueeIndex = self.Entity:GetBodygroup(0)
+    local marqueeIndex = self:GetBodygroup(0)
 
     if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
         cam.IgnoreZ(true)
@@ -312,7 +310,7 @@ function ENT:Draw()
     if self.CabinetArtHasDrawn then
         render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, self.CabinetArtMaterial)
     end
-    self.Entity:DrawModel()
+    self:DrawModel()
     render.MaterialOverrideByIndex()
 
     if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
@@ -337,7 +335,7 @@ function ENT:OnPlayerChange(name, old, new)
             if self.Game then
                 self.Game:OnStartPlaying(new)
             end
-            
+
             self.LastPlayer = new
 
             if new == LocalPlayer() then
@@ -430,7 +428,7 @@ function ENT:UpdateScreen()
                     self.Game:Draw()
                 else
                     surface.SetFont("DermaLarge")
-                    local w, h = surface.GetTextSize("NO GAME LOADED")
+                    local w = surface.GetTextSize("NO GAME LOADED")
                     surface.SetTextColor(255, 255, 255, 255)
                     surface.SetTextPos((ScreenWidth / 2) - (w / 2), ScreenHeight / 2)
                     surface.DrawText("NO GAME LOADED")
@@ -476,6 +474,37 @@ function ENT:StopSounds()
     end
 end
 
+function ENT:SetGame(game, forceLibLoad)
+    if self.Game then
+        if self.Game.Destroy then
+            self.Game:Destroy()
+        end
+        self.Game = nil
+    end
+
+    self:StopSounds()
+
+    self.MarqueeHasDrawn = false
+    self.CabinetArtHasDrawn = false
+
+    if game and game ~= "" then
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
+
+        if self.Game.Init then
+            self.Game:Init()
+        end
+
+        if IsValid(self:GetPlayer()) then
+            self.Game:OnStartPlaying(self:GetPlayer())
+        end
+    end
+
+    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
+        self:UpdateMarquee()
+    end
+    self:UpdateScreen()
+end
+
 function ENT:GetUpvalues(game)
     local upvalues = {
         SCREEN_WIDTH = ScreenWidth,
@@ -517,35 +546,4 @@ function ENT:GetUpvalues(game)
     upvalues.CABINET = WrappedInclusion("arcademachine_lib/cabinet.lua", { MACHINE = self })
 
     return upvalues
-end
-
-function ENT:SetGame(game, forceLibLoad)
-    if self.Game then
-        if self.Game.Destroy then
-            self.Game:Destroy()
-        end
-        self.Game = nil
-    end
-
-    self:StopSounds()
-
-    self.MarqueeHasDrawn = false
-    self.CabinetArtHasDrawn = false
-
-    if game and game ~= "" then
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
-
-        if self.Game.Init then
-            self.Game:Init()
-        end
-
-        if IsValid(self:GetPlayer()) then
-            self.Game:OnStartPlaying(self:GetPlayer())
-        end
-    end
-
-    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
-        self:UpdateMarquee()
-    end
-    self:UpdateScreen()
 end

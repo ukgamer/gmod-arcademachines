@@ -39,7 +39,7 @@ function SOUND:LoadQueued(tbl)
             self.Sounds[tbl.key].err = errstr
             return
         end
-        
+
         snd:SetPos(MACHINE.Entity:GetPos())
         MACHINE.LoadedSounds[tbl.key] = snd
 

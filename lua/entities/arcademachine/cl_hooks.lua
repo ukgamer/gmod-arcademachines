@@ -42,7 +42,7 @@ local function ShowSettingsPanel()
         AMSettingsPanel:SetMinimumSize(200, 200)
         AMSettingsPanel:SetTitle("Arcade Machine Settings")
         AMSettingsPanel:DockPadding(10, 30, 10, 10)
-    
+
         local scroll = vgui.Create("DScrollPanel", AMSettingsPanel)
         scroll:Dock(FILL)
 
@@ -63,7 +63,7 @@ local function ShowSettingsPanel()
         checkbox:SetValue(AM.DisableBloom:GetBool())
         checkbox:SizeToContents()
 
-        local label = vgui.Create("DLabel", scroll)
+        label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
         label:SetWrap(true)
         label:SetAutoStretchVertical(true)
@@ -72,7 +72,7 @@ local function ShowSettingsPanel()
         label:SetText("Performance")
 
         if pac then
-            local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+            checkbox = vgui.Create("DCheckBoxLabel", scroll)
             checkbox:Dock(TOP)
             checkbox:DockMargin(0, 0, 0, 5)
             checkbox:SetFont("AMInfoFont")
@@ -82,7 +82,7 @@ local function ShowSettingsPanel()
             checkbox:SizeToContents()
         end
 
-        local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+        checkbox = vgui.Create("DCheckBoxLabel", scroll)
         checkbox:Dock(TOP)
         checkbox:DockMargin(0, 0, 0, 5)
         checkbox:SetFont("AMInfoFont")
@@ -91,7 +91,7 @@ local function ShowSettingsPanel()
         checkbox:SetValue(AM.DisableOthers:GetBool())
         checkbox:SizeToContents()
 
-        local label = vgui.Create("DLabel", scroll)
+        label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
         label:SetWrap(true)
         label:SetAutoStretchVertical(true)
@@ -108,7 +108,7 @@ local function ShowSettingsPanel()
             LocalPlayer():ConCommand("arcademachine_clear_cache")
         end
 
-        local button = vgui.Create("DButton", scroll)
+        button = vgui.Create("DButton", scroll)
         button:Dock(TOP)
         button:DockMargin(0, 0, 0, 5)
         button:SetFont("AMInfoFont")
@@ -201,7 +201,7 @@ local function ShowInfoPanel(machine)
         label:SetFont("AMInfoFontBold")
         label:SetText("Game Information")
 
-        local label = vgui.Create("DLabel", scroll)
+        label = vgui.Create("DLabel", scroll)
         label:Dock(TOP)
         label:SetWrap(true)
         label:SetAutoStretchVertical(true)

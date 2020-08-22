@@ -5,23 +5,23 @@ function HTTP:urlhash(str)
     local blocks = 4
     local hash = ""
     local memblock = {}
-    
+
     if strlen < blocks then
         blocks = 1
     end
-    
+
     local lastInc = 0
-    
+
     for i = 1, blocks do
         local pos = math.floor((i / blocks) * strlen)
         memblock[i] = util.CRC(string.sub(str, lastInc + 1, pos))
         lastInc = pos
     end
-    
+
     for _, v in ipairs(memblock) do
         hash = hash .. string.format("%x", v)
     end
-    
+
     hash = string.upper(hash)
     return hash
 end
