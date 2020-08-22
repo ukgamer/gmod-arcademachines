@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install essentials
-        run: apt update && apt install curl unzip git -y
+        run: sudo apt update && sudo apt install curl unzip git -y
 
       - name: Get glualint
         run: curl -s https://api.github.com/repos/FPtje/GLuaFixer/releases/latest | grep -oP 'browser_download_url.+\K(https:\/\/.+glualint-\d\.\d+\.\d-linux-stripped\.zip)' | xargs curl -L -o latest && unzip latest
