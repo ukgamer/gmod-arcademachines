@@ -363,6 +363,11 @@ function ENT:OnLocalPlayerEntered()
         AM.BloomWasDisabled = true
     end
 
+    if cvars.Bool("webbrowser_f1_open") then
+        LocalPlayer():ConCommand("webbrowser_f1_open 0")
+        AM.MSBrowserWasDisabled = true
+    end
+
     if AM.DisablePAC:GetBool() and pac and pac.IsEnabled() then
         pac.Disable()
         AM.PACWasDisabled = true
