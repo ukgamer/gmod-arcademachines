@@ -1,4 +1,5 @@
 AM = AM or {
+    UI = {},
     QueuedSounds = {},
     FOV = CreateClientConVar("arcademachine_fov", 70, true, false),
     DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false),
@@ -7,7 +8,8 @@ AM = AM or {
     DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false),
     BloomWasDisabled = false,
     PACWasDisabled = false,
-    OutfitterWasDisabled = false
+    OutfitterWasDisabled = false,
+    MSBrowserWasDisabled = false
 }
 
 function AM:OnLocalPlayerLeft()
@@ -21,11 +23,19 @@ function AM:OnLocalPlayerLeft()
         pac.Enable()
     end
 
+    if self.MSBrowserWasDisabled then
+        LocalPlayer():ConCommand("webbrowser_f1_open 1")
+    end
+
     --[[if self.DisableOutfitter:GetBool() and OutfitterWasDisabled then
         outfitter.SetHighPerf(false, true)
         outfitter.EnableEverything()
     end--]]
 end
+
+local LookingAt = nil
+local PressedF1 = false
+local ShowInfoPanel = false
 
 local NextQueueAt = 0
 
@@ -34,123 +44,111 @@ local LookDist = 100
 local ControlsBgCol = Color(0, 0, 0, 200)
 local ControlsTextCol = Color(255, 255, 255, 200)
 
-AMSettingsPanel = AMSettingsPanel or nil
-local function ShowSettingsPanel()
-    if not IsValid(AMSettingsPanel) then
-        AMSettingsPanel = vgui.Create("DFrame")
-        AMSettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
-        AMSettingsPanel:SetMinimumSize(200, 200)
-        AMSettingsPanel:SetTitle("Arcade Machine Settings")
-        AMSettingsPanel:DockPadding(10, 30, 10, 10)
+AM.UI.SettingsPanel = AM.UI.SettingsPanel or nil
+if not IsValid(AM.UI.SettingsPanel) then
+    AM.UI.SettingsPanel = vgui.Create("DFrame")
+    AM.UI.SettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
+    AM.UI.SettingsPanel:SetMinimumSize(200, 200)
+    AM.UI.SettingsPanel:SetTitle("Arcade Machine Settings")
+    AM.UI.SettingsPanel:DockPadding(10, 30, 10, 10)
+    AM.UI.SettingsPanel:SetDeleteOnClose(false)
+    AM.UI.SettingsPanel:SetVisible(false)
 
-        local scroll = vgui.Create("DScrollPanel", AMSettingsPanel)
-        scroll:Dock(FILL)
+    local scroll = vgui.Create("DScrollPanel", AM.UI.SettingsPanel)
+    scroll:Dock(FILL)
 
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 10)
-        label:SetFont("AMInfoFontBold")
-        label:SetText("General")
+    local label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 10)
+    label:SetFont("AMInfoFontBold")
+    label:SetText("General")
 
-        local checkbox = vgui.Create("DCheckBoxLabel", scroll)
-        checkbox:Dock(TOP)
-        checkbox:DockMargin(0, 0, 0, 5)
-        checkbox:SetFont("AMInfoFont")
-        checkbox:SetText("Disable bloom when in machine")
-        checkbox:SetConVar("arcademachine_disable_bloom")
-        checkbox:SetValue(AM.DisableBloom:GetBool())
-        checkbox:SizeToContents()
+    local checkbox = vgui.Create("DCheckBoxLabel", scroll)
+    checkbox:Dock(TOP)
+    checkbox:DockMargin(0, 0, 0, 5)
+    checkbox:SetFont("AMInfoFont")
+    checkbox:SetText("Disable bloom when in machine")
+    checkbox:SetConVar("arcademachine_disable_bloom")
+    checkbox:SetValue(AM.DisableBloom:GetBool())
+    checkbox:SizeToContents()
 
-        label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 10)
-        label:SetFont("AMInfoFontBold")
-        label:SetText("Performance")
+    label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 10)
+    label:SetFont("AMInfoFontBold")
+    label:SetText("Performance")
 
-        if pac then
-            checkbox = vgui.Create("DCheckBoxLabel", scroll)
-            checkbox:Dock(TOP)
-            checkbox:DockMargin(0, 0, 0, 5)
-            checkbox:SetFont("AMInfoFont")
-            checkbox:SetText("Disable PAC when in machine")
-            checkbox:SetConVar("arcademachine_disable_pac")
-            checkbox:SetValue(AM.DisablePAC:GetBool())
-            checkbox:SizeToContents()
-        end
+    checkbox = vgui.Create("DCheckBoxLabel", scroll)
+    checkbox:Dock(TOP)
+    checkbox:DockMargin(0, 0, 0, 5)
+    checkbox:SetFont("AMInfoFont")
+    checkbox:SetText("Disable PAC when in machine")
+    checkbox:SetConVar("arcademachine_disable_pac")
+    checkbox:SetValue(AM.DisablePAC:GetBool())
+    checkbox:SizeToContents()
 
-        checkbox = vgui.Create("DCheckBoxLabel", scroll)
-        checkbox:Dock(TOP)
-        checkbox:DockMargin(0, 0, 0, 5)
-        checkbox:SetFont("AMInfoFont")
-        checkbox:SetText("Disable other machines when in machine")
-        checkbox:SetConVar("arcademachine_disable_others_when_active")
-        checkbox:SetValue(AM.DisableOthers:GetBool())
-        checkbox:SizeToContents()
+    checkbox = vgui.Create("DCheckBoxLabel", scroll)
+    checkbox:Dock(TOP)
+    checkbox:DockMargin(0, 0, 0, 5)
+    checkbox:SetFont("AMInfoFont")
+    checkbox:SetText("Disable other machines when in machine")
+    checkbox:SetConVar("arcademachine_disable_others_when_active")
+    checkbox:SetValue(AM.DisableOthers:GetBool())
+    checkbox:SizeToContents()
 
-        label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 10)
-        label:SetFont("AMInfoFontBold")
-        label:SetText("Debug")
+    label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 10)
+    label:SetFont("AMInfoFontBold")
+    label:SetText("Debug")
 
-        local button = vgui.Create("DButton", scroll)
-        button:Dock(TOP)
-        button:DockMargin(0, 0, 0, 5)
-        button:SetFont("AMInfoFont")
-        button:SetText("Clear cache")
-        button.DoClick = function()
-            LocalPlayer():ConCommand("arcademachine_clear_cache")
-        end
-
-        button = vgui.Create("DButton", scroll)
-        button:Dock(TOP)
-        button:DockMargin(0, 0, 0, 5)
-        button:SetFont("AMInfoFont")
-        button:SetText("Reload machines")
-        button.DoClick = function()
-            LocalPlayer():ConCommand("arcademachine_reload_machines")
-        end
+    local button = vgui.Create("DButton", scroll)
+    button:Dock(TOP)
+    button:DockMargin(0, 0, 0, 5)
+    button:SetFont("AMInfoFont")
+    button:SetText("Clear cache")
+    button.DoClick = function()
+        LocalPlayer():ConCommand("arcademachine_clear_cache")
     end
 
-    AMSettingsPanel:Center()
-    AMSettingsPanel:MakePopup()
+    button = vgui.Create("DButton", scroll)
+    button:Dock(TOP)
+    button:DockMargin(0, 0, 0, 5)
+    button:SetFont("AMInfoFont")
+    button:SetText("Reload machines")
+    button.DoClick = function()
+        LocalPlayer():ConCommand("arcademachine_reload_machines")
+    end
 end
 
 list.Set("DesktopWindows", "ArcadeMachines", {
     title = "Arcade Machines",
     icon = "icon64/arcademachine.png",
     init = function(icon, window)
-        ShowSettingsPanel()
+        AM.UI.SettingsPanel:SetVisible(true)
+        AM.UI.SettingsPanel:Center()
+        AM.UI.SettingsPanel:MakePopup()
     end
 })
 
-AMInfoPanel = AMInfoPanel or nil
-local LookingAt = nil
-local function ShowInfoPanel(machine)
-    if LookingAt == machine then return end
-
-    if LookingAt ~= machine and IsValid(AMInfoPanel) then
-        AMInfoPanel:Remove()
-    end
-
-    LookingAt = machine
-
-    AMInfoPanel = vgui.Create("DFrame")
-    AMInfoPanel:SetPaintedManually(true)
-    AMInfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
-    AMInfoPanel:SetMinimumSize(300, 300)
-    AMInfoPanel:SetPos(0, ScrH() * 0.5 - (AMInfoPanel:GetTall() * 0.5))
-    AMInfoPanel:SetTitle("")
-    AMInfoPanel:SetDraggable(false)
-    AMInfoPanel:ShowCloseButton(false)
-    AMInfoPanel:DockPadding(10, 10, 10, 20)
-    AMInfoPanel.Paint = function(self, w, h)
+AM.UI.InfoPanel = AM.UI.InfoPanel or nil
+if not IsValid(AM.UI.InfoPanel) then
+    AM.UI.InfoPanel = vgui.Create("DFrame")
+    AM.UI.InfoPanel:SetPaintedManually(true)
+    AM.UI.InfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
+    AM.UI.InfoPanel:SetMinimumSize(300, 300)
+    AM.UI.InfoPanel:SetPos(0, ScrH() * 0.5 - (AM.UI.InfoPanel:GetTall() * 0.5))
+    AM.UI.InfoPanel:SetTitle("")
+    AM.UI.InfoPanel:SetDraggable(false)
+    AM.UI.InfoPanel:ShowCloseButton(false)
+    AM.UI.InfoPanel:DockPadding(10, 10, 10, 20)
+    AM.UI.InfoPanel.Paint = function(self, w, h)
         draw.RoundedBoxEx(20, 0, 0, w, h, ControlsBgCol, false, true, false, true)
 
         local text = "Open chat and mouse over to scroll (default Y)"
@@ -162,7 +160,7 @@ local function ShowInfoPanel(machine)
         surface.DrawText(text)
     end
 
-    local scroll = vgui.Create("DScrollPanel", AMInfoPanel)
+    local scroll = vgui.Create("DScrollPanel", AM.UI.InfoPanel)
     scroll:Dock(FILL)
     local sbar = scroll:GetVBar()
     sbar.Paint = function(self, w, h) end
@@ -170,44 +168,70 @@ local function ShowInfoPanel(machine)
     sbar.btnDown.Paint = function(self, w, h) end
     sbar.btnGrip.Paint = function(self, w, h) end
 
-    if machine.Game then
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("DermaLarge")
-        label:SetText(machine.Game.Name)
+    AM.UI.GameLabel = vgui.Create("DLabel", scroll)
+    AM.UI.GameLabel:Dock(TOP)
+    AM.UI.GameLabel:SetWrap(true)
+    AM.UI.GameLabel:SetAutoStretchVertical(true)
+    AM.UI.GameLabel:DockMargin(0, 0, 0, 15)
+    AM.UI.GameLabel:SetFont("DermaLarge")
+    AM.UI.GameLabel:SetText("")
+
+    AM.UI.CoinsLabel = vgui.Create("DLabel", scroll)
+    AM.UI.CoinsLabel:Dock(TOP)
+    AM.UI.CoinsLabel:SetWrap(true)
+    AM.UI.CoinsLabel:SetAutoStretchVertical(true)
+    AM.UI.CoinsLabel:DockMargin(0, 0, 0, 15)
+    AM.UI.CoinsLabel:SetFont("AMInfoFontBold")
+    AM.UI.CoinsLabel:SetText("")
+
+    local label = vgui.Create("DLabel", scroll)
+    label:Dock(TOP)
+    label:SetWrap(true)
+    label:SetAutoStretchVertical(true)
+    label:DockMargin(0, 0, 0, 10)
+    label:SetFont("AMInfoFontBold")
+    label:SetText("Game Information")
+
+    AM.UI.DescriptionLabel = vgui.Create("DLabel", scroll)
+    AM.UI.DescriptionLabel:Dock(TOP)
+    AM.UI.DescriptionLabel:SetWrap(true)
+    AM.UI.DescriptionLabel:SetAutoStretchVertical(true)
+    AM.UI.DescriptionLabel:DockMargin(0, 0, 0, 15)
+    AM.UI.DescriptionLabel:SetFont("AMInfoFont")
+    AM.UI.DescriptionLabel:SetText("")
+end
+
+local function ToggleInfoPanel(machine)
+    if not IsValid(machine) or not machine.Game then
+        if IsValid(AM.UI.InfoPanel) then
+            AM.UI.InfoPanel:SetVisible(false)
+        end
+        LookingAt = nil
+        return
     end
+
+    if LookingAt == machine then return end
+
+    LookingAt = machine
+
+    AM.UI.InfoPanel:SetVisible(true)
 
     local cost = machine:GetMSCoinCost()
 
     if cost > 0 then
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("AMInfoFontBold")
-        label:SetText("This machine costs " .. cost .. " coin(s) to play.")
+        AM.UI.CoinsLabel:SetVisible(true)
+        AM.UI.CoinsLabel:SetText("This machine costs " .. cost .. " coin(s) to play.")
+    else
+        AM.UI.CoinsLabel:SetVisible(false)
     end
 
-    if machine.Game and machine.Game.Description then
-        local label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 10)
-        label:SetFont("AMInfoFontBold")
-        label:SetText("Game Information")
+    AM.UI.GameLabel:SetText(machine.Game.Name)
 
-        label = vgui.Create("DLabel", scroll)
-        label:Dock(TOP)
-        label:SetWrap(true)
-        label:SetAutoStretchVertical(true)
-        label:DockMargin(0, 0, 0, 15)
-        label:SetFont("AMInfoFont")
-        label:SetText(machine.Game.Description)
+    if machine.Game.Description then
+        AM.UI.DescriptionLabel:SetVisible(true)
+        AM.UI.DescriptionLabel:SetText(machine.Game.Description)
+    else
+        AM.UI.DescriptionLabel:SetVisible(false)
     end
 end
 
@@ -232,7 +256,17 @@ end)
 hook.Add("CreateMove", "arcademachine_scroll", function(cmd)
     if not IsValid(AM.CurrentMachine) then
         PressedUse = false
+        PressedF1 = false
         return
+    end
+
+    if input.IsKeyDown(KEY_F1) then
+        if not PressedF1 then
+            ShowInfoPanel = not ShowInfoPanel
+            PressedF1 = true
+        end
+    else
+        PressedF1 = false
     end
 
     local fov = AM.FOV:GetInt()
@@ -266,12 +300,13 @@ end)
 
 hook.Add("HUDPaint", "arcademachine_hud", function()
     -- Paint manually so the panel hides when the camera is out
-    if IsValid(AMInfoPanel) then
-        AMInfoPanel:PaintManual()
+    if IsValid(AM.UI.InfoPanel) then
+        AM.UI.InfoPanel:PaintManual()
     end
 
     if IsValid(AM.CurrentMachine) then
         local strings = {
+            ["[F1] Toggle Game Info"] = 0,
             ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,
             ["[SCROLL] Zoom"] = 0,
             ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
@@ -311,26 +346,24 @@ hook.Add("Think", "arcademachine_think", function()
     end
 
     if not IsValid(AM.CurrentMachine) then
-        local tr = util.TraceLine(util.GetPlayerTrace(LocalPlayer(), EyeAngles():Forward()))
+        local tr = util.TraceLine({
+            start = LocalPlayer():EyePos(),
+            endpos = LocalPlayer():EyePos() + EyeAngles():Forward() * LookDist,
+            filter = function(ent)
+                if ent:GetClass() == "arcademachine" then return true end
+            end
+        })
 
-        if
-            IsValid(tr.Entity) and
-            tr.Entity:GetClass() == "arcademachine" and
-            tr.Entity:GetPos():DistToSqr(LocalPlayer():GetPos()) < LookDist * LookDist and
-            tr.Entity.Game
-        then
-            ShowInfoPanel(tr.Entity)
+        ToggleInfoPanel(tr.Entity)
+    else
+        if ShowInfoPanel then
+            ToggleInfoPanel(AM.CurrentMachine)
         else
-            if IsValid(AMInfoPanel) then
-                AMInfoPanel:Remove()
+            if IsValid(AM.UI.InfoPanel) then
+                AM.UI.InfoPanel:SetVisible(false)
             end
             LookingAt = nil
         end
-    else
-        if IsValid(AMInfoPanel) then
-            AMInfoPanel:Remove()
-        end
-        LookingAt = nil
     end
 
     if RealTime() < NextQueueAt then return end
