@@ -16,19 +16,6 @@ local PressedWalk = false
 
 local LoadedLibs = {}
 
-surface.CreateFont("AMInfoFont", {
-    font = "Tahoma",
-    extended = true,
-    size = 16
-})
-
-surface.CreateFont("AMInfoFontBold", {
-    font = "Tahoma",
-    extended = true,
-    size = 16,
-    weight = 1000
-})
-
 local function DebugPrint(...)
     if Debug:GetBool() then
         print("[ARCADE]", ...)

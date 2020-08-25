@@ -33,6 +33,19 @@ function AM:OnLocalPlayerLeft()
     end--]]
 end
 
+surface.CreateFont("AMInfoFont", {
+    font = "Tahoma",
+    extended = true,
+    size = 16
+})
+
+surface.CreateFont("AMInfoFontBold", {
+    font = "Tahoma",
+    extended = true,
+    size = 16,
+    weight = 1000
+})
+
 local LookingAt = nil
 local PressedF1 = false
 local ShowInfoPanel = false
