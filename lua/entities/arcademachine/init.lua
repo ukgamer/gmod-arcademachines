@@ -113,7 +113,7 @@ function ENT:Think()
 end
 
 function ENT:Use(activator, caller)
-    if not activator:IsPlayer() or not activator:IsValid() then return end
+    if not IsValid(activator) or not activator:IsPlayer() then return end
 
     if not IsValid(self:GetPlayer()) then
         self:SetPlayer(activator)
