@@ -1,0 +1,14 @@
+VertexLitGeneric
+{
+	$basetexture "models/props_arcade/hockeytable/hockeytable001a"
+	$bumpmap "models/props_arcade/hockeytable/hockeytable001a_normal"
+
+	$envmap "env_cubemap"
+
+	$phong 1
+	$phongfresnelranges "[0.41 0.7 1]"
+	$phongalbedotint 1
+	$phongexponent 10
+	$phongboost 2
+	$phongalbedoboost 8
+}

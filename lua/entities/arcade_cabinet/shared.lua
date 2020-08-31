@@ -6,7 +6,7 @@ ENT.Category = "ukgamer"
 ENT.Spawnable = false
 ENT.Instructions = "Spawn only if you are working on a game. Must have a game set before it can be used. Refer to developer documentation."
 
-ENT.Class = "arcademachine"
+ENT.Class = "arcade_cabinet"
 
 function ENT:OnSeatCreated(name, old, new)
     if IsValid(new) and not new.HasUpdatedAnim then

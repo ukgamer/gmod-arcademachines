@@ -3,11 +3,7 @@ AddCSLuaFile("cl_hooks.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
-if SERVERID ~= nil then
-    include("ms_specific.lua")
-end
-
-resource.AddSingleFile("materials/icon64/arcademachine.png")
+resource.AddSingleFile("materials/icon64/arcade_cabinet.png")
 
 resource.AddSingleFile("models/metastruct/ms_acabinet_v2.mdl")
 resource.AddSingleFile("models/metastruct/ms_acabinet_v2.phy")
@@ -32,8 +28,8 @@ resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel_normal
 
 local function AddCSGameFiles()
     local paths = {
-        "arcademachine_games/",
-        "arcademachine_lib/"
+        "arcade_cabinet_games/",
+        "arcade_cabinet_lib/"
     }
 
     for _, p in ipairs(paths) do
@@ -49,8 +45,8 @@ function ENT:SpawnFunction(ply, tr)
 
     local ent = ents.Create(self.Class)
     ent:SetPos(tr.HitPos)
-    ent:Spawn()
     ent:SetAngles(Angle(0, (ply:GetPos() - tr.HitPos):Angle().y, 0))
+    ent:Spawn()
     ent:Activate()
 
     ent.Owner = ply
@@ -118,7 +114,7 @@ function ENT:Use(activator, caller)
     if not IsValid(self:GetPlayer()) then
         self:SetPlayer(activator)
         self:GetPlayer():EnterVehicle(self:GetSeat())
-        self.CanLeaveVehicle = false
+        self:GetSeat().CanLeaveVehicle = false
         self:GetPlayer().ArcadeWasAllowedWeaponsInVehicle = self:GetPlayer():GetAllowWeaponsInVehicle()
         self:GetPlayer():SetAllowWeaponsInVehicle(false)
     end
@@ -128,34 +124,15 @@ function ENT:OnRemove()
 
 end
 
--- To stop people accidentally tapping E and leaving, don't let them leave normally
--- the client has to tell us in a net message that they really want to leave
-hook.Add("CanExitVehicle", "arcademachine_canexitvehicle", function(veh, ply)
-    if not veh.ArcadeMachine then return end
-
-    return veh.ArcadeMachine.CanLeaveVehicle
-end)
-
-util.AddNetworkString("arcademachine_leave")
-net.Receive("arcademachine_leave", function(len, ply)
-    local veh = ply:GetVehicle()
-
-    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
-
-    veh.ArcadeMachine.CanLeaveVehicle = true
-    ply:ExitVehicle()
-    ply:SetAllowWeaponsInVehicle(ply.ArcadeWasAllowedWeaponsInVehicle)
-end)
-
-hook.Add("PlayerLeaveVehicle", "arcademachine_leavevehicle", function(ply, veh)
+hook.Add("PlayerLeaveVehicle", "arcade_cabinet_leavevehicle", function(ply, veh)
     if not IsValid(veh.ArcadeMachine) then return end
 
     ply:SetPos(veh:GetPos() + veh:GetForward() * -10 + veh:GetUp() * 10)
     ply:SetEyeAngles((veh.ArcadeMachine:GetPos() - ply:EyePos()):Angle())
 end)
 
-util.AddNetworkString("arcademachine_insertcoin")
-net.Receive("arcademachine_insertcoin", function(len, ply)
+util.AddNetworkString("arcade_cabinet_insertcoin")
+net.Receive("arcade_cabinet_insertcoin", function(len, ply)
     local veh = ply:GetVehicle()
 
     if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
@@ -173,8 +150,8 @@ net.Receive("arcademachine_insertcoin", function(len, ply)
     veh.ArcadeMachine:SetCoins(veh.ArcadeMachine:GetCoins() + 1)
 end)
 
-util.AddNetworkString("arcademachine_takecoins")
-net.Receive("arcademachine_takecoins", function(len, ply)
+util.AddNetworkString("arcade_cabinet_takecoins")
+net.Receive("arcade_cabinet_takecoins", function(len, ply)
     local veh = ply:GetVehicle()
 
     if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
