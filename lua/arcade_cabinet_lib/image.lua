@@ -8,7 +8,7 @@ IMAGE.STATUS_ERROR = 2
 
 IMAGE.Images = {}
 
-local path = "arcademachines/cache/images"
+local path = "arcade/cache/images"
 file.CreateDir(path)
 
 function IMAGE:LoadFromURL(url, key, callback, noCache)

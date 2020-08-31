@@ -8,7 +8,7 @@ FILE.STATUS_ERROR = 2
 
 FILE.Files = {}
 
-local path = "arcademachines/cache/files"
+local path = "arcade/cache/files"
 file.CreateDir(path)
 
 function FILE:LoadFromURL(url, key, callback, noCache)
