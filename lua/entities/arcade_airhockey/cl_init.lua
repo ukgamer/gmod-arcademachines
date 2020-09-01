@@ -4,7 +4,7 @@ include("cl_hooks.lua")
 local ScreenWidth = 64 * 5
 local ScreenHeight = 64
 local DigitMaterial = CreateMaterial(
-    "AirHockey_Digit_Material_aa",
+    "AirHockey_Digit_Material",
     "UnlitGeneric",
     {
         ["$basetexture"] = "models/props_arcade/hockeytable/score_atlas"

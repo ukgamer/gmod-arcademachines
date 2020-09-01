@@ -19,6 +19,8 @@ resource.AddSingleFile("models/props_arcade/hockeypuck001a_phys.dx90.vtx")
 resource.AddFile("materials/models/props_arcade/hockeytable/hockeypuck001a.vmt")
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/hockeypuck001a_normal.vtf")
 
+ENT.PhysgunDisabled = true
+
 function ENT:Initialize()
     self:SetModel("models/props_arcade/hockeypuck001a.mdl")
 
