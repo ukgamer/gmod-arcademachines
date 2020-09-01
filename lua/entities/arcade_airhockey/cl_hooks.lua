@@ -10,14 +10,33 @@ local ViewAngle = Angle(35, 90)
 local Player1ScoreAngle = Angle(0, -90)
 local Player2ScoreAngle = Angle(0, 90)
 
+--hook.Remove("HUDPaint", "arcade_airhockey_debug")
+-- hook.Add("HUDPaint", "arcade_airhockey_debug", function()
+--     local boundary = {
+--         Vector(-7, 60, 33.8),
+--         Vector(-7, 57, 33.8),
+--         Vector(7, 57, 33.8),
+--         Vector(7, 60, 33.8),
+--         Vector(-7, 60, 36),
+--         Vector(-7, 57, 36),
+--         Vector(7, 57, 36),
+--         Vector(7, 60, 36)
+--     }
+
+--     for _, v in ipairs(ents.FindByClass("arcade_airhockey")) do
+--         for k, v2 in ipairs(boundary) do
+--             local pos = v:LocalToWorld(v2):ToScreen()
+
+--             surface.SetDrawColor(0, 255, 0, 255)
+--             surface.DrawRect(pos.x - 5, pos.y - 5, 10, 10)
+--         end
+--     end
+-- end)
+
 hook.Add("CalcVehicleView", "arcade_airhockey_view", function(veh, ply, view)
     local hockeyTable = ARCADE.AirHockey.CurrentMachine
 
     if not IsValid(hockeyTable) then return end
-
-    local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
-
-    if tp then return end
 
     if LocalPlayer():KeyDown(IN_SCORE) then
         local right = -40

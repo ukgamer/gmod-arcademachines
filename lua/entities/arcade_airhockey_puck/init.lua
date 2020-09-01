@@ -24,6 +24,7 @@ function ENT:Initialize()
 
     self:SetMoveType(MOVETYPE_VPHYSICS)
     self:SetSolid(SOLID_VPHYSICS)
+    --self:PhysicsInitShadow()
     self:PhysicsInit(SOLID_VPHYSICS)
     self:DrawShadow(false)
     local phys = self:GetPhysicsObject()
@@ -31,9 +32,24 @@ function ENT:Initialize()
         phys:SetMass(50)
     end
 
+    -- self:StartMotionController()
+
     construct.SetPhysProp(nil, self, 0, self:GetPhysicsObject(), { Material = "ice" })
 end
 
 function ENT:GravGunPickupAllowed(ply)
     return false
+end
+
+function ENT:PhysicsCollide(colData, collider)
+    local tbl = self:GetAirHockeyTable()
+
+    if
+        CurTime() - (self.LastCollisonSound or 0) > 0.75 and
+        (colData.HitEntity == tbl or colData.HitEntity == tbl:GetStriker1() or colData.HitEntity == tbl:GetStriker2()) and
+        colData.Speed > 35
+    then
+        self:EmitSound("physics/surfaces/tile_impact_bullet4.wav", 50, 255)
+        self.LastCollisonSound = CurTime()
+    end
 end

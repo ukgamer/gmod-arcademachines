@@ -100,7 +100,7 @@ end
 
 function ENT:Think()
     if not IsValid(self:GetPlayer()) or self:GetSeat():GetDriver() ~= self:GetPlayer() then
-        self:SetPlayer(nil)
+        self:SetPlayer(NULL)
         self:SetCoins(0)
     end
 

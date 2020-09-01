@@ -33,9 +33,10 @@ function ENT:SetupDataTables()
     if CLIENT then
         self:NetworkVarNotify("Score1", self.OnScoreChange)
         self:NetworkVarNotify("Score2", self.OnScoreChange)
-        self:NetworkVarNotify("Player1", self.OnPlayerChange)
-        self:NetworkVarNotify("Player2", self.OnPlayerChange)
     end
+
+    self:NetworkVarNotify("Player1", self.OnPlayerChange)
+    self:NetworkVarNotify("Player2", self.OnPlayerChange)
 
     self:NetworkVarNotify("Seat1", self.OnSeatCreated)
     self:NetworkVarNotify("Seat2", self.OnSeatCreated)
@@ -51,4 +52,31 @@ end
 
 function ENT:CanProperty()
     return false
+end
+
+-- Isn't called when player becomes nil...
+function ENT:OnPlayerChange(name, old, new)
+    if CLIENT then
+        local key = name == "Player1" and "LastPlayer1" or "LastPlayer2"
+
+        if IsValid(new) then
+            if old ~= new then
+                self[key] = new
+
+                if new == LocalPlayer() then
+                    self:OnLocalPlayerEntered()
+                end
+            end
+        else
+            self[key] = nil
+
+            if old == LocalPlayer() then
+                ARCADE.AirHockey:OnLocalPlayerLeft()
+            end
+        end
+    else
+        if not IsValid(new) then
+            self:Reset()
+        end
+    end
 end
