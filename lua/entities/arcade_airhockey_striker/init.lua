@@ -20,6 +20,8 @@ resource.AddFile("materials/models/props_arcade/hockeytable/hockeystriker001a.vm
 resource.AddFile("materials/models/props_arcade/hockeytable/hockeystriker001b.vmt")
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/hockeystriker_normal.vtf")
 
+ENT.PhysgunDisabled = true
+
 function ENT:Initialize()
     self:SetModel("models/props_arcade/hockeystriker001a.mdl")
 
