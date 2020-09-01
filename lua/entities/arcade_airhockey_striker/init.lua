@@ -23,18 +23,15 @@ resource.AddSingleFile("materials/models/props_arcade/hockeytable/hockeystriker_
 function ENT:Initialize()
     self:SetModel("models/props_arcade/hockeystriker001a.mdl")
 
-    self:EnableCustomCollisions()
-
     self:SetMoveType(MOVETYPE_VPHYSICS)
     self:SetSolid(SOLID_VPHYSICS)
-    self:PhysicsInit(SOLID_VPHYSICS)
+    self:PhysicsInitShadow()
     self:DrawShadow(false)
     local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:SetMass(100)
     end
 
-    self:MakePhysicsObjectAShadow()
     self:StartMotionController()
 
     construct.SetPhysProp(nil, self, 0, self:GetPhysicsObject(), { Material = "ice" })

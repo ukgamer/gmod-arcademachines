@@ -36,6 +36,8 @@ hook.Add("ContextMenuOpen", "arcade_no_contextmenu", function()
     return false
 end)
 
+-- TODO: Come up with a nicer way for arcade entities to draw stuff to HUD
+local DisclaimerBG = Color(0, 0, 0, 180)
 hook.Add("HUDPaint", "arcade_hud", function()
     local strings = {}
 
@@ -45,6 +47,18 @@ hook.Add("HUDPaint", "arcade_hud", function()
             ["[HOLD " .. string.upper(input.LookupBinding("+score") or "tab") .. "] View Score"] = 0,
             ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
         }
+
+        local text = "This is janky and unfinished, but sort of playable. Help wanted. - ukgamer"
+        surface.SetFont("DermaLarge")
+        local w, h = surface.GetTextSize(text)
+        local x = (ScrW() * 0.5) - (w * 0.5)
+        local y = ScrH() * 0.1
+
+        draw.RoundedBox(8, x - 10, y - 10, w + 20, h + 20, DisclaimerBG)
+
+        surface.SetTextColor(255, 255, 255, 200 + math.sin(RealTime() * 4) * 100)
+        surface.SetTextPos(x, y)
+        surface.DrawText(text)
     elseif IsValid(ARCADE.Cabinet.CurrentMachine) then
         strings = {
             ["[F1] Toggle Game Info"] = 0,

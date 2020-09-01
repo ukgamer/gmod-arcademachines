@@ -52,5 +52,7 @@ hook.Add("StartCommand", "arcade_airhockey_move", function(ply, cmd)
     local mouseX = math.Clamp(cmd:GetMouseX() * 0.1, -3, 3)
     local mouseY = math.Clamp(cmd:GetMouseY() * 0.1, -3, 3)
 
-    striker.MoveVector = (striker.MoveVector or Vector()) + (veh.AirHockey:GetForward() * -mouseX) + (veh.AirHockey:GetRight() * -mouseY)
+    local mult = veh.AirHockey:GetPlayer1() == ply and -1 or 1
+
+    striker.MoveVector = (striker.MoveVector or Vector()) + (veh.AirHockey:GetForward() * mouseX * mult) + (veh.AirHockey:GetRight() * mouseY * mult)
 end)

@@ -19,15 +19,39 @@ resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_atlas.vt
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_blank.vtf")
 
 local LocalPlayAreaBoundary = {
-    Vector(-28, -60, 34),
-    Vector(-28, 60, 34),
-    Vector(28, 60, 34),
-    Vector(28, -60, 34),
-    Vector(-28, -60, 40),
-    Vector(-28, 60, 40),
-    Vector(28, 60, 40),
-    Vector(28, -60, 40)
+    Vector(-28, -60, 33.8),
+    Vector(-28, 60, 33.8),
+    Vector(28, 60, 33.8),
+    Vector(28, -60, 33.8),
+    Vector(-28, -60, 42),
+    Vector(-28, 60, 42),
+    Vector(28, 60, 42),
+    Vector(28, -60, 42)
 }
+
+local LocalGoalBoundary1 = {
+    Vector(-7, 60, 33.8),
+    Vector(-7, 57, 33.8),
+    Vector(7, 57, 33.8),
+    Vector(7, 60, 33.8),
+    Vector(-7, 60, 36),
+    Vector(-7, 57, 36),
+    Vector(7, 57, 36),
+    Vector(7, 60, 36)
+}
+
+local LocalGoalBoundary2 = {
+    Vector(-7, -60, 33.8),
+    Vector(-7, -57, 33.8),
+    Vector(7, -57, 33.8),
+    Vector(7, -60, 33.8),
+    Vector(-7, -60, 36),
+    Vector(-7, -57, 36),
+    Vector(7, -57, 36),
+    Vector(7, -60, 36)
+}
+
+local AirSound = "plats/crane/vertical_start.wav"
 
 local function WithinBounds(point, vecs)
     local b1, b2, _, b4, t1, _, t3, _ = unpack(vecs)
@@ -85,7 +109,6 @@ function ENT:Initialize()
     local phys = self:GetPhysicsObject()
     if phys:IsValid() then
         phys:EnableMotion(false)
-        phys:SetMaterial("arcade_airhockey_table")
     end
 
     construct.SetPhysProp(nil, self, 0, self:GetPhysicsObject(), { Material = "ice" })
@@ -125,7 +148,7 @@ function ENT:Initialize()
     seat1:SetOwner(self:GetOwner())
     seat2:SetOwner(self:GetOwner())
 
-    self:RespawnObjects()
+    self:Reset()
 end
 
 function ENT:RespawnPuck()
@@ -141,6 +164,7 @@ function ENT:RespawnPuck()
 
     self:SetPuck(puck)
     puck:SetOwner(self:GetOwner())
+    puck:SetAirHockeyTable(self)
 end
 
 function ENT:RespawnStriker1()
@@ -176,23 +200,35 @@ function ENT:RespawnStriker2()
     striker2:SetAirHockeyTable(self)
 end
 
-function ENT:RespawnObjects()
+function ENT:Reset()
+    self:StopSound(AirSound)
+    self:EmitSound(AirSound, 50, 255, 0.2)
+
+    self:SetScore1(0)
+    self:SetScore2(0)
+
     self:RespawnPuck()
     self:RespawnStriker1()
     self:RespawnStriker2()
 end
 
 function ENT:Think()
-    if not IsValid(self:GetPlayer1()) or self:GetSeat1():GetDriver() ~= self:GetPlayer1() then
-        self:SetPlayer1(nil)
+    if self:GetSeat1():GetDriver() ~= self:GetPlayer1() then
+        self:SetPlayer1(NULL)
     end
-    if not IsValid(self:GetPlayer2()) or self:GetSeat2():GetDriver() ~= self:GetPlayer2() then
-        self:SetPlayer2(nil)
+    if self:GetSeat2():GetDriver() ~= self:GetPlayer2() then
+        self:SetPlayer2(NULL)
     end
 
-    local boundary = {}
+    local boundary, goalBoundary1, goalBoundary2 = {}, {}, {}
     for k, v in ipairs(LocalPlayAreaBoundary) do
         boundary[k] = self:LocalToWorld(v)
+    end
+    for k, v in ipairs(LocalGoalBoundary1) do
+        goalBoundary1[k] = self:LocalToWorld(v)
+    end
+    for k, v in ipairs(LocalGoalBoundary2) do
+        goalBoundary2[k] = self:LocalToWorld(v)
     end
 
     if not IsValid(self:GetPuck()) or not WithinBounds(self:GetPuck():GetPos(), boundary) then
@@ -205,7 +241,19 @@ function ENT:Think()
         self:RespawnStriker2()
     end
 
-    self:NextThink(CurTime() + 0.1)
+    if WithinBounds(self:GetPuck():GetPos(), goalBoundary1) then
+        self:SetScore2(self:GetScore2() + 1)
+        self:RespawnPuck()
+        self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
+    end
+
+    if WithinBounds(self:GetPuck():GetPos(), goalBoundary2) then
+        self:SetScore1(self:GetScore1() + 1)
+        self:RespawnPuck()
+        self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
+    end
+
+    self:NextThink(CurTime())
     return true
 end
 
@@ -228,7 +276,7 @@ function ENT:Use(activator, caller)
 end
 
 function ENT:OnRemove()
-
+    self:StopSound(AirSound)
 end
 
 hook.Add("ShouldCollide", "arcade_airhockey_collisions", function(ent1, ent2)

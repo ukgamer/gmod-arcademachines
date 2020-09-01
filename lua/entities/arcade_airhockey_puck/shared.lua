@@ -7,6 +7,10 @@ ENT.Spawnable = false
 
 ENT.Class = "arcade_airhockey_puck"
 
+function ENT:SetupDataTables()
+    self:NetworkVar("Entity", 0, "AirHockeyTable")
+end
+
 function ENT:CanConstruct()
     return false
 end
@@ -18,3 +22,16 @@ end
 function ENT:CanProperty()
     return false
 end
+
+-- function ENT:PhysicsSimulate(phys, delta)
+--     phys:Wake()
+
+--     local params = {
+--         pos = phys:GetPos(),
+--         angle = Angle(),
+--         maxangular = 0,
+--         deltatime = delta
+--     }
+
+--     phys:ComputeShadowControl(params)
+-- end

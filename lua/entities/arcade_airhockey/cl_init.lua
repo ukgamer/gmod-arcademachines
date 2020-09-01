@@ -159,27 +159,6 @@ function ENT:Draw()
     end
 end
 
--- Isn't called when player becomes nil...
-function ENT:OnPlayerChange(name, old, new)
-    local key = name == "Player1" and "LastPlayer1" or "LastPlayer2"
-
-    if IsValid(new) then
-        if old ~= new then
-            self[key] = new
-
-            if new == LocalPlayer() then
-                self:OnLocalPlayerEntered()
-            end
-        end
-    else
-        self[key] = nil
-
-        if old == LocalPlayer() then
-            ARCADE.AirHockey:OnLocalPlayerLeft()
-        end
-    end
-end
-
 function ENT:OnScoreChange(name, old, new)
     self.ScoreChange = true
 end
