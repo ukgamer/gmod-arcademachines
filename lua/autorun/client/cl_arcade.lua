@@ -48,11 +48,11 @@ hook.Add("HUDPaint", "arcade_hud", function()
             ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
         }
 
-        local text = "This is janky and unfinished, but sort of playable. Help wanted. - ukgamer"
-        surface.SetFont("DermaLarge")
+        local text = "I know the physics are janky. This is probably the best it will get in GMod. If you have high ping, good luck. Sorry :("
+        surface.SetFont("DermaDefault")
         local w, h = surface.GetTextSize(text)
         local x = (ScrW() * 0.5) - (w * 0.5)
-        local y = ScrH() * 0.1
+        local y = ScrH() * 0.9
 
         draw.RoundedBox(8, x - 10, y - 10, w + 20, h + 20, DisclaimerBG)
 

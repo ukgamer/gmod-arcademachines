@@ -152,13 +152,18 @@ function ENT:Initialize()
 end
 
 function ENT:RespawnPuck()
+    local pos = self:LocalToWorld(Vector(0, 0, 34.8))
+
     if IsValid(self:GetPuck()) then
-        self:GetPuck():Remove()
+        self:GetPuck():SetPos(pos)
+        self:GetPuck():SetAngles(Angle())
+        self:GetPuck():SetLocalAngularVelocity(Angle())
+        return
     end
 
     local puck = ents.Create("arcade_airhockey_puck")
     puck:SetCustomCollisionCheck(true)
-    puck:SetPos(self:LocalToWorld(Vector(0, 0, 34.8)))
+    puck:SetPos(pos)
     puck:Spawn()
     self:DeleteOnRemove(puck)
 
@@ -168,13 +173,18 @@ function ENT:RespawnPuck()
 end
 
 function ENT:RespawnStriker1()
+    local pos = self:LocalToWorld(Vector(0, 50, 34.8))
+
     if IsValid(self:GetStriker1()) then
-        self:GetStriker1():Remove()
+        self:GetStriker1():SetPos(pos)
+        self:GetStriker1():SetAngles(Angle())
+        self:GetStriker1():SetLocalAngularVelocity(Angle())
+        return
     end
 
     local striker1 = ents.Create("arcade_airhockey_striker")
     striker1:SetCustomCollisionCheck(true)
-    striker1:SetPos(self:LocalToWorld(Vector(0, 50, 34.8)))
+    striker1:SetPos(pos)
     striker1:Spawn()
     self:DeleteOnRemove(striker1)
 
@@ -184,13 +194,18 @@ function ENT:RespawnStriker1()
 end
 
 function ENT:RespawnStriker2()
+    local pos = self:LocalToWorld(Vector(0, -50, 34.8))
+
     if IsValid(self:GetStriker2()) then
-        self:GetStriker2():Remove()
+        self:GetStriker2():SetPos(pos)
+        self:GetStriker2():SetAngles(Angle())
+        self:GetStriker2():SetLocalAngularVelocity(Angle())
+        return
     end
 
     local striker2 = ents.Create("arcade_airhockey_striker")
     striker2:SetCustomCollisionCheck(true)
-    striker2:SetPos(self:LocalToWorld(Vector(0, -50, 34.8)))
+    striker2:SetPos(pos)
     striker2:Spawn()
     striker2:SetSkin(1)
     self:DeleteOnRemove(striker2)
