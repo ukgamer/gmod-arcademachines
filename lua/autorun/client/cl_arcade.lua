@@ -1,9 +1,8 @@
-ARCADE = ARCADE or {
-    Debug = CreateClientConVar("arcade_debug", 0, true, false),
-    UI = {
-        ControlsBgCol = Color(0, 0, 0, 200),
-        ControlsTextCol = Color(255, 255, 255, 200)
-    }
+ARCADE.Debug = CreateClientConVar("arcade_debug", 0, true, false)
+
+ARCADE.UI = {
+    ControlsBgCol = Color(0, 0, 0, 200),
+    ControlsTextCol = Color(255, 255, 255, 200)
 }
 
 function ARCADE:DebugPrint(...)

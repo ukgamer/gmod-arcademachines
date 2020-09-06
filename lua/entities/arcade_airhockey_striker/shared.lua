@@ -23,8 +23,30 @@ function ENT:CanProperty()
     return false
 end
 
-local startPos1 = Vector(0, 50, 34.8)
-local startPos2 = Vector(0, -50, 34.8)
+local StartPos1 = Vector(0, 50, 34.8)
+local StartPos2 = Vector(0, -50, 34.8)
+
+local LocalBoundary1 = {
+    Vector(24, 57, 33.8),
+    Vector(24, 2, 33.8),
+    Vector(-24, 2, 33.8),
+    Vector(-24, 57, 33.8),
+    Vector(24, 57, 40),
+    Vector(24, 2, 40),
+    Vector(-24, 2, 40),
+    Vector(-24, 57, 40)
+}
+
+local LocalBoundary2 = {
+    Vector(24, -57, 33.8),
+    Vector(24, -2, 33.8),
+    Vector(-24, -2, 33.8),
+    Vector(-24, -57, 33.8),
+    Vector(24, -57, 40),
+    Vector(24, -2, 40),
+    Vector(-24, -2, 40),
+    Vector(-24, -57, 40)
+}
 
 function ENT:PhysicsSimulate(phys, delta)
     phys:Wake()
@@ -33,13 +55,9 @@ function ENT:PhysicsSimulate(phys, delta)
 
     if not IsValid(hockeyTable) then return end
 
-    local origin = hockeyTable:LocalToWorld(hockeyTable:GetStriker1() == self and startPos1 or startPos2)
+    local origin = hockeyTable:LocalToWorld(hockeyTable:GetStriker1() == self and StartPos1 or StartPos2)
 
-    if not self.MoveVector then
-        phys:UpdateShadow(origin, Angle(), FrameTime())
-    else
-        phys:UpdateShadow(origin + self.MoveVector, Angle(), FrameTime())
-    end
+    phys:UpdateShadow(self.MoveVector and origin + self.MoveVector or origin, Angle(0, hockeyTable:GetAngles().y), FrameTime())
 end
 
 hook.Add("StartCommand", "arcade_airhockey_move", function(ply, cmd)
@@ -49,10 +67,20 @@ hook.Add("StartCommand", "arcade_airhockey_move", function(ply, cmd)
 
     local striker = veh.AirHockey:GetPlayer1() == ply and veh.AirHockey:GetStriker1() or veh.AirHockey:GetStriker2()
 
+    -- TODO: Add configurable mouse sensitivity
     local mouseX = math.Clamp(cmd:GetMouseX() * 0.1, -3, 3)
     local mouseY = math.Clamp(cmd:GetMouseY() * 0.1, -3, 3)
 
     local mult = veh.AirHockey:GetPlayer1() == ply and -1 or 1
 
-    striker.MoveVector = (striker.MoveVector or Vector()) + (veh.AirHockey:GetForward() * mouseX * mult) + (veh.AirHockey:GetRight() * mouseY * mult)
+    local targetPos = (striker.MoveVector or Vector()) + (veh.AirHockey:GetForward() * mouseX * mult) + (veh.AirHockey:GetRight() * mouseY * mult)
+
+    local absTargetPos = veh.AirHockey:WorldToLocal(veh.AirHockey:LocalToWorld(striker == veh.AirHockey:GetStriker1() and StartPos1 or StartPos2) + targetPos)
+
+    if
+        (striker == veh.AirHockey:GetStriker1() and ARCADE:WithinBounds(absTargetPos, LocalBoundary1)) or
+        (striker == veh.AirHockey:GetStriker2() and ARCADE:WithinBounds(absTargetPos, LocalBoundary2))
+    then
+        striker.MoveVector = targetPos
+    end
 end)

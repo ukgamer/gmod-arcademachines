@@ -19,6 +19,7 @@ resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_atlas.vt
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_blank.vtf")
 
 local ZeroAngle = Angle()
+local ZeroVec = Vector()
 
 local LocalTablePositions = {
     Striker1 = Vector(0, 50, 34.8),
@@ -62,32 +63,6 @@ local LocalGoalBoundary2 = {
 }
 
 local AirSound = "plats/crane/vertical_start.wav"
-
-local function WithinBounds(point, vecs)
-    local b1, b2, _, b4, t1, _, t3, _ = unpack(vecs)
-
-    local dir1 = (t1 - b1)
-    local size1 = dir1:Length()
-    dir1 = dir1 / size1
-
-    local dir2 = (b2 - b1)
-    local size2 = dir2:Length()
-    dir2 = dir2 / size2
-
-    local dir3 = (b4 - b1)
-    local size3 = dir3:Length()
-    dir3 = dir3 / size3
-
-    local cube3d_center = (b1 + t3) / 2.0
-
-    local dir_vec = point - cube3d_center
-
-    local res1 = math.abs(dir_vec:Dot(dir1)) * 2 < size1
-    local res2 = math.abs(dir_vec:Dot(dir2)) * 2 < size2
-    local res3 = math.abs(dir_vec:Dot(dir3)) * 2 < size3
-
-    return res1 and res2 and res3
-end
 
 function ENT:SpawnFunction(ply, tr)
     if not tr.Hit then return end
@@ -174,8 +149,11 @@ function ENT:RespawnPuck(side)
 
     if IsValid(self:GetPuck()) then
         self:GetPuck():SetPos(pos)
-        self:GetPuck():SetAngles(ZeroAngle)
-        self:GetPuck():SetLocalAngularVelocity(ZeroAngle)
+        local phys = self:GetPuck():GetPhysicsObject()
+        if IsValid(phys) then
+            phys:SetVelocityInstantaneous(ZeroVec)
+            phys:SetAngles(ZeroAngle)
+        end
         return
     end
 
@@ -195,8 +173,11 @@ function ENT:RespawnStriker1()
 
     if IsValid(self:GetStriker1()) then
         self:GetStriker1():SetPos(pos)
-        self:GetStriker1():SetAngles(ZeroAngle)
-        self:GetStriker1():SetLocalAngularVelocity(ZeroAngle)
+        local phys = self:GetStriker1():GetPhysicsObject()
+        if IsValid(phys) then
+            phys:SetVelocityInstantaneous(ZeroVec)
+            phys:SetAngles(ZeroAngle)
+        end
         return
     end
 
@@ -216,8 +197,11 @@ function ENT:RespawnStriker2()
 
     if IsValid(self:GetStriker2()) then
         self:GetStriker2():SetPos(pos)
-        self:GetStriker2():SetAngles(ZeroAngle)
-        self:GetStriker2():SetLocalAngularVelocity(ZeroAngle)
+        local phys = self:GetStriker2():GetPhysicsObject()
+        if IsValid(phys) then
+            phys:SetVelocityInstantaneous(ZeroVec)
+            phys:SetAngles(ZeroAngle)
+        end
         return
     end
 
@@ -264,23 +248,23 @@ function ENT:Think()
         goalBoundary2[k] = self:LocalToWorld(v)
     end
 
-    if not IsValid(self:GetPuck()) or not WithinBounds(self:GetPuck():GetPos(), boundary) then
+    if not IsValid(self:GetPuck()) or not ARCADE:WithinBounds(self:GetPuck():GetPos(), boundary) then
         self:RespawnPuck()
     end
-    if not IsValid(self:GetStriker1()) or not WithinBounds(self:GetStriker1():GetPos(), boundary) then
+    if not IsValid(self:GetStriker1()) or not ARCADE:WithinBounds(self:GetStriker1():GetPos(), boundary) then
         self:RespawnStriker1()
     end
-    if not IsValid(self:GetStriker2()) or not WithinBounds(self:GetStriker2():GetPos(), boundary) then
+    if not IsValid(self:GetStriker2()) or not ARCADE:WithinBounds(self:GetStriker2():GetPos(), boundary) then
         self:RespawnStriker2()
     end
 
-    if WithinBounds(self:GetPuck():GetPos(), goalBoundary1) then
+    if ARCADE:WithinBounds(self:GetPuck():GetPos(), goalBoundary1) then
         self:SetScore2(self:GetScore2() + 1)
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
         self:RespawnPuck(1)
     end
 
-    if WithinBounds(self:GetPuck():GetPos(), goalBoundary2) then
+    if ARCADE:WithinBounds(self:GetPuck():GetPos(), goalBoundary2) then
         self:SetScore1(self:GetScore1() + 1)
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
         self:RespawnPuck(2)

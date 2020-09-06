@@ -10,17 +10,13 @@ local ViewAngle = Angle(35, 90)
 local Player1ScoreAngle = Angle(0, -90)
 local Player2ScoreAngle = Angle(0, 90)
 
---hook.Remove("HUDPaint", "arcade_airhockey_debug")
+-- hook.Remove("HUDPaint", "arcade_airhockey_debug")
 -- hook.Add("HUDPaint", "arcade_airhockey_debug", function()
 --     local boundary = {
---         Vector(-7, 60, 33.8),
---         Vector(-7, 57, 33.8),
---         Vector(7, 57, 33.8),
---         Vector(7, 60, 33.8),
---         Vector(-7, 60, 36),
---         Vector(-7, 57, 36),
---         Vector(7, 57, 36),
---         Vector(7, 60, 36)
+--         Vector(24, -56, 33.8),
+--         Vector(24, -3, 33.8),
+--         Vector(-24, -3, 33.8),
+--         Vector(-24, -56, 33.8)
 --     }
 
 --     for _, v in ipairs(ents.FindByClass("arcade_airhockey")) do
