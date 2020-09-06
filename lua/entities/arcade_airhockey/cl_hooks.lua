@@ -70,7 +70,7 @@ hook.Add("CreateMove", "arcade_airhockey_move", function(cmd)
             PressedUse = true
             PressedUseAt = RealTime()
         elseif RealTime() >= PressedUseAt + 0.8 then
-            net.Start("arcade_airhockey_leave")
+            net.Start("arcade_leave")
             net.SendToServer()
             PressedUse = false
         end

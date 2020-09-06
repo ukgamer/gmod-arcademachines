@@ -18,6 +18,16 @@ resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_right.vm
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_atlas.vtf")
 resource.AddSingleFile("materials/models/props_arcade/hockeytable/score_blank.vtf")
 
+local ZeroAngle = Angle()
+
+local LocalTablePositions = {
+    Striker1 = Vector(0, 50, 34.8),
+    Striker2 = Vector(0, -50, 34.8),
+    Puck0 = Vector(0, 0, 34.8),
+    Puck1 = Vector(0, 30, 34.8),
+    Puck2 = Vector(0, -30, 34.8)
+}
+
 local LocalPlayAreaBoundary = {
     Vector(-28, -60, 33.8),
     Vector(-28, 60, 33.8),
@@ -151,13 +161,21 @@ function ENT:Initialize()
     self:Reset()
 end
 
-function ENT:RespawnPuck()
-    local pos = self:LocalToWorld(Vector(0, 0, 34.8))
+function ENT:RespawnPuck(side)
+    local pos = nil
+
+    if side == 1 then
+        pos = self:LocalToWorld(LocalTablePositions.Puck1)
+    elseif side == 2 then
+        pos = self:LocalToWorld(LocalTablePositions.Puck2)
+    else
+        pos = self:LocalToWorld(LocalTablePositions.Puck0)
+    end
 
     if IsValid(self:GetPuck()) then
         self:GetPuck():SetPos(pos)
-        self:GetPuck():SetAngles(Angle())
-        self:GetPuck():SetLocalAngularVelocity(Angle())
+        self:GetPuck():SetAngles(ZeroAngle)
+        self:GetPuck():SetLocalAngularVelocity(ZeroAngle)
         return
     end
 
@@ -173,12 +191,12 @@ function ENT:RespawnPuck()
 end
 
 function ENT:RespawnStriker1()
-    local pos = self:LocalToWorld(Vector(0, 50, 34.8))
+    local pos = self:LocalToWorld(LocalTablePositions.Striker1)
 
     if IsValid(self:GetStriker1()) then
         self:GetStriker1():SetPos(pos)
-        self:GetStriker1():SetAngles(Angle())
-        self:GetStriker1():SetLocalAngularVelocity(Angle())
+        self:GetStriker1():SetAngles(ZeroAngle)
+        self:GetStriker1():SetLocalAngularVelocity(ZeroAngle)
         return
     end
 
@@ -194,12 +212,12 @@ function ENT:RespawnStriker1()
 end
 
 function ENT:RespawnStriker2()
-    local pos = self:LocalToWorld(Vector(0, -50, 34.8))
+    local pos = self:LocalToWorld(LocalTablePositions.Striker2)
 
     if IsValid(self:GetStriker2()) then
         self:GetStriker2():SetPos(pos)
-        self:GetStriker2():SetAngles(Angle())
-        self:GetStriker2():SetLocalAngularVelocity(Angle())
+        self:GetStriker2():SetAngles(ZeroAngle)
+        self:GetStriker2():SetLocalAngularVelocity(ZeroAngle)
         return
     end
 
@@ -258,14 +276,14 @@ function ENT:Think()
 
     if WithinBounds(self:GetPuck():GetPos(), goalBoundary1) then
         self:SetScore2(self:GetScore2() + 1)
-        self:RespawnPuck()
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
+        self:RespawnPuck(1)
     end
 
     if WithinBounds(self:GetPuck():GetPos(), goalBoundary2) then
         self:SetScore1(self:GetScore1() + 1)
-        self:RespawnPuck()
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
+        self:RespawnPuck(2)
     end
 
     self:NextThink(CurTime())
