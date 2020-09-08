@@ -15,11 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install essentials
-        run: sudo apt update && sudo apt install curl unzip git -y
-
       - name: Get glualint
         run: curl -s https://api.github.com/repos/FPtje/GLuaFixer/releases/latest | grep -oP 'browser_download_url.+\K(https:\/\/.+glualint-\d\.\d+\.\d-linux-stripped\.zip)' | xargs curl -L -o latest && unzip latest
 
       - name: Run linter
-        run: ./glualint `git diff-tree --no-commit-id --name-only -r ${GITHUB_SHA}`
+        run: ./glualint `git diff-tree --no-commit-id --name-only -r ${GITHUB_HEAD_REF}`
