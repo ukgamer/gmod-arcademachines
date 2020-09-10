@@ -34,10 +34,10 @@ local LocalPlayAreaBoundary = {
     Vector(-28, 60, 33.8),
     Vector(28, 60, 33.8),
     Vector(28, -60, 33.8),
-    Vector(-28, -60, 42),
-    Vector(-28, 60, 42),
-    Vector(28, 60, 42),
-    Vector(28, -60, 42)
+    Vector(-28, -60, 45),
+    Vector(-28, 60, 45),
+    Vector(28, 60, 45),
+    Vector(28, -60, 45)
 }
 
 local LocalGoalBoundary1 = {
@@ -172,6 +172,7 @@ function ENT:RespawnStriker1()
     local pos = self:LocalToWorld(LocalTablePositions.Striker1)
 
     if IsValid(self:GetStriker1()) then
+        self:GetStriker1():SetMoveVector(ZeroVec)
         self:GetStriker1():SetPos(pos)
         local phys = self:GetStriker1():GetPhysicsObject()
         if IsValid(phys) then
@@ -196,6 +197,7 @@ function ENT:RespawnStriker2()
     local pos = self:LocalToWorld(LocalTablePositions.Striker2)
 
     if IsValid(self:GetStriker2()) then
+        self:GetStriker2():SetMoveVector(ZeroVec)
         self:GetStriker2():SetPos(pos)
         local phys = self:GetStriker2():GetPhysicsObject()
         if IsValid(phys) then
