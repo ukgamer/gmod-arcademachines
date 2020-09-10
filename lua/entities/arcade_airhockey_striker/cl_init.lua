@@ -29,3 +29,9 @@ function ENT:Draw()
         cam.IgnoreZ(false)
     end
 end
+
+hook.Add("NotifyShouldTransmit", "arcade_airhockey_transmit", function(ent, shouldtransmit)
+    if ent:GetClass() == "arcade_airhockey_striker" and shouldtransmit then
+        ent:SetPredictable(true)
+    end
+end)
