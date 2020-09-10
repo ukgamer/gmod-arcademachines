@@ -262,12 +262,16 @@ function ENT:Think()
         self:SetScore2(self:GetScore2() + 1)
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
         self:RespawnPuck(1)
+        self:RespawnStriker1()
+        self:RespawnStriker2()
     end
 
     if ARCADE:WithinBounds(self:GetPuck():GetPos(), goalBoundary2) then
         self:SetScore1(self:GetScore1() + 1)
         self:EmitSound("ui/hitsound_vortex" .. math.random(1, 5) .. ".wav", 55)
         self:RespawnPuck(2)
+        self:RespawnStriker1()
+        self:RespawnStriker2()
     end
 
     self:NextThink(CurTime())
