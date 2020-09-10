@@ -136,8 +136,8 @@ local function ResetClouds()
     for i = 1,7 do
         clouds[i] = {
 
-            x = math.random(400)+0,
-            y = math.random(320)+80
+            x = math.random(400) + 0,
+            y = math.random(320) + 80
 
         }
     end
@@ -231,7 +231,7 @@ end
                 speedvel = 0
             }
         end
-		
+
         if nuke.levels == 0 then
             for i = 1, 180 do
                 nuke_explode_particles[i] = {
@@ -623,31 +623,29 @@ end
         if nuke.levels > 0 then
             ExplodeNuke()
         end
-           
-		if nuke.levels == 1 then
+
+        if nuke.levels == 1 then
             SOUND:StopSound("ambient/alarms/siren.wav")
         elseif nuke.levels == 0 and nuke.alive == 0  then
             nuke.can_drop = 1
         end
-		
+
     end
 
     local function DrawNuke(x1,y1,scale)
+        --base
+        surface.SetDrawColor(150,150,150,255)
+        surface.DrawRect(x1,y1,10 * scale,30 * scale)
+        --head
+        surface.SetDrawColor(180,0,0,255)
+        surface.DrawRect(x1,y1 + (25 * scale),10 * scale,7 * scale)
+        --head2
+        surface.SetDrawColor(180,0,0,255)
+        surface.DrawRect(x1 + (1 * scale),y1 + (27 * scale),8 * scale,7 * scale)
 
-			--base
-			surface.SetDrawColor(150,150,150,255)
-			surface.DrawRect(x1,y1,10 * scale,30 * scale)
-			--head
-			surface.SetDrawColor(180,0,0,255)
-			surface.DrawRect(x1,y1 + (25 * scale),10 * scale,7 * scale)
-			--head2
-			surface.SetDrawColor(180,0,0,255)
-			surface.DrawRect(x1 + (1 * scale),y1 + (27 * scale),8 * scale,7 * scale)
-
-			--tail
-			surface.SetDrawColor(150,150,150,255)
-			surface.DrawRect(x1-(2 * scale),y1 + 0,14 * scale,10 * scale)
-
+        --tail
+        surface.SetDrawColor(150,150,150,255)
+        surface.DrawRect(x1-(2 * scale),y1 + 0,14 * scale,10 * scale)
     end
 
     local function DrawNukeAmmo()
@@ -657,10 +655,10 @@ end
     end
 
     local function DrawBomb()
-		if bomb.alive == 1 then
-			surface.SetDrawColor(195,0,0)
-			surface.DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
-		end
+        if bomb.alive == 1 then
+            surface.SetDrawColor(195,0,0)
+            surface.DrawRect(bomb.x,bomb.y,bomb.w,bomb.h)
+        end
     end
 
     local function DropBomb()
@@ -1043,8 +1041,8 @@ function GAME:Update()
 
         end
     elseif state == 1 then --gameover
-        if thePlayer:KeyDown(IN_JUMP) and COINS:GetCoins() > 0 and 
-			can_continue_time + 2 < RealTime() then
+        if thePlayer:KeyDown(IN_JUMP) and COINS:GetCoins() > 0 and
+            can_continue_time + 2 < RealTime() then
             --GameReset()
             plane.y = -200
 
@@ -1228,18 +1226,18 @@ function GAME:Draw()
         DrawText ( ( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) - 250,"LEVEL: " .. level, 255,255,255  )
 
         if can_continue_time + 2 < RealTime() then
-				surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
-			    surface.SetFont("DermaLarge")
-				
-			if COINS:GetCoins() > 0 then
-				local tw, th = surface.GetTextSize("PRESS SPACE TO RESTART")
-				surface.SetTextPos(( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -80)
-				surface.DrawText("PRESS SPACE TO RESTART")
-			else 
-				local tw, th = surface.GetTextSize("INSERT COIN")
-				surface.SetTextPos(( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -80)
-				surface.DrawText("INSERT COIN")
-			end
+                surface.SetTextColor(255, 255, 255, math.sin(now * 5) * 255)
+                surface.SetFont("DermaLarge")
+
+            if COINS:GetCoins() > 0 then
+                tw, th = surface.GetTextSize("PRESS SPACE TO RESTART")
+                surface.SetTextPos(( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -80)
+                surface.DrawText("PRESS SPACE TO RESTART")
+            else
+                tw, th = surface.GetTextSize("INSERT COIN")
+                surface.SetTextPos(( SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2) -80)
+                surface.DrawText("INSERT COIN")
+            end
         end
     end
 
