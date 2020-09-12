@@ -35,44 +35,22 @@ hook.Add("ContextMenuOpen", "arcade_no_contextmenu", function()
     return false
 end)
 
--- TODO: Come up with a nicer way for arcade entities to draw stuff to HUD
 local DisclaimerBG = Color(0, 0, 0, 180)
-hook.Add("HUDPaint", "arcade_hud", function()
-    if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
-        ARCADE.Cabinet.UI.InfoPanel:PaintManual()
-    end
+local function DrawAirHockeyHUD()
+    local text = "I know the physics are janky. This is probably the best it will get in GMod. If you have high ping, good luck. Sorry :("
+    surface.SetFont("DermaDefault")
+    local w, h = surface.GetTextSize(text)
+    local x = (ScrW() * 0.5) - (w * 0.5)
+    local y = ScrH() * 0.9
 
-    local strings = {}
+    draw.RoundedBox(8, x - 10, y - 10, w + 20, h + 20, DisclaimerBG)
 
-    if IsValid(ARCADE.AirHockey.CurrentMachine) then
-        strings = {
-            ["[MOUSE] Move Striker"] = 0,
-            ["[HOLD " .. string.upper(input.LookupBinding("+score") or "tab") .. "] View Score"] = 0,
-            ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
-        }
+    surface.SetTextColor(255, 255, 255, 200 + math.sin(RealTime() * 4) * 100)
+    surface.SetTextPos(x, y)
+    surface.DrawText(text)
+end
 
-        local text = "I know the physics are janky. This is probably the best it will get in GMod. If you have high ping, good luck. Sorry :("
-        surface.SetFont("DermaDefault")
-        local w, h = surface.GetTextSize(text)
-        local x = (ScrW() * 0.5) - (w * 0.5)
-        local y = ScrH() * 0.9
-
-        draw.RoundedBox(8, x - 10, y - 10, w + 20, h + 20, DisclaimerBG)
-
-        surface.SetTextColor(255, 255, 255, 200 + math.sin(RealTime() * 4) * 100)
-        surface.SetTextPos(x, y)
-        surface.DrawText(text)
-    elseif IsValid(ARCADE.Cabinet.CurrentMachine) then
-        strings = {
-            ["[F1] Toggle Game Info"] = 0,
-            ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,
-            ["[SCROLL] Zoom"] = 0,
-            ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
-        }
-    else
-        return
-    end
-
+local function DrawControls(strings)
     local width = 0
 
     surface.SetFont("DermaLarge")
@@ -95,5 +73,29 @@ hook.Add("HUDPaint", "arcade_hud", function()
         )
 
         x = x + v
+    end
+end
+
+-- TODO: Come up with a nicer way for arcade entities to draw stuff to HUD
+hook.Add("HUDPaint", "arcade_hud", function()
+    if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
+        ARCADE.Cabinet.UI.InfoPanel:PaintManual()
+    end
+
+    if IsValid(ARCADE.AirHockey.CurrentMachine) then
+        DrawControls({
+            ["[MOUSE] Move Striker"] = 0,
+            ["[HOLD " .. string.upper(input.LookupBinding("+score") or "tab") .. "] View Score"] = 0,
+            ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
+        })
+
+        DrawAirHockeyHUD()
+    elseif IsValid(ARCADE.Cabinet.CurrentMachine) then
+        DrawControls({
+            ["[F1] Toggle Game Info"] = 0,
+            ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,
+            ["[SCROLL] Zoom"] = 0,
+            ["[HOLD " .. string.upper(input.LookupBinding("+use") or "e") .. "] Exit"] = 0
+        })
     end
 end)
