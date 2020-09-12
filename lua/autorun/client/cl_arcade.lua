@@ -38,6 +38,10 @@ end)
 -- TODO: Come up with a nicer way for arcade entities to draw stuff to HUD
 local DisclaimerBG = Color(0, 0, 0, 180)
 hook.Add("HUDPaint", "arcade_hud", function()
+    if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
+        ARCADE.Cabinet.UI.InfoPanel:PaintManual()
+    end
+
     local strings = {}
 
     if IsValid(ARCADE.AirHockey.CurrentMachine) then
