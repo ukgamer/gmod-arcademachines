@@ -191,6 +191,10 @@ function GAME:Init()
         CABINET:UpdateMarquee()
     end)
 
+    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/cabinet.png", "cabinet", function(image)
+        CABINET:UpdateCabinetArt()
+    end)
+
     self:SpawnAsteroids()
 end
 
@@ -643,6 +647,12 @@ function GAME:DrawMarquee()
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(IMAGE.Images.marquee.mat)
     surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+end
+
+function GAME:DrawCabinetArt()
+    surface.SetMaterial(IMAGE.Images["cabinet"].mat)
+    surface.SetDrawColor(255, 255, 255)
+    surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 function GAME:DrawPlayerTriangle(pos, ang, thrusting)
