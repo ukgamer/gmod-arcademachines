@@ -16,3 +16,14 @@ net.Receive("arcade_leave", function(len, ply)
     ply:ExitVehicle()
     ply:SetAllowWeaponsInVehicle(ply.ArcadeWasAllowedWeaponsInVehicle)
 end)
+
+local NoSitEnts = {
+    "arcade_airhockey",
+    "arcade_airhockey_puck",
+    "arcade_airhockey_striker",
+    "arcade_cabinet"
+}
+
+hook.Add("OnPlayerSit", "arcade_nosit", function(ply, pos, ang, parent, parentbone, veh)
+    if table.HasValue(NoSitEnts, ent:GetClass()) then return false end
+end)
