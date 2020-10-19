@@ -135,7 +135,7 @@ if not IsValid(ARCADE.Cabinet.UI.SettingsPanel) then
     button:SetFont("AMInfoFont")
     button:SetText("Reload machines")
     button.DoClick = function()
-        LocalPlayer():ConCommand("arcade_cabinet_reload_machines")
+        LocalPlayer():ConCommand("arcade_cabinet_reload")
     end
 end
 
