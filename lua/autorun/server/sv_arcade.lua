@@ -25,5 +25,5 @@ local NoSitEnts = {
 }
 
 hook.Add("OnPlayerSit", "arcade_nosit", function(ply, pos, ang, parent, parentbone, veh)
-    if table.HasValue(NoSitEnts, ent:GetClass()) then return false end
+    if table.HasValue(NoSitEnts, parent:GetClass()) then return false end
 end)
