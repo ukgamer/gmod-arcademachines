@@ -18,12 +18,12 @@ net.Receive("arcade_leave", function(len, ply)
 end)
 
 local NoSitEnts = {
-    "arcade_airhockey",
-    "arcade_airhockey_puck",
-    "arcade_airhockey_striker",
-    "arcade_cabinet"
+    ["arcade_airhockey"] = true,
+    ["arcade_airhockey_puck"] = true,
+    ["arcade_airhockey_striker"] = true,
+    ["arcade_cabinet"] = true
 }
 
 hook.Add("OnPlayerSit", "arcade_nosit", function(ply, pos, ang, parent, parentbone, veh)
-    if table.HasValue(NoSitEnts, parent:GetClass()) then return false end
+    if IsValid(parent) and NoSitEnts[parent:GetClass()] then return false end
 end)
