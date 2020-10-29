@@ -1,7 +1,7 @@
 -- To stop people accidentally tapping E and leaving, don't let them leave normally
 -- the client has to tell us in a net message that they really want to leave
 hook.Add("CanExitVehicle", "arcade_canexitvehicle", function(veh, ply)
-    if not IsValid(veh.ArcadeMachine) and not IsValid(veh.AirHockey) then return end
+    if not IsValid(veh.ArcadeMachine) then return end
 
     return veh.CanLeaveVehicle
 end)
@@ -10,7 +10,7 @@ util.AddNetworkString("arcade_leave")
 net.Receive("arcade_leave", function(len, ply)
     local veh = ply:GetVehicle()
 
-    if not IsValid(veh) or (not IsValid(veh.ArcadeMachine) and not IsValid(veh.AirHockey)) then return end
+    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) then return end
 
     veh.CanLeaveVehicle = true
     ply:ExitVehicle()
@@ -18,9 +18,6 @@ net.Receive("arcade_leave", function(len, ply)
 end)
 
 local NoSitEnts = {
-    ["arcade_airhockey"] = true,
-    ["arcade_airhockey_puck"] = true,
-    ["arcade_airhockey_striker"] = true,
     ["arcade_cabinet"] = true
 }
 
