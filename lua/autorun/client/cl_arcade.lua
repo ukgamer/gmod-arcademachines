@@ -1,3 +1,5 @@
+ARCADE = ARCADE or {}
+
 ARCADE.Debug = CreateClientConVar("arcade_debug", 0, true, false)
 
 ARCADE.UI = {
