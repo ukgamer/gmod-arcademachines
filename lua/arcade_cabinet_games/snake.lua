@@ -6,7 +6,7 @@
 
 -- hey as long as it works
 
---function Snake()
+function Snake()
     if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
@@ -42,7 +42,7 @@
     end
 
     local GAME = { Name = "Snake", State = nil }
-    GAME.Description = "Use WASD to control the snake.\nMade by Jule :D"
+    GAME.Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD."
 
     local PLAYER = nil
 
@@ -57,7 +57,7 @@
     local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
     SNAKE.Dead = false
     SNAKE.DiedAt = math.huge
-    SNAKE.MoveInterval = 0.1 -- Amount of seconds between each movement cycle.
+    SNAKE.MoveInterval = 0.1
     SNAKE.GoldenApplesEaten = 0
     SNAKE.GoalReached = false
     SNAKE.Boosted = false
@@ -119,7 +119,7 @@
     function APPLE_TYPE_GOLDEN.OnEaten()
         Score = Score + 250
 
-        SNAKE.GoldenApplesEaten = math.min( SNAKE.GoldenApplesEaten + 1 , 10) -- Won't need to count above 10.
+        SNAKE.GoldenApplesEaten = math.min( SNAKE.GoldenApplesEaten + 1 , 10)
 
         if SNAKE.GoldenApplesEaten == 10 and not SNAKE.GoalReached then
             PlayLoaded( "goalreached" )
@@ -148,6 +148,10 @@
 
         SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "music", function( snd )
             snd:EnableLooping( true )
+        end )
+
+        IMAGE:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png", "cabinet", function()
+            CABINET:UpdateCabinetArt()
         end )
     end
 
@@ -286,14 +290,14 @@
             AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
 
             if self:CheckForSpawnReserved( AppleX, AppleY ) then
-                return -- Just halt, spawner function will be ran again instantly.
+                return
             end
 
             local Type = APPLE_TYPE_NORMAL
 
             if math.random( 1, 10 ) == 4 then
                 Type = APPLE_TYPE_GOLDEN
-            elseif math.random( 1, 15 ) == 6 then -- Tfw boost apples still more common thatn golden apples
+            elseif math.random( 1, 15 ) == 6 then
                 Type = APPLE_TYPE_BOOST
             end
 
@@ -501,5 +505,11 @@
         surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 100, 20, 20 )
     end
 
+    function GAME:DrawCabinetArt()
+        surface.SetMaterial( IMAGE.Images.cabinet.mat )
+        surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+        surface.DrawTexturedRect( 0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT )
+    end
+
     return GAME
---end
+end
