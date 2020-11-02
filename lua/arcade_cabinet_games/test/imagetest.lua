@@ -2,6 +2,8 @@ local GAME = {}
 
 GAME.Name = "Image Test"
 
+GAME.LateUpdateMarquee = true
+
 local w, h = 337, 85
 local loaded = false
 
@@ -13,9 +15,6 @@ function GAME:Init()
 end
 
 function GAME:DrawMarquee()
-    surface.SetDrawColor(0, 0, 0, 255)
-    surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(IMAGE.Images["logo"].mat)
     surface.DrawTexturedRect(MARQUEE_WIDTH / 2 - (w * 0.75 / 2), MARQUEE_HEIGHT / 2 - (h * 0.75 / 2), w * 0.75, h * 0.75)
