@@ -6,7 +6,7 @@
 
 -- hey as long as it works
 
-function Snake()
+--function Snake()
     if not FONT:Exists( "Snake32" ) then
         surface.CreateFont( "Snake32", {
             font = "Trebuchet MS",
@@ -512,4 +512,4 @@ function Snake()
     end
 
     return GAME
-end
+--end
