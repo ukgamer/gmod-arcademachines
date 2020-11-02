@@ -51,6 +51,7 @@ local defaultBallSpeed = 200
 local ballSpeed = defaultBallSpeed
 local maxBallSpeed = 300
 local maxVelocity = 600
+local defaultPadSize = Vector(50, 10)
 
 local powerUpFallSpeed = 100
 
@@ -232,12 +233,17 @@ end
 
 MakePup("big_pad", 20, "sprites/key_12", function(p)
 	p.oldSizeX = padObject.size.x
+	if not p.oldSizeX then
+		padObject.size.x = defaultPadSize.x
+		p.oldSizeX = defaultPadSize.x
+	end
+
 	padObject.size.x = padObject.size.x * 2
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
 end,
 nil,
 function(p)
-	padObject.size.x = p.oldSizeX
+	padObject.size.x = p.oldSizeX or defaultPadSize.x
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end)
 
@@ -300,12 +306,17 @@ end, nil, nil, false, true)
 
 MakePup("small_pad", 15, "hud/killicons/default", function(p)
 	p.oldSizeX = padObject.size.x
+	if not p.oldSize then
+		padObject.size.x = defaultPadSize.x
+		p.oldSize = defaultPadSize.x
+	end
+
 	padObject.size.x = padObject.size.x / 2
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end,
 nil,
 function(p)
-	padObject.size.x = p.oldSizeX
+	padObject.size.x = p.oldSizeX or defaultPadSize.x
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
 end, true)
 
@@ -682,7 +693,7 @@ local function ResetGame()
 	badPowerups = {}
 	currentPowerUps = {}
 
-	padObject = CreateBoxObject(Vector(0, 0), Vector(50, 10), Color(50, 125, 255))
+	padObject = CreateBoxObject(Vector(0, 0), defaultPadSize, Color(50, 125, 255))
 
 	ballObject = CreateBoxObject(Vector(0, 0), Vector(17.5, 17.5), nil, function(x, y, w, h)
 		surface.SetDrawColor(ballObject.render.color)
