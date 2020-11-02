@@ -23,6 +23,7 @@
 
 --local function game() -- For testing
 local GAME = {}
+GAME.LateUpdateMarquee = true
 GAME.Bodygroup = BG_GENERIC_TRACKBALL
 GAME.Name = "Börk Berker"
 GAME.Description = [[Controls:
@@ -50,6 +51,7 @@ local defaultBallSpeed = 200
 local ballSpeed = defaultBallSpeed
 local maxBallSpeed = 300
 local maxVelocity = 600
+local defaultPadSize = Vector(50, 10)
 
 local powerUpFallSpeed = 100
 
@@ -231,12 +233,17 @@ end
 
 MakePup("big_pad", 20, "sprites/key_12", function(p)
 	p.oldSizeX = padObject.size.x
+	if not p.oldSizeX then
+		padObject.size.x = defaultPadSize.x
+		p.oldSizeX = defaultPadSize.x
+	end
+
 	padObject.size.x = padObject.size.x * 2
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
 end,
 nil,
 function(p)
-	padObject.size.x = p.oldSizeX
+	padObject.size.x = p.oldSizeX or defaultPadSize.x
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end)
 
@@ -299,12 +306,17 @@ end, nil, nil, false, true)
 
 MakePup("small_pad", 15, "hud/killicons/default", function(p)
 	p.oldSizeX = padObject.size.x
+	if not p.oldSize then
+		padObject.size.x = defaultPadSize.x
+		p.oldSize = defaultPadSize.x
+	end
+
 	padObject.size.x = padObject.size.x / 2
 	padObject.pos.x = padObject.pos.x + padObject.size.x / 2
 end,
 nil,
 function(p)
-	padObject.size.x = p.oldSizeX
+	padObject.size.x = p.oldSizeX or defaultPadSize.x
 	padObject.pos.x = padObject.pos.x - padObject.size.x / 4
 end, true)
 
@@ -681,7 +693,7 @@ local function ResetGame()
 	badPowerups = {}
 	currentPowerUps = {}
 
-	padObject = CreateBoxObject(Vector(0, 0), Vector(50, 10), Color(50, 125, 255))
+	padObject = CreateBoxObject(Vector(0, 0), defaultPadSize, Color(50, 125, 255))
 
 	ballObject = CreateBoxObject(Vector(0, 0), Vector(17.5, 17.5), nil, function(x, y, w, h)
 		surface.SetDrawColor(ballObject.render.color)
@@ -749,6 +761,16 @@ function GAME:GameOver()
 		gameOverAt = RealTime() + 10
 		isGameOver = true
 	end
+end
+
+function GAME:Init()
+	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_marque.png", "marquee", function(image)
+		CABINET:UpdateMarquee()
+	end)
+
+	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_artwork.png", "cabinet", function(image)
+		CABINET:UpdateCabinetArt()
+	end)
 end
 
 function GAME:Start()
@@ -896,59 +918,15 @@ end
 
 -- Called once on init
 function GAME:DrawMarquee()
-	surface.SetDrawColor(0, 0, 0)
-	surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-
-	surface.SetDrawColor(255, 255, 255)
-	surface.SetMaterial(boarder)
+	surface.SetDrawColor(255, 255, 255, 255)
+	surface.SetMaterial(IMAGE.Images.marquee.mat)
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+end
 
-	for x = 1, 12 do
-		surface.SetDrawColor(0, 100, 50)
-		for y = 1, 4 do
-			surface.DrawRect(50 + x * 30, 10 + y * 20, 20, 10)
-		end
-	end
-
-	local pH, pW = 50, 10
-	surface.SetDrawColor(50, 125, 255)
-	local pX, pY = MARQUEE_WIDTH - pH * 3, MARQUEE_HEIGHT - pW * 3
-	surface.DrawRect(pX, pY, pH, pW)
-
+function GAME:DrawCabinetArt()
+	surface.SetMaterial(IMAGE.Images.cabinet.mat)
 	surface.SetDrawColor(255, 255, 255)
-	surface.SetMaterial(boarder)
-	surface.DrawTexturedRect(pX, pY, pH, pW)
-
-	local bX, bY = 17.5, 17.5
-	surface.SetDrawColor(100, 200, 255)
-	surface.SetMaterial(ballMaterial)
-	surface.DrawTexturedRect(pX + bX, pY - bY, bX, bY)
-
-	local text = "BÖRK BERKER"
-
-	surface.SetFont("ScoreboardDefaultTitle")
-	local tW, tH = surface.GetTextSize(text)
-	local x, y = MARQUEE_WIDTH / 2 - tW / 2, MARQUEE_HEIGHT / 2 - tH
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x - 1, y - 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x + 1, y + 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x - 1, y + 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x + 1, y - 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(200, 255, 255)
-	surface.SetTextPos(x, y)
-	surface.DrawText(text)
+	surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 local demoObjects = {}
@@ -1186,7 +1164,7 @@ end
 return GAME
 --end -- For testing
 
---local ent = Entity(2051)
+--local ent = this
 --if IsValid(ent) and ent.SetGame then
 --	ent:SetGame(game)
 --end

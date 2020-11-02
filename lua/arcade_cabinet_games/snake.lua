@@ -4,8 +4,7 @@
 -- https://github.com/ukgamer/gmod-arcademachines
 -- Made by Jule
 
--- Some stuff here probably could be done in better ways.
--- The game works now though (should).
+-- hey as long as it works
 
 --function Snake()
     if not FONT:Exists( "Snake32" ) then
@@ -43,7 +42,7 @@
     end
 
     local GAME = { Name = "Snake", State = nil }
-    GAME.Description = "Use WASD to control the snake.\nMade by Jule :D"
+    GAME.Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD."
 
     local PLAYER = nil
 
@@ -58,7 +57,7 @@
     local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
     SNAKE.Dead = false
     SNAKE.DiedAt = math.huge
-    SNAKE.MoveInterval = 0.1 -- Amount of seconds between each movement cycle.
+    SNAKE.MoveInterval = 0.1
     SNAKE.GoldenApplesEaten = 0
     SNAKE.GoalReached = false
     SNAKE.Boosted = false
@@ -120,9 +119,7 @@
     function APPLE_TYPE_GOLDEN.OnEaten()
         Score = Score + 250
 
-        -- There's a "side quest" in the game where you need to eat 10 golden apples
-        -- By completing this quest your snake turns into "gold"
-        SNAKE.GoldenApplesEaten = math.min( SNAKE.GoldenApplesEaten + 1 , 10) -- Won't need to count above 10.
+        SNAKE.GoldenApplesEaten = math.min( SNAKE.GoldenApplesEaten + 1 , 10)
 
         if SNAKE.GoldenApplesEaten == 10 and not SNAKE.GoalReached then
             PlayLoaded( "goalreached" )
@@ -151,6 +148,10 @@
 
         SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "music", function( snd )
             snd:EnableLooping( true )
+        end )
+
+        IMAGE:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png", "cabinet", function()
+            CABINET:UpdateCabinetArt()
         end )
     end
 
@@ -289,14 +290,14 @@
             AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
 
             if self:CheckForSpawnReserved( AppleX, AppleY ) then
-                return -- Just halt, spawner function will be ran again instantly.
+                return
             end
 
             local Type = APPLE_TYPE_NORMAL
 
             if math.random( 1, 10 ) == 4 then
                 Type = APPLE_TYPE_GOLDEN
-            elseif math.random( 1, 15 ) == 6 then -- Tfw boost apples still more common thatn golden apples
+            elseif math.random( 1, 15 ) == 6 then
                 Type = APPLE_TYPE_BOOST
             end
 
@@ -353,8 +354,6 @@
             if not SNAKE.Dead then
                 APPLES:Spawner()
 
-                -- In order to fix a few flaws in the game, I had to handle the input in a weird way.
-                -- This isn't perfect either, but the game should feel way more responsive now.
                 if SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
                     if PLAYER:KeyPressed( IN_FORWARD ) then
                         table.insert( SNAKE.QueuedMoves, function()
@@ -418,8 +417,6 @@
                 TEXT_ALIGN_CENTER
             )
 
-            -- Draw an animated snake during the attracting state.
-            -- Also draw an apple that the snake is seemingly going after.
             surface.SetDrawColor( Color( 25, 255, 25 ) )
             if AttractorSnake.LastFrameAdvance + 0.25 < RealTime() then
                 AttractorSnake.ActiveFrame = ( AttractorSnake.ActiveFrame == "FRAME.1" and "FRAME.2" or "FRAME.1" )
@@ -506,6 +503,12 @@
         -- Apple
         surface.SetDrawColor( Color( 255, 50, 50 ) )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 100, 20, 20 )
+    end
+
+    function GAME:DrawCabinetArt()
+        surface.SetMaterial( IMAGE.Images.cabinet.mat )
+        surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+        surface.DrawTexturedRect( 0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT )
     end
 
     return GAME
