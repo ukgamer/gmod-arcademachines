@@ -1,16 +1,5 @@
-AM = AM or {
-    QueuedSounds = {}
-}
-
 include("shared.lua")
 include("cl_hooks.lua")
-
-local Debug = CreateClientConVar("arcademachine_debug", 0, true, false)
-AM.FOV = CreateClientConVar("arcademachine_fov", 70, true, false)
-AM.DisableBloom = CreateClientConVar("arcademachine_disable_bloom", 1, true, false)
-AM.DisablePAC = CreateClientConVar("arcademachine_disable_pac", 1, true, false)
---AM.DisableOutfitter = CreateClientConVar("arcademachine_disable_outfitter", 1, true, false)
-AM.DisableOthers = CreateClientConVar("arcademachine_disable_others_when_active", 0, true, false)
 
 local MaxDist = 200
 
@@ -18,38 +7,15 @@ local ScreenWidth = 512
 local ScreenHeight = 512
 local MarqueeWidth = 512
 local MarqueeHeight = 179
+local CabinetArtWidth = 1024
+local CabinetArtHeight = 1024
 
 local PressedWalk = false
-local PressedUse = false
-local PressedUseAt = 0
-
-local BloomWasDisabled = false
-local PACWasDisabled = false
---local OutfitterWasDisabled = false
 
 local LoadedLibs = {}
 
-surface.CreateFont("AMInfoFont", {
-    font = "Tahoma",
-    extended = true,
-    size = 16
-})
-
-surface.CreateFont("AMInfoFontBold", {
-    font = "Tahoma",
-    extended = true,
-    size = 16,
-    weight = 1000
-})
-
-local function DebugPrint(...)
-    if Debug:GetBool() then
-        print("[ARCADE]", ...)
-    end
-end
-
-concommand.Add("arcademachine_reload_machines", function()
-    for _, v in ipairs(ents.FindByClass("arcademachine")) do
+concommand.Add("arcade_cabinet_reload", function()
+    for _, v in ipairs(ents.FindByClass("arcade_cabinet")) do
         if v:GetCurrentGame() then
             v:SetGame(v:GetCurrentGame())
         elseif v.Game then
@@ -63,13 +29,13 @@ concommand.Add("arcademachine_reload_machines", function()
     end
 end)
 
-concommand.Add("arcademachine_clear_cache", function()
+concommand.Add("arcade_cabinet_clear_cache", function()
     local paths = {
         "images",
         "files"
     }
 
-    local base = "arcademachines/cache/"
+    local base = "arcade/cache/"
 
     for _, v in ipairs(paths) do
         for _, fv in ipairs(file.Find(base .. v .. "/*", "DATA")) do
@@ -106,11 +72,12 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
-    self.MarqueeHasDrawn = false
+    self.MarqueeHasDrawn = self.MarqueeHasDrawn or false
+    self.CabinetArtHasDrawn = self.CabinetArtHasDrawn or false
 
     local num = math.random(9999)
 
-    self.ScreenTexture = GetRenderTargetEx(
+    self.ScreenTexture = self.ScreenTexture or GetRenderTargetEx(
         "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
@@ -120,7 +87,7 @@ function ENT:Initialize()
         CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
-    self.ScreenMaterial = CreateMaterial(
+    self.ScreenMaterial = self.ScreenMaterial or CreateMaterial(
         "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
@@ -131,7 +98,7 @@ function ENT:Initialize()
         }
     )
 
-    self.MarqueeTexture = GetRenderTargetEx(
+    self.MarqueeTexture = self.MarqueeTexture or GetRenderTargetEx(
         "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
@@ -141,7 +108,7 @@ function ENT:Initialize()
         CREATERENDERTARGETFLAGS_HDR,
         IMAGE_FORMAT_DEFAULT
     )
-    self.MarqueeMaterial = CreateMaterial(
+    self.MarqueeMaterial = self.MarqueeMaterial or CreateMaterial(
         "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
@@ -153,10 +120,30 @@ function ENT:Initialize()
         }
     )
 
+    self.CabinetArtTexture = self.CabinetArtTexture or GetRenderTargetEx(
+        "ArcadeMachine_CabinetArt_" .. self:EntIndex() .. "_" .. num,
+        CabinetArtWidth,
+        CabinetArtHeight,
+        RT_SIZE_DEFAULT,
+        MATERIAL_RT_DEPTH_NONE,
+        16,
+        CREATERENDERTARGETFLAGS_HDR,
+        IMAGE_FORMAT_DEFAULT
+    )
+    self.CabinetArtMaterial = self.CabinetArtMaterial or CreateMaterial(
+        "ArcadeMachine_CabinetArt_Material_" .. self:EntIndex() .. "_" .. num,
+        "VertexLitGeneric",
+        {
+            ["$basetexture"] = self.CabinetArtTexture:GetName(),
+            ["$model"] = 1,
+            ["$nodecal"] = 1
+        }
+    )
+
     self.InRange = self.InRange or false
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
-    
+
     -- Used to work around network variable spamming being changed from
     -- empty to a game and back again when loaded into room on MS
     self.AllowGameChangeAt = 0
@@ -195,7 +182,7 @@ function ENT:Think()
     end
 
     if self.LastGameNWVar ~= nil and self.AllowGameChangeAt - RealTime() <= 0 then
-        DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
+        ARCADE:DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
         self:SetGame(self.LastGameNWVar)
         self.LastGameNWVar = nil
         self.AllowGameChangeAt = RealTime() + 1
@@ -206,28 +193,28 @@ function ENT:Think()
     if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
         if self.Game then
             if self.CoinChange.new > self.CoinChange.old and self.Game.OnCoinsInserted then
-                self.Entity:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
+                self:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
                 self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
             end
-        
+
             if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
                 self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
             end
         end
-        
+
         self.CoinChange = nil
     end
 
     if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
-        self.Entity:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
-        self.Entity:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
+        self:SetBodygroup(0, Bodygroups[self.Game.Bodygroup][1])
+        self:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
     end
 
-    if AM.DisableOthers:GetBool() and AM.CurrentMachine and AM.CurrentMachine ~= self then
+    if ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentMachine and ARCADE.Cabinet.CurrentMachine ~= self then
         return
     end
 
-    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self.Entity:GetPos()) > MaxDist * MaxDist then
+    if LocalPlayer() and LocalPlayer():GetPos():DistToSqr(self:GetPos()) > MaxDist * MaxDist then
         if self.InRange then
             self.InRange = false
             self:OnLeftRange()
@@ -254,7 +241,7 @@ function ENT:Think()
                         return
                     end
 
-                    net.Start("arcademachine_insertcoin")
+                    net.Start("arcade_cabinet_insertcoin")
                     net.SendToServer()
                 end
             else
@@ -264,7 +251,7 @@ function ENT:Think()
 
         for _, v in pairs(self.LoadedSounds) do
             if IsValid(v) then
-                v:SetPos(self.Entity:GetPos())
+                v:SetPos(self:GetPos())
             end
         end
 
@@ -274,16 +261,24 @@ end
 
 function ENT:OnEnteredRange()
     self:UpdateScreen()
+
+    if self.Game and self.Game.OnLocalPlayerNearby then
+        self.Game:OnLocalPlayerNearby()
+    end
 end
 
 function ENT:OnLeftRange()
     self:UpdateScreen()
+
+    if self.Game and self.Game.OnLocalPlayerAway then
+        self.Game:OnLocalPlayerAway()
+    end
 end
 
 function ENT:Draw()
-    local marqueeIndex = self.Entity:GetBodygroup(0)
+    local marqueeIndex = self:GetBodygroup(0)
 
-    if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if IsValid(ARCADE.Cabinet.CurrentMachine) and ARCADE.Cabinet.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
         cam.IgnoreZ(true)
     end
 
@@ -291,14 +286,17 @@ function ENT:Draw()
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
-    self.Entity:DrawModel()
+    if self.CabinetArtHasDrawn then
+        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, self.CabinetArtMaterial)
+    end
+    self:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if IsValid(AM.CurrentMachine) and AM.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if IsValid(ARCADE.Cabinet.CurrentMachine) and ARCADE.Cabinet.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
         cam.IgnoreZ(false)
     end
 
-    if not self.InRange or not self.Game or (AM.DisableOthers:GetBool() and AM.CurrentMachine and AM.CurrentMachine ~= self) then
+    if not self.InRange or not self.Game or (ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentMachine and ARCADE.Cabinet.CurrentMachine ~= self) then
         return
     end
 
@@ -316,7 +314,7 @@ function ENT:OnPlayerChange(name, old, new)
             if self.Game then
                 self.Game:OnStartPlaying(new)
             end
-            
+
             self.LastPlayer = new
 
             if new == LocalPlayer() then
@@ -331,49 +329,37 @@ function ENT:OnPlayerChange(name, old, new)
         self.LastPlayer = nil
 
         if old == LocalPlayer() then
-            self:OnLocalPlayerLeft()
+            ARCADE.Cabinet:OnLocalPlayerLeft()
         end
     end
 end
 
 function ENT:OnLocalPlayerEntered()
-    AM.CurrentMachine = self
+    ARCADE.Cabinet.CurrentMachine = self
 
-    if AM.DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
+    if ARCADE.Cabinet.DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
         LocalPlayer():ConCommand("mat_disable_bloom 1")
-        BloomWasDisabled = true
+        ARCADE.Cabinet.BloomWasDisabled = true
     end
 
-    if AM.DisablePAC:GetBool() and pac and pac.IsEnabled() then
+    if cvars.Bool("webbrowser_f1_open") then
+        LocalPlayer():ConCommand("webbrowser_f1_open 0")
+        ARCADE.Cabinet.MSBrowserWasDisabled = true
+    end
+
+    if ARCADE.Cabinet.DisablePAC:GetBool() and pac and pac.IsEnabled() then
         pac.Disable()
-        PACWasDisabled = true
+        ARCADE.Cabinet.PACWasDisabled = true
     else
-        PACWasDisabled = false
+        ARCADE.Cabinet.PACWasDisabled = false
     end
 
-    --[[if AM.DisableOutfitter:GetBool() and outfitter then
+    --[[if ARCADE.Cabinet.DisableOutfitter:GetBool() and outfitter then
         outfitter.SetHighPerf(true, true)
         outfitter.DisableEverything()
-        OutfitterWasDisabled = true
+        ARCADE.Cabinet.OutfitterWasDisabled = true
     else
-        OutfitterWasDisabled = false
-    end--]]
-end
-
-function ENT:OnLocalPlayerLeft()
-    AM.CurrentMachine = nil
-
-    if AM.DisableBloom:GetBool() and BloomWasDisabled then
-        LocalPlayer():ConCommand("mat_disable_bloom 0")
-    end
-
-    if AM.DisablePAC:GetBool() and PACWasDisabled then
-        pac.Enable()
-    end
-
-    --[[if AM.DisableOutfitter:GetBool() and OutfitterWasDisabled then
-        outfitter.SetHighPerf(false, true)
-        outfitter.EnableEverything()
+        ARCADE.Cabinet.OutfitterWasDisabled = false
     end--]]
 end
 
@@ -399,6 +385,22 @@ function ENT:UpdateMarquee()
     render.PopRenderTarget()
 end
 
+function ENT:UpdateCabinetArt()
+    if self.CabinetArtHasDrawn then return end
+
+    render.PushRenderTarget(self.CabinetArtTexture)
+        cam.Start2D()
+            surface.SetDrawColor(0, 0, 0, 255)
+            surface.DrawRect(0, 0, CabinetArtWidth, CabinetArtHeight)
+
+            if self.Game and self.Game.DrawCabinetArt then
+                self.Game:DrawCabinetArt()
+                self.CabinetArtHasDrawn = true
+            end
+        cam.End2D()
+    render.PopRenderTarget()
+end
+
 function ENT:UpdateScreen()
     render.PushRenderTarget(self.ScreenTexture)
         cam.Start2D()
@@ -410,7 +412,7 @@ function ENT:UpdateScreen()
                     self.Game:Draw()
                 else
                     surface.SetFont("DermaLarge")
-                    local w, h = surface.GetTextSize("NO GAME LOADED")
+                    local w = surface.GetTextSize("NO GAME LOADED")
                     surface.SetTextColor(255, 255, 255, 255)
                     surface.SetTextPos((ScreenWidth / 2) - (w / 2), ScreenHeight / 2)
                     surface.DrawText("NO GAME LOADED")
@@ -427,7 +429,7 @@ end
 function ENT:OnGameChange(name, old, new)
     if old == new then return end
 
-    DebugPrint(
+    ARCADE:DebugPrint(
         self:EntIndex(),
         "new", new,
         "old", old,
@@ -439,7 +441,7 @@ function ENT:OnGameChange(name, old, new)
 
     if self.AllowGameChangeAt == 0 or self.AllowGameChangeAt - RealTime() > 0 then
         self.AllowGameChangeAt = RealTime() + 1
-        DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
+        ARCADE:DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
     end
 end
 
@@ -451,9 +453,40 @@ function ENT:StopSounds()
     end
 
     table.Empty(self.LoadedSounds)
-    if AM.QueuedSounds[self:EntIndex()] then
-        AM.QueuedSounds[self:EntIndex()] = nil
+    if ARCADE.Cabinet.QueuedSounds[self:EntIndex()] then
+        ARCADE.Cabinet.QueuedSounds[self:EntIndex()] = nil
     end
+end
+
+function ENT:SetGame(game, forceLibLoad)
+    if self.Game then
+        if self.Game.Destroy then
+            self.Game:Destroy()
+        end
+        self.Game = nil
+    end
+
+    self:StopSounds()
+
+    self.MarqueeHasDrawn = false
+    self.CabinetArtHasDrawn = false
+
+    if game and game ~= "" then
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game))
+
+        if self.Game.Init then
+            self.Game:Init()
+        end
+
+        if IsValid(self:GetPlayer()) then
+            self.Game:OnStartPlaying(self:GetPlayer())
+        end
+    end
+
+    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
+        self:UpdateMarquee()
+    end
+    self:UpdateScreen()
 end
 
 function ENT:GetUpvalues(game)
@@ -461,7 +494,9 @@ function ENT:GetUpvalues(game)
         SCREEN_WIDTH = ScreenWidth,
         SCREEN_HEIGHT = ScreenHeight,
         MARQUEE_WIDTH = MarqueeWidth,
-        MARQUEE_HEIGHT = MarqueeHeight
+        MARQUEE_HEIGHT = MarqueeHeight,
+        CABINET_ART_WIDTH = CabinetArtWidth,
+        CABINET_ART_HEIGHT = CabinetArtHeight
     }
 
     for k, v in pairs(BG) do
@@ -475,10 +510,10 @@ function ENT:GetUpvalues(game)
         upvalues.FILE = LoadedLibs[game].FILE
     else
         LoadedLibs[game] = {
-            COLLISION = include("arcademachine_lib/collision.lua"),
-            IMAGE = include("arcademachine_lib/image.lua"),
-            FONT = include("arcademachine_lib/font.lua"),
-            FILE = include("arcademachine_lib/file.lua")
+            COLLISION = include("arcade_cabinet_lib/collision.lua"),
+            IMAGE = include("arcade_cabinet_lib/image.lua"),
+            FONT = include("arcade_cabinet_lib/font.lua"),
+            FILE = include("arcade_cabinet_lib/file.lua")
         }
 
         upvalues.COLLISION = LoadedLibs[game].COLLISION
@@ -489,39 +524,10 @@ function ENT:GetUpvalues(game)
 
     -- Allow each instance to have its own copy of sound library in case they want to
     -- play the same sound at the same time (needs to emit from the machine)
-    upvalues.SOUND = WrappedInclusion("arcademachine_lib/sound.lua", { MACHINE = self, QUEUE = AM.QueuedSounds })
+    upvalues.SOUND = WrappedInclusion("arcade_cabinet_lib/sound.lua", { MACHINE = self, QUEUE = ARCADE.Cabinet.QueuedSounds })
 
-    upvalues.COINS = WrappedInclusion("arcademachine_lib/coins.lua", { MACHINE = self })
-    upvalues.MARQUEE = WrappedInclusion("arcademachine_lib/marquee.lua", { MACHINE = self })
+    upvalues.COINS = WrappedInclusion("arcade_cabinet_lib/coins.lua", { MACHINE = self })
+    upvalues.CABINET = WrappedInclusion("arcade_cabinet_lib/cabinet.lua", { MACHINE = self })
 
     return upvalues
-end
-
-function ENT:SetGame(game, forceLibLoad)
-    if self.Game then
-        if self.Game.Destroy then
-            self.Game:Destroy()
-        end
-        self.Game = nil
-    end
-
-    self:StopSounds()
-
-    if game and game ~= "" then
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcademachine_games/" .. game .. ".lua", self:GetUpvalues(game))
-
-        if self.Game.Init then
-            self.Game:Init()
-        end
-
-        if IsValid(self:GetPlayer()) then
-            self.Game:OnStartPlaying(self:GetPlayer())
-        end
-    end
-
-    self.MarqueeHasDrawn = false
-    if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
-        self:UpdateMarquee()
-    end
-    self:UpdateScreen()
 end

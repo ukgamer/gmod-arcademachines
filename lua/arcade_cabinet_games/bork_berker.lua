@@ -23,6 +23,7 @@
 
 --local function game() -- For testing
 local GAME = {}
+GAME.LateUpdateMarquee = true
 GAME.Bodygroup = BG_GENERIC_TRACKBALL
 GAME.Name = "Börk Berker"
 GAME.Description = [[Controls:
@@ -37,7 +38,7 @@ local playerScore = 0
 local gameOverAt = 0
 local isGameOver = false
 
-local moveX, moveY = 0, 0
+local moveX = 0
 local defaultMoveSpeed = 250
 local moveSpeed = defaultMoveSpeed
 local moveSlowDown = 1250
@@ -75,7 +76,6 @@ local hardnessColors = {
 }
 
 local isMusicMuted = false
-local curSongLen = 0
 local currentSong = ""
 local nextMusicPlay = 0
 local music = {
@@ -111,14 +111,12 @@ local baseBoxObject =  {
 }
 
 local currentPowerUps = {}
-local badPowerups = {}
 local powerUps = {}
 local basePowerUp = {
 	icon = Material("sprites/key_12"),
 	name = "base",
 	time = 5,
 }
-local cachedMaterials = {}
 
 local soundTimesTable = {}
 local function MakeSound(soundPath, pitch, level)
@@ -340,27 +338,27 @@ local function UpdatePowerups()
 			local data = ob.data
 			if data.rev then
 				data.lerp = data.lerp - FrameTime() * 2
-				
+
 				if data.lerp <= 0 then
 					data.lerp = 0
 					data.rev = false
 				end
 			elseif not data.rev then
 				data.lerp = data.lerp + FrameTime() * 2
-				
+
 				if data.lerp >= 1 then
 					data.lerp = 1
 					data.rev = true
 				end
 			end
 
-			local color = math.Remap(data.lerp, 0, 1, 100, 255)
+			local col = math.Remap(data.lerp, 0, 1, 100, 255)
 			if data.fullDraw then
 				data.color = Color(255, 255, 255)
 			elseif data.mean then
 				data.color = Color(data.lerp * 255, 0, 0)
 			else
-				data.color = Color(data.lerp * 255, color, data.lerp * 255)
+				data.color = Color(data.lerp * 255, col, data.lerp * 255)
 			end
 
 			ob.size = Vector(data.defaultSize + data.lerp * 5, data.defaultSize + data.lerp * 5)
@@ -431,11 +429,9 @@ local function UpdatePowerups()
 					currentPowerUps[name] = nil
 				end
 
-				if powerUp.time > -1 then
-					if CurTime() >= powerUp.endTime then
-						powerUp.reset(powerUp)
-						currentPowerUps[name] = nil
-					end
+				if powerUp.time > -1 and CurTime() >= powerUp.endTime then
+					powerUp.reset(powerUp)
+					currentPowerUps[name] = nil
 				end
 			end
 		end
@@ -458,7 +454,6 @@ local function UpdateBallObject()
 		return
 	end
 
-	local lastPos = ballObject.lastPos
 	local velX, velY = ballObject.vel.x, ballObject.vel.y
 	local posX, posY = ballObject.pos.x, ballObject.pos.y
 
@@ -472,25 +467,25 @@ local function UpdateBallObject()
 			ballObject.lastHitID = ob.id
 			local ball = ballObject
 
-			local left = ob.pos.x
-			local up   = ob.pos.y
-			local right= ob.pos.x + ob.size.x
-			local down = ob.pos.y + ob.size.y
+			local left 	= ob.pos.x
+			local up   	= ob.pos.y
+			local right	= ob.pos.x + ob.size.x
+			local down 	= ob.pos.y + ob.size.y
 
-			local ballLeft = ball.pos.x
-			local ballUp   = ball.pos.y
-			local ballRight= ball.pos.x + ball.size.x
-			local ballDown = ball.pos.y + ball.size.y
+			local ballLeft 	= ball.pos.x
+			local ballUp   	= ball.pos.y
+			local ballRight	= ball.pos.x + ball.size.x
+			local ballDown 	= ball.pos.y + ball.size.y
 
-			local lastBallLeft = ball.lastPos.x
-			local lastBallUp   = ball.lastPos.y
-			local lastBallRight= ball.lastPos.x + ball.size.x
-			local lastBallDown = ball.lastPos.y + ball.size.y
+			local lastBallLeft 	= ball.lastPos.x
+			local lastBallUp   	= ball.lastPos.y
+			local lastBallRight	= ball.lastPos.x + ball.size.x
+			local lastBallDown 	= ball.lastPos.y + ball.size.y
 
-			local collidedLeft = lastBallRight < left and ballRight >= left
-			local collidedRight= lastBallLeft >= right and ballLeft < right
-			local collidedUp   = lastBallDown < up and ballDown >= up
-			local collidedDown = lastBallUp >= down and ballUp < down
+			local collidedLeft 	= lastBallRight < left and ballRight >= left
+			local collidedRight	= lastBallLeft >= right and ballLeft < right
+			local collidedUp   	= lastBallDown < up and ballDown >= up
+			local collidedDown 	= lastBallUp >= down and ballUp < down
 
 			--bigball smashes through blocks
 			if ballObject.isBigBall and ob.isBlock then
@@ -503,19 +498,19 @@ local function UpdateBallObject()
 					end
 				end
 			else
-				local velY = math.abs(ballObject.vel.y)
-				local velX = math.abs(ballObject.vel.x)
+				local vel_Y = math.abs(ballObject.vel.y)
+				local vel_X = math.abs(ballObject.vel.x)
 
 				if collidedUp then
-					ballObject.vel.y = -velY
+					ballObject.vel.y = -vel_Y
 				elseif collidedDown then
-					ballObject.vel.y = velY
+					ballObject.vel.y = vel_Y
 				end
 
 				if collidedLeft then
-					ballObject.vel.x = -velX
+					ballObject.vel.x = -vel_X
 				elseif collidedRight then
-					ballObject.vel.x = velX
+					ballObject.vel.x = vel_X
 				end
 			end
 
@@ -550,7 +545,7 @@ local function UpdateBallObject()
 					else
 						MakeSound("friends/friend_join.wav", len, 0.5)
 						if ballObject.vel.x >= maxBallSpeed - 10 or ballObject.vel.x <= -maxBallSpeed - 10 then
-							MakeSound("weapons/fx/rics/ric" .. math.random(1, 5) ..".wav", 100, 0.1)
+							MakeSound("weapons/fx/rics/ric" .. math.random(1, 5) .. ".wav", 100, 0.1)
 						end
 					end
 				end
@@ -581,10 +576,8 @@ local function UpdateBallObject()
 	end
 
 	--out of bounds
-	if posY >= SCREEN_HEIGHT + ballObject.size.y * 4 then
-		if not shouldRespawnBall then
-			GAME:GameOver()
-		end
+	if posY >= SCREEN_HEIGHT + ballObject.size.y * 4 and not shouldRespawnBall then
+		GAME:GameOver()
 	end
 end
 
@@ -594,22 +587,20 @@ local function UpdateObjects()
 	for k,v in pairs(objects) do
 		if v.vel ~= Vector(0, 0) then
 			v.lastPos = v.pos
-			
+
 			local clamp = v.id == ballObject.id and maxBallSpeed or maxVelocity
 
 			v.vel.x = math.Clamp(v.vel.x, -clamp, clamp)
 			v.vel.y = math.Clamp(v.vel.y, -clamp, clamp)
 			v.setPos(v.pos + (v.vel * FrameTime()))
 
-			if v.id == ballObject.id then
-				if RealTime() >= nextSample then
-					table.insert(oldBallPositions, v.pos)
-					
-					if table.Count(oldBallPositions) >= 5 then
-						table.remove(oldBallPositions, 1)
-					end
-					nextSample = RealTime() + 0.05
+			if v.id == ballObject.id and RealTime() >= nextSample then
+				table.insert(oldBallPositions, v.pos)
+
+				if table.Count(oldBallPositions) >= 5 then
+					table.remove(oldBallPositions, 1)
 				end
+				nextSample = RealTime() + 0.05
 			end
 		end
 
@@ -635,10 +626,10 @@ local function RenderObjects()
 		for i = 1, #oldBallPositions do
 			local alpha = math.Remap(i, 0, #oldBallPositions, 0, 255)
 
-			local color = ballObject.render.color
-			color.a = alpha
+			local col = ballObject.render.color
+			col.a = alpha
 
-			surface.SetDrawColor(color:Unpack())
+			surface.SetDrawColor(col:Unpack())
 			surface.SetMaterial(ballMaterial)
 			local posX, posY = oldBallPositions[i].x, oldBallPositions[i].y
 			local scaleX, scaleY = ballObject.size.x, ballObject.size.y
@@ -715,7 +706,7 @@ local function ResetGame()
 
 	for x = 1, (SCREEN_WIDTH / 40) - 1 do
 		for y = 1, (SCREEN_HEIGHT / yAmn) - 1 do
-			local color = hardnessColors[1]
+			local col = hardnessColors[1]
 			local hardness = 1
 
 			if y <= hardBlocks then
@@ -727,11 +718,11 @@ local function ResetGame()
 					hits = #hardnessColors
 				end
 
-				color = hardnessColors[curColor]
+				col = hardnessColors[curColor]
 				hardness = hits
 			end
 
-			local block = CreateBoxObject(Vector(40 * x, 20 * y + 40), Vector(20, 10), color, nil, true)
+			local block = CreateBoxObject(Vector(40 * x, 20 * y + 40), Vector(20, 10), col, nil, true)
 			block.isBlock = true
 			block.hardness = hardness
 
@@ -751,16 +742,24 @@ function GAME:GameOver()
 		end
 
 		for name, powerUp in pairs(currentPowerUps) do
-			if powerUp and powerUp.endTime and powerUp.time ~= 0 then
-				if not powerUp.pauseTime then
-					powerUp.pauseTime = powerUp.endTime - CurTime()
-				end
+			if powerUp and powerUp.endTime and powerUp.time ~= 0 and not powerUp.pauseTime then
+				powerUp.pauseTime = powerUp.endTime - CurTime()
 			end
 		end
 
 		gameOverAt = RealTime() + 10
 		isGameOver = true
 	end
+end
+
+function GAME:Init()
+	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_marque.png", "marquee", function(image)
+		CABINET:UpdateMarquee()
+	end)
+
+	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_artwork.png", "cabinet", function(image)
+		CABINET:UpdateCabinetArt()
+	end)
 end
 
 function GAME:Start()
@@ -852,22 +851,20 @@ function GAME:Update()
 		lastRPress = CurTime()
 	end
 
-	if thePlayer:KeyDown(IN_JUMP) then
-		if not ballObject.launched then
-			local trueVel = padObject.vel.x > ballSpeed and ballSpeed or padObject.vel.x < -ballSpeed and -ballSpeed or 0
-			if trueVel >= -25 and trueVel <= 25 then
-				local rng = math.random(0, 1)
-				if rng == 0 then
-					trueVel = math.Rand(-ballSpeed / 4, -ballSpeed / 2) --cur ballspeed is 200, so this would be min 50, max 100
-				else
-					trueVel = math.Rand(ballSpeed / 4, ballSpeed / 2)
-				end
+	if thePlayer:KeyDown(IN_JUMP) and not ballObject.launched then
+		local trueVel = padObject.vel.x > ballSpeed and ballSpeed or padObject.vel.x < -ballSpeed and -ballSpeed or 0
+		if trueVel >= -25 and trueVel <= 25 then
+			local rng = math.random(0, 1)
+			if rng == 0 then
+				trueVel = math.Rand(-ballSpeed / 4, -ballSpeed / 2) --cur ballspeed is 200, so this would be min 50, max 100
+			else
+				trueVel = math.Rand(ballSpeed / 4, ballSpeed / 2)
 			end
-
-			ballObject.setPos(ballObject.pos + Vector(0, -5)) -- -5 margin of error incase
-			ballObject.setVel(Vector(trueVel, -ballSpeed)) --always kick the ball upward
-			ballObject.launched = true
 		end
+
+		ballObject.setPos(ballObject.pos + Vector(0, -5)) -- -5 margin of error incase
+		ballObject.setVel(Vector(trueVel, -ballSpeed)) --always kick the ball upward
+		ballObject.launched = true
 	end
 
 	-- halt the pad, since im using velocities
@@ -910,59 +907,15 @@ end
 
 -- Called once on init
 function GAME:DrawMarquee()
-	surface.SetDrawColor(0, 0, 0)
-	surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-
-	surface.SetDrawColor(255, 255, 255)
-	surface.SetMaterial(boarder)
+	surface.SetDrawColor(255, 255, 255, 255)
+	surface.SetMaterial(IMAGE.Images.marquee.mat)
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
+end
 
-	for x = 1, 12 do
-		surface.SetDrawColor(0, 100, 50)
-		for y = 1, 4 do
-			surface.DrawRect(50 + x * 30, 10 + y * 20, 20, 10)
-		end
-	end
-
-	local pH, pW = 50, 10
-	surface.SetDrawColor(50, 125, 255)
-	local pX, pY = MARQUEE_WIDTH - pH * 3, MARQUEE_HEIGHT - pW * 3
-	surface.DrawRect(pX, pY, pH, pW)
-
+function GAME:DrawCabinetArt()
+	surface.SetMaterial(IMAGE.Images.cabinet.mat)
 	surface.SetDrawColor(255, 255, 255)
-	surface.SetMaterial(boarder)
-	surface.DrawTexturedRect(pX, pY, pH, pW)
-
-	local bX, bY = 17.5, 17.5
-	surface.SetDrawColor(100, 200, 255)
-	surface.SetMaterial(ballMaterial)
-	surface.DrawTexturedRect(pX + bX, pY - bY, bX, bY)
-
-	local text = "BÖRK BERKER"
-
-	surface.SetFont("ScoreboardDefaultTitle")
-	local tW, tH = surface.GetTextSize(text)
-	local x, y = MARQUEE_WIDTH / 2 - tW / 2, MARQUEE_HEIGHT / 2 - tH
-	
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x - 1, y - 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x + 1, y + 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x - 1, y + 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(0, 125, 255)
-	surface.SetTextPos(x + 1, y - 1)
-	surface.DrawText(text)
-
-	surface.SetTextColor(200, 255, 255)
-	surface.SetTextPos(x, y)
-	surface.DrawText(text)
+	surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 local demoObjects = {}
@@ -970,7 +923,7 @@ function GAME:DrawDemo()
 	surface.SetDrawColor(50, 50, 100)
 	surface.DrawRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
 
-	if table.IsEmpty(demoObjects) then 
+	if table.IsEmpty(demoObjects) then
 		for x = 1, (SCREEN_WIDTH / 40) - 1 do
 			for y = 1, (SCREEN_HEIGHT / 40) - 1 do
 				local tab = {}
@@ -1007,7 +960,6 @@ function GAME:DrawDemo()
 		if v.isPad then
 			v.func(sin + SCREEN_WIDTH / 2 - 20, SCREEN_HEIGHT - 40)
 		elseif v.isBall then
-			local range = 
 			v.func(sin + SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT - 60)
 		else
 			v.func()
@@ -1046,7 +998,7 @@ function GAME:Draw()
 	surface.SetDrawColor(currentBgColor:Unpack())
 	surface.SetMaterial(currentBackground)
 	surface.DrawTexturedRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
-	
+
 	if gameState == 0 then
 		self:DrawDemo()
 		surface.SetFont("DermaLarge")
@@ -1060,7 +1012,7 @@ function GAME:Draw()
 	if gameState == 1 then
 		local score = "Score: " .. playerScore
 		surface.SetFont("DermaLarge")
-		local tW, tH = surface.GetTextSize(score)
+		local tW = surface.GetTextSize(score)
 		surface.SetTextColor(255, 255, 255)
 		surface.SetTextPos(SCREEN_WIDTH / 2 - tW / 2, 0)
 		surface.DrawText(score)
@@ -1112,9 +1064,9 @@ function GAME:Draw()
 			end
 
 			surface.SetFont("Default")
-			local tW, tH = surface.GetTextSize(txt)
+			tW, tH = surface.GetTextSize(txt)
 			surface.SetTextColor(50, 125, 255)
-			surface.SetTextPos(x + 10 - tW/2, y + 20)
+			surface.SetTextPos(x + 10 - tW / 2, y + 20)
 			surface.DrawText(txt)
 			i = i + 1
 		end
@@ -1130,7 +1082,7 @@ function GAME:Draw()
 
 	surface.SetMaterial(soundIcon)
 	surface.DrawTexturedRect(soundIconPosX, soundIconPosY, 32, 32)
-	
+
 	if isMusicMuted then
 		surface.SetMaterial(xMarkIcon)
 		surface.DrawTexturedRect(soundIconPosX, soundIconPosY, 32, 32)
@@ -1141,7 +1093,7 @@ function GAME:Draw()
 		local col = Color(255, 50, 50)
 		local txt = "GAME OVER IN " .. math.max(0, math.floor(gameOverAt - RealTime()))
 		surface.SetFont("DermaLarge")
-		local tW, tH = surface.GetTextSize(txt)
+		tW, tH = surface.GetTextSize(txt)
 
 		surface.SetDrawColor(0, 0, 0, 225)
 		surface.DrawRect(SCREEN_WIDTH / 2 - tW / 2, SCREEN_HEIGHT / 2 - tH / 2, tW, tH)
@@ -1150,7 +1102,7 @@ function GAME:Draw()
 		surface.SetTextPos(SCREEN_WIDTH / 2 - tW / 2, SCREEN_HEIGHT / 2 - tH / 2)
 		surface.DrawText(txt)
 
-		local txt = "Insert coin to continue.."
+		txt = "Insert coin to continue.."
 		local tW2, tH2 = surface.GetTextSize(txt)
 
 		local x, y = SCREEN_WIDTH / 2 - tW2 / 2, SCREEN_HEIGHT / 2 - tH2 / 2 + tH
@@ -1163,15 +1115,15 @@ end
 
 -- Called when someone sits in the seat
 function GAME:OnStartPlaying(ply)
-    if ply == LocalPlayer() then
-        thePlayer = ply
-    end
+	if ply == LocalPlayer() then
+		thePlayer = ply
+	end
 end
 
 -- Called when someone leaves the seat
 function GAME:OnStopPlaying(ply)
-    if ply == thePlayer then
-        thePlayer = nil
+	if ply == thePlayer then
+		thePlayer = nil
 	end
 
 	nextMusicPlay = 0
@@ -1191,17 +1143,17 @@ function GAME:OnCoinsInserted(ply, old, new)
 end
 
 function GAME:OnCoinsLost(ply, old, new)
-    if ply ~= LocalPlayer() then return end
+	if ply ~= LocalPlayer() then return end
 
-    if new == 0 then
-        self:Stop()
-    end
+	if new == 0 then
+		self:Stop()
+	end
 end
 
 return GAME
 --end -- For testing
 
---local ent = Entity(2051)
+--local ent = this
 --if IsValid(ent) and ent.SetGame then
 --	ent:SetGame(game)
 --end

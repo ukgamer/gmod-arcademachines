@@ -73,7 +73,7 @@
             {
                 x = SCREEN_WIDTH / 2 - 45,
                 y = SCREEN_HEIGHT / 2,
-            
+
                 w = 90,
                 h = 10
             }
@@ -214,10 +214,8 @@
     end
 
     function SNAKE:CanMoveOnAxis( Axis )
-        if #self.Tail >= 1 then
-            if Axis ~= 0 then
-                return false
-            end
+        if #self.Tail >= 1 and Axis ~= 0 then
+            return false
         end
 
         return true
@@ -225,11 +223,9 @@
 
     function SNAKE:EventTimers()
         if not SNAKE.Dead then
-            if SNAKE.Boosted then
-                if SNAKE.BoostedAt + SNAKE.TotalBoostTime <= RealTime() then
-                    SNAKE.Boosted = false
-                    SNAKE.TotalBoostTime = 0
-                end
+            if SNAKE.Boosted and SNAKE.BoostedAt + SNAKE.TotalBoostTime <= RealTime() then
+                SNAKE.Boosted = false
+                SNAKE.TotalBoostTime = 0
             end
         else
             if SNAKE.DiedAt + 7 <= RealTime() and not CoinsTaken then
@@ -249,14 +245,14 @@
             self.Col = Color( 255, 216, 0 )
             return
         end
-        
+
         self.Col = Color( 25, 255, 25 )
     end
 
     function SNAKE:Draw()
         surface.SetDrawColor( self.Col )
         surface.DrawRect( self.x, self.y, 10, 10 )
-        
+
         for _, TailPart in ipairs( self.Tail ) do
             surface.DrawRect( TailPart.x, TailPart.y, 10, 10 )
         end
@@ -283,28 +279,26 @@
     end
 
     function APPLES:Spawner()
-        if GAME.State == STATE_PLAYING then
-            if #self.OnScreen < self.MAX_APPLES then
-                local AppleX = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
-                local AppleY = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
-                local AppleX = math.max( math.min( SCREEN_WIDTH - 42, AppleX ), 20 )
-                local AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
+        if GAME.State == STATE_PLAYING and #self.OnScreen < self.MAX_APPLES then
+            local AppleX = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
+            local AppleY = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
+            AppleX = math.max( math.min( SCREEN_WIDTH - 42, AppleX ), 20 )
+            AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
 
-                if self:CheckForSpawnReserved( AppleX, AppleY ) then
-                    return 
-                end
-
-                local Type = APPLE_TYPE_NORMAL
-
-                if math.random( 1, 10 ) == 4 then
-                    Type = APPLE_TYPE_GOLDEN
-                elseif math.random( 1, 15 ) == 6 then 
-                    Type = APPLE_TYPE_BOOST
-                end
-
-                local NewApple = { x = AppleX, y = AppleY, Type = Type }
-                table.insert( self.OnScreen, NewApple )
+            if self:CheckForSpawnReserved( AppleX, AppleY ) then
+                return -- Just halt, spawner function will be ran again instantly.
             end
+
+            local Type = APPLE_TYPE_NORMAL
+
+            if math.random( 1, 10 ) == 4 then
+                Type = APPLE_TYPE_GOLDEN
+            elseif math.random( 1, 15 ) == 6 then -- Tfw boost apples still more common thatn golden apples
+                Type = APPLE_TYPE_BOOST
+            end
+
+            local NewApple = { x = AppleX, y = AppleY, Type = Type }
+            table.insert( self.OnScreen, NewApple )
         end
     end
 
@@ -363,7 +357,7 @@
                             SNAKE.MoveY = -10
                         end )
                     end
-                    
+
                     if PLAYER:KeyPressed( IN_BACK ) then
                         table.insert( SNAKE.QueuedMoves, function()
                             SNAKE.MoveX = 0
@@ -379,7 +373,7 @@
                             SNAKE.MoveX = 10
                         end )
                     end
-                    
+
                     if PLAYER:KeyPressed( IN_MOVELEFT ) then
                         table.insert( SNAKE.QueuedMoves, function()
                             SNAKE.MoveY = 0
@@ -411,11 +405,11 @@
 
         if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
             draw.SimpleText(
-                "INSERT COINS", 
-                "Snake32", 
-                SCREEN_WIDTH / 2, 
-                SCREEN_HEIGHT - 100, 
-                Color( 255, 255, 255, ( CurTime() % 1 > 0.5 and 255 or 0 ) ),
+                "INSERT COINS",
+                "Snake32",
+                SCREEN_WIDTH / 2,
+                SCREEN_HEIGHT - 100,
+                Color( 255, 255, 255, CurTime() % 1 > 0.5 and 255 or 0 ),
                 TEXT_ALIGN_CENTER
             )
 
@@ -424,7 +418,7 @@
                 AttractorSnake.ActiveFrame = ( AttractorSnake.ActiveFrame == "FRAME.1" and "FRAME.2" or "FRAME.1" )
                 AttractorSnake.LastFrameAdvance = RealTime()
             end
-            
+
             for _, object in ipairs( AttractorSnake[AttractorSnake.ActiveFrame] ) do
                 surface.DrawRect( object.x, object.y, object.w, object.h )
             end

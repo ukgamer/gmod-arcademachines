@@ -8,7 +8,7 @@ local loaded = false
 function GAME:Init()
     IMAGE:LoadFromURL("https://i.imgur.com/SH39yEU.png", "logo", function(image)
         loaded = true
-        MARQUEE:UpdateMarquee()
+        CABINET:UpdateMarquee()
     end)
 end
 
@@ -22,7 +22,7 @@ function GAME:DrawMarquee()
 end
 
 function GAME:Update()
-    
+
 end
 
 function GAME:Draw()
@@ -38,7 +38,7 @@ function GAME:OnStartPlaying(ply)
 end
 
 function GAME:OnStopPlaying(ply)
-    
+
 end
 
 return GAME

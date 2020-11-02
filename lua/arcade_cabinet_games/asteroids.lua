@@ -39,7 +39,6 @@ local livesAngle = Angle(0, -90, 0)
 local nextFire = 0
 local respawnAt = 0
 local nextUfo = 0
-local fastBeep = false
 local asteroidTypes = {
     {
         name = "small",
@@ -130,7 +129,7 @@ local ufoTypes = {
             Vector(1, 4),
             Vector(2, 2),
             Vector(5, 0),
-            Vector(3, -2),
+            Vector(2, -2),
             Vector(-2, -2)
         },
         collisionVertices = {
@@ -153,7 +152,7 @@ local ufoTypes = {
             Vector(2, 8),
             Vector(4, 4),
             Vector(10, 0),
-            Vector(6, -4),
+            Vector(4, -4),
             Vector(-4, -4)
         },
         collisionVertices = {
@@ -189,14 +188,18 @@ local yawVec = Vector(0, 0, 1)
 
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee", function(image)
-        MARQUEE:UpdateMarquee()
+        CABINET:UpdateMarquee()
+    end)
+
+    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/cabinet.png", "cabinet", function(image)
+        CABINET:UpdateCabinetArt()
     end)
 
     self:SpawnAsteroids()
 end
 
 function GAME:Destroy()
-    
+
 end
 
 function GAME:PlaySound(snd, looping)
@@ -248,7 +251,7 @@ function GAME:Stop()
 
     score = 0
     extraLifeScore = 0
-    
+
     gameState = GAME_STATE_ATTRACT
 
     self:SpawnAsteroids()
@@ -456,7 +459,7 @@ function GAME:DestroyUfo(key, obj, byPlayer)
         score = score + points
         extraLifeScore = extraLifeScore + points
     end
-    
+
     self:SpawnExplosion(obj.pos, "bangsmall")
     table.remove(objects.ufos, key)
 
@@ -553,16 +556,14 @@ function GAME:Update()
 
         if thePlayer:KeyDown(IN_FORWARD) then
             objects.player.vel:Add(objects.player.ang:Forward() * 10 * FrameTime())
-            
+
             self:PlaySound("thrust", true)
         else
             self:PauseSound("thrust")
         end
 
-        if thePlayer:KeyDown(IN_JUMP) then
-            if now >= nextFire and #objects.bullets < 4 then
-                self:SpawnBullet()
-            end
+        if thePlayer:KeyDown(IN_JUMP) and now >= nextFire and #objects.bullets < 4 then
+            self:SpawnBullet()
         end
 
         objects.player.pos:Add(objects.player.vel * 25 * FrameTime())
@@ -648,6 +649,12 @@ function GAME:DrawMarquee()
     surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 end
 
+function GAME:DrawCabinetArt()
+    surface.SetMaterial(IMAGE.Images["cabinet"].mat)
+    surface.SetDrawColor(255, 255, 255)
+    surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
+end
+
 function GAME:DrawPlayerTriangle(pos, ang, thrusting)
     if not ang then ang = Angle() end
 
@@ -662,10 +669,10 @@ function GAME:DrawPlayerTriangle(pos, ang, thrusting)
         surface.SetDrawColor(255, 255, 255, 255)
         surface.DrawLine(pos.x - 5, pos.y + 5, pos.x + 10, pos.y)
         surface.DrawLine(pos.x + 10, pos.y, pos.x - 5, pos.y - 5)
-        surface.DrawLine(pos.x - 3, pos.y - 4, pos.x - 3, pos.y + 4) -- back of the ship
+        surface.DrawLine(pos.x - 2, pos.y - 4, pos.x - 2, pos.y + 4) -- back of the ship
         if thrusting and now % 0.1 > 0.05 then
-            surface.DrawLine(pos.x - 3, pos.y - 2, pos.x - 8, pos.y)
-            surface.DrawLine(pos.x - 8, pos.y, pos.x - 3, pos.y + 2)
+            surface.DrawLine(pos.x - 2, pos.y - 2, pos.x - 8, pos.y)
+            surface.DrawLine(pos.x - 8, pos.y, pos.x - 2, pos.y + 2)
         end
     cam.PopModelMatrix()
 end
@@ -764,7 +771,6 @@ function GAME:Draw()
 
     if gameState ~= GAME_STATE_ATTRACT then
         surface.SetFont("DermaLarge")
-        local tw, th = surface.GetTextSize(score)
         surface.SetTextColor(255, 255, 255, 255)
         surface.SetTextPos(10, 0)
         surface.DrawText(score)
@@ -776,7 +782,7 @@ function GAME:Draw()
         end
 
         surface.SetFont("DermaDefault")
-        local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
+        local _, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
         surface.SetTextColor(255, 255, 255, 255)
         surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
         surface.DrawText(COINS:GetCoins() .. " COIN(S)")

@@ -23,7 +23,7 @@ local STATE_WON  = 2
 local STATE_LOST = 3
 
 local GAME = {
-	Name = 'Sudoku',
+	Name = "Sudoku",
 	Description = [[
 	You will be presented with a 9x9 grid of fields. Some contain numbers between 1 and 9, some don't.
 	This 9x9 grid is subdivided into 9 smaller 3x3 boxes.
@@ -72,36 +72,36 @@ local GAME = {
 }
 
 GAME.grid.border = {
-	x = GAME.SX/20,
-	y = GAME.SY/20
+	x = GAME.SX / 20,
+	y = GAME.SY / 20
 }
 
 GAME.grid.width = {
-	x = (GAME.SX/50)/3,
-	y = (GAME.SY/50)/3
+	x = (GAME.SX / 50) / 3,
+	y = (GAME.SY / 50) / 3
 }
 
 GAME.grid.length = {
-	x = (GAME.SX-2*GAME.grid.border.x)/3,
-	y = (GAME.SY-2*GAME.grid.border.y)/3
+	x = (GAME.SX- 2 * GAME.grid.border.x) / 3,
+	y = (GAME.SY- 2 * GAME.grid.border.y) / 3
 }
 
 local border, width, length = GAME.grid.border, GAME.grid.width, GAME.grid.length
 
 function GAME:GetDigitPos (digit_x, digit_y)
-	return border.x + (math.floor(digit_x/3)-1)*(length.x-width.x) + (digit_x%3 + 2) * (length.x-width.x)/3 + 17,
-		border.y + (math.floor(digit_y/3)-1)*(length.y-width.y) + (digit_y%3 + 2) * (length.y-width.y)/3 + 10
+	return border.x + (math.floor(digit_x / 3) - 1) * (length.x-width.x) + (digit_x % 3 + 2) * (length.x-width.x) / 3 + 17,
+		border.y + (math.floor(digit_y / 3) - 1) * (length.y-width.y) + (digit_y % 3 + 2) * (length.y-width.y) / 3 + 10
 end
 
 function GAME:GetGuessDigitPos (digit_x, digit_y, guess_digit)
-	local guess_x = guess_digit == 9 and 10 or ((guess_digit-1)%4+1)*10
-	local guess_y = guess_digit == 9 and 16 or math.floor(guess_digit/5) * 32
-	return border.x + (math.floor(digit_x/3)-1)*(length.x-width.x) + (digit_x%3 + 2) * (length.x-width.x)/3 -4 + guess_x,
-		border.y + (math.floor(digit_y/3)-1)*(length.y-width.y) + (digit_y%3 + 2) * (length.y-width.y)/3 + 2 + guess_y
+	local guess_x = guess_digit == 9 and 10 or ((guess_digit - 1) % 4 + 1) * 10
+	local guess_y = guess_digit == 9 and 16 or math.floor(guess_digit / 5) * 32
+	return border.x + (math.floor(digit_x / 3) - 1) * (length.x-width.x) + (digit_x % 3 + 2) * (length.x-width.x) / 3 - 4 + guess_x,
+		border.y + (math.floor(digit_y / 3) - 1) * (length.y-width.y) + (digit_y % 3 + 2) * (length.y-width.y) / 3 + 2 + guess_y
 end
 
 function GAME:DrawTextXCentered (y, text)
-	surface.SetTextPos((self.SX-surface.GetTextSize(text))/2, y)
+	surface.SetTextPos((self.SX - surface.GetTextSize(text)) / 2, y)
 	return surface.DrawText(text)
 end
 
@@ -121,23 +121,23 @@ function GAME:DrawGrid()
 	end
 
 	for x = 0, 2 do
-		local offset_x = x*(length.x-width.x)
+		local offset_x = x * (length.x-width.x)
 		for y = 0, 2 do
-			local offset_y = y*(length.y-width.y)
+			local offset_y = y * (length.y-width.y)
 			surface.DrawRect(offset_x + border.x, offset_y + border.y, length.x, width.y)
-			surface.DrawRect(offset_x + border.x+length.x-width.x, offset_y + border.y, width.x, length.y)
-			surface.DrawRect(offset_x + border.x, offset_y + border.y+length.y-width.y, length.x, width.y)
+			surface.DrawRect(offset_x + border.x + length.x-width.x, offset_y + border.y, width.x, length.y)
+			surface.DrawRect(offset_x + border.x, offset_y + border.y + length.y-width.y, length.x, width.y)
 			surface.DrawRect(offset_x + border.x, offset_y + border.y, width.x, length.y)
 
 			-- subgrid
 			for s_x = 0, 2 do
-				local offset_s_x = offset_x + s_x * (length.x-width.x)/3
+				local offset_s_x = offset_x + s_x * (length.x-width.x) / 3
 				for s_y = 0, 2 do
-					local offset_s_y = offset_y + s_y * (length.y-width.y)/3
-					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, length.x/3, width.y/3)
-					surface.DrawRect(offset_s_x + border.x+(length.x-width.x)/3, offset_s_y + border.y, width.x/3, length.y/3)
-					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y+(length.y-width.y)/3, length.x/3, width.y/3)
-					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, width.x/3, length.y/3)
+					local offset_s_y = offset_y + s_y * (length.y-width.y) / 3
+					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, length.x / 3, width.y / 3)
+					surface.DrawRect(offset_s_x + border.x + (length.x-width.x) / 3, offset_s_y + border.y, width.x / 3, length.y / 3)
+					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y + (length.y-width.y) / 3, length.x / 3, width.y / 3)
+					surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, width.x / 3, length.y / 3)
 				end
 			end
 		end
@@ -151,26 +151,26 @@ function GAME:DrawGridSelectionBox()
 		if not (self.cursor.x and self.cursor.y) then -- first stage
 			offset_x, offset_y, scale = 0, 0, 3
 		else
-			offset_x = self.cursor.x*(length.x-width.x)
-			offset_y = self.cursor.y*(length.y-width.y)
+			offset_x = self.cursor.x * (length.x-width.x)
+			offset_y = self.cursor.y * (length.y-width.y)
 		end
-		surface.DrawRect(offset_x + border.x, offset_y + border.y, (length.x-width.x)*scale, width.y)
-		surface.DrawRect(offset_x + border.x+(length.x-width.x)*scale, offset_y + border.y, width.x, (length.y-width.y)*scale)
-		surface.DrawRect(offset_x + border.x, offset_y + border.y+(length.y-width.y)*scale, (length.x-width.x)*scale, width.y)
-		surface.DrawRect(offset_x + border.x, offset_y + border.y, width.x, (length.y-width.y)*scale)
+		surface.DrawRect(offset_x + border.x, offset_y + border.y, (length.x-width.x) * scale, width.y)
+		surface.DrawRect(offset_x + border.x + (length.x-width.x) * scale, offset_y + border.y, width.x, (length.y-width.y) * scale)
+		surface.DrawRect(offset_x + border.x, offset_y + border.y + (length.y-width.y) * scale, (length.x-width.x) * scale, width.y)
+		surface.DrawRect(offset_x + border.x, offset_y + border.y, width.x, (length.y-width.y) * scale)
 		surface.SetDrawColor(255, 255, 0, 80)
-		surface.DrawRect(offset_x + border.x, offset_y + border.y, (length.x-width.x)*scale+1, (length.y-width.y)*scale+1)
+		surface.DrawRect(offset_x + border.x, offset_y + border.y, (length.x-width.x) * scale + 1, (length.y-width.y) * scale + 1)
 	else -- normal handling
-		local x, y, s_x, s_y = math.floor(self.cursor.x/3), math.floor(self.cursor.y/3),
+		local x, y, s_x, s_y = math.floor(self.cursor.x / 3), math.floor(self.cursor.y / 3),
 			self.cursor.x % 3, self.cursor.y % 3
-		local offset_x = x*(length.x-width.x)
-		local offset_y = y*(length.y-width.y)
-		local offset_s_x = offset_x + (s_x - 1) * (length.x-width.x)/3
-		local offset_s_y = offset_y + (s_y - 1) * (length.y-width.y)/3
-		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, length.x/3, width.y)
-		surface.DrawRect(offset_s_x + border.x+(length.x-width.x)/3, offset_s_y + border.y, width.x, length.y/3+width.y/1.5--[[<- the width addition here is a hack; I got too tired to fix this the correct way]])
-		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y+(length.y-width.y)/3, length.x/3, width.y)
-		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, width.x, length.y/3)
+		local offset_x = x * (length.x-width.x)
+		local offset_y = y * (length.y-width.y)
+		local offset_s_x = offset_x + (s_x - 1) * (length.x-width.x) / 3
+		local offset_s_y = offset_y + (s_y - 1) * (length.y-width.y) / 3
+		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, length.x / 3, width.y)
+		surface.DrawRect(offset_s_x + border.x + (length.x-width.x) / 3, offset_s_y + border.y, width.x, length.y / 3 + width.y / 1.5--[[<- the width addition here is a hack; I got too tired to fix this the correct way]])
+		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y + (length.y-width.y) / 3, length.x / 3, width.y)
+		surface.DrawRect(offset_s_x + border.x, offset_s_y + border.y, width.x, length.y / 3)
 	end
 end
 
@@ -190,13 +190,11 @@ function GAME:DrawGridContent(attract_mode)
 					surface.SetTextColor(255, 255, 255, 255)
 				else
 					surface.SetTextColor(0, 255, 255, 255)
-					if not valid then
-						if entry == bad_entry then
-							surface.SetTextColor(255, 0, 0, 255)
-						end
+					if not valid and entry == bad_entry then
+						surface.SetTextColor(255, 0, 0, 255)
 					end
 				end
-				surface.SetTextPos(self:GetDigitPos(x, y))
+				surface.SetTextPos(self:GetDigitPos(x-(attract_mode and 0.1 or 0), y))
 				surface.DrawText(entry.digit)
 			end
 			if entry.guesses then
@@ -214,26 +212,26 @@ function GAME:DrawGridContent(attract_mode)
 end
 
 local KANJI do
-	local K = {'乙','了','又','与','及','丈','刃','凡','勺','互','弔','井','升',
-		'丹','乏','匁','屯','介','冗','凶','刈','匹','厄','双','孔','幻','斗',
-		'斤','且','丙','甲','凸','丘','斥','仙','凹','召','巨','占','囚','奴',
-		'尼','巧','払','汁','玄','甘','矛','込','弐','朱','吏','劣','充','妄',
-		'企','仰','伐','伏','刑','旬','旨','匠','叫','吐','吉','如','妃','尽',
-		'帆','忙','扱','朽','朴','汚','汗','江','壮','缶','肌','舟','芋','芝',
-		'巡','迅','亜','更','寿','励','含','佐','伺','伸','但','伯','伴','呉',
-		'克','却','吟','吹','呈','壱','坑','坊','妊','妨','妙','肖','尿','尾',
-		'岐','攻','忌','床','廷','忍','戒','戻','抗','抄','択','把','抜','扶',
-		'抑','杉','沖','沢','沈','没','妥','狂','秀','肝','即','芳','辛','迎',
-		'邦','岳','奉','享','盲','依','佳','侍','侮','併','免','刺','劾','卓',
-		'叔','坪','奇','奔','姓','宜','尚','屈','岬','弦','征','彼','怪','怖',
-		'肩','房','押','拐','拒','拠','拘','拙','拓','抽','抵','拍','披','抱',
-		'抹','昆','昇','枢','析','杯','枠','欧','肯','殴','況','沼','泥','泊',
-		'泌','沸','泡','炎','炊','炉','邪','祈','祉','突','肢','肪','到','茎',
-		'苗','茂','迭','迫','邸','阻','附','斉','甚','帥','衷','幽','為','盾',
-		'卑','哀','亭','帝','侯','俊','侵','促','俗','盆','冠','削','勅','貞',
-		'卸','厘','怠','叙','咲','垣','契','姻','孤','封','峡','峠','弧','悔',
-		'恒','恨','怒','威','括','挟','拷','挑','施','是','冒','架','枯','柄',
-		'柳','皆','洪','浄','津','洞','牲','狭','狩','珍','某'}
+	local K = {"乙","了","又","与","及","丈","刃","凡","勺","互","弔","井","升",
+		"丹","乏","匁","屯","介","冗","凶","刈","匹","厄","双","孔","幻","斗",
+		"斤","且","丙","甲","凸","丘","斥","仙","凹","召","巨","占","囚","奴",
+		"尼","巧","払","汁","玄","甘","矛","込","弐","朱","吏","劣","充","妄",
+		"企","仰","伐","伏","刑","旬","旨","匠","叫","吐","吉","如","妃","尽",
+		"帆","忙","扱","朽","朴","汚","汗","江","壮","缶","肌","舟","芋","芝",
+		"巡","迅","亜","更","寿","励","含","佐","伺","伸","但","伯","伴","呉",
+		"克","却","吟","吹","呈","壱","坑","坊","妊","妨","妙","肖","尿","尾",
+		"岐","攻","忌","床","廷","忍","戒","戻","抗","抄","択","把","抜","扶",
+		"抑","杉","沖","沢","沈","没","妥","狂","秀","肝","即","芳","辛","迎",
+		"邦","岳","奉","享","盲","依","佳","侍","侮","併","免","刺","劾","卓",
+		"叔","坪","奇","奔","姓","宜","尚","屈","岬","弦","征","彼","怪","怖",
+		"肩","房","押","拐","拒","拠","拘","拙","拓","抽","抵","拍","披","抱",
+		"抹","昆","昇","枢","析","杯","枠","欧","肯","殴","況","沼","泥","泊",
+		"泌","沸","泡","炎","炊","炉","邪","祈","祉","突","肢","肪","到","茎",
+		"苗","茂","迭","迫","邸","阻","附","斉","甚","帥","衷","幽","為","盾",
+		"卑","哀","亭","帝","侯","俊","侵","促","俗","盆","冠","削","勅","貞",
+		"卸","厘","怠","叙","咲","垣","契","姻","孤","封","峡","峠","弧","悔",
+		"恒","恨","怒","威","括","挟","拷","挑","施","是","冒","架","枯","柄",
+		"柳","皆","洪","浄","津","洞","牲","狭","狩","珍","某"}
 	local nK = #K
 	KANJI = function() local p = math.random(1,nK) return K[p] end
 end
@@ -253,10 +251,10 @@ function GAME:UpdateAttract()
 				col[1] = overflow
 			end
 		end
-		self.next_attract_tick = CurTime()+0.2
+		self.next_attract_tick = CurTime() + 0.2
 	end
 
-	if math.random()>0.8 then
+	if math.random() > 0.8 then
 		--local x, y = math.random(1,9), math.random(1,9)
 		for x = 1, 9 do
 			for y = 9, 1, -1 do
@@ -268,10 +266,10 @@ function GAME:UpdateAttract()
 		end
 	end
 
-	if math.random()>0.5 then
-		local x = (not self.last_attract_x_duration or self.last_attract_x_duration < 3 or math.random()>0.2) and self.last_attract_x or math.random(1,9)
+	if math.random() > 0.5 then
+		local x = (not self.last_attract_x_duration or self.last_attract_x_duration < 3 or math.random() > 0.2) and self.last_attract_x or math.random(1,9)
 		self.last_attract_x = x
-		self.last_attract_x_duration = (self.last_attract_x_duration or 0)+1
+		self.last_attract_x_duration = (self.last_attract_x_duration or 0) + 1
 
 		self.game_data[x][1] = self.game_data[x][1] or {}
 		self.game_data[x][1].digit = KANJI()
@@ -334,17 +332,17 @@ end
 
 function GAME:DrawGameOver()
 	surface.SetDrawColor(0,0,0,255)
-	surface.DrawRect(border.x, self.SY/3, self.SY-border.x, self.SY/3)
+	surface.DrawRect(border.x, self.SY / 3, self.SY-border.x, self.SY / 3)
 	surface.SetDrawColor(255,0,0,255)
-	surface.DrawRect(0, self.SY/3, self.SY, width.y)
-	surface.DrawRect(0, self.SY*2/3-4, self.SY, width.y)
+	surface.DrawRect(0, self.SY / 3, self.SY, width.y)
+	surface.DrawRect(0, self.SY * 2 / 3-4, self.SY, width.y)
 
 	surface.SetFont("DermaLarge")
 	surface.SetTextColor(255, 255, 255, 255)
 	surface.SetTextPos(240,0)
 	surface.DrawText("GAME OVER")
 	local sw, sh = surface.GetTextSize("YOU LOST")
-	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
+	surface.SetTextPos((self.SX-sw) / 2, (self.SY-sh) / 2 - 20)
 	surface.DrawText("YOU LOST")
 	surface.SetFont("DermaDefault")
 	if COINS:GetCoins() > 0 then
@@ -360,15 +358,15 @@ end
 
 function GAME:DrawWin()
 	surface.SetDrawColor(0,0,0,255)
-	surface.DrawRect(border.x, self.SY/3, self.SY-border.x, self.SY/3)
+	surface.DrawRect(border.x, self.SY / 3, self.SY-border.x, self.SY / 3)
 	surface.SetDrawColor(0,255,0,255)
-	surface.DrawRect(0, self.SY/3, self.SY, width.y)
-	surface.DrawRect(0, self.SY*2/3-4, self.SY, width.y)
+	surface.DrawRect(0, self.SY / 3, self.SY, width.y)
+	surface.DrawRect(0, self.SY * 2 / 3-4, self.SY, width.y)
 
 	surface.SetFont("DermaLarge")
 	surface.SetTextColor(255, 255, 255, 255)
 	local sw, sh = surface.GetTextSize("YOU WON")
-	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
+	surface.SetTextPos((self.SX - sw) / 2, (self.SY - sh) / 2 - 20)
 	surface.DrawText("YOU WON")
 	surface.SetFont("DermaDefault")
 	if COINS:GetCoins() > 0 then
@@ -382,16 +380,16 @@ end
 
 function GAME:DrawError()
 	surface.SetDrawColor(0,0,0,255)
-	surface.DrawRect(0, self.SY/3, self.SY, self.SY/3)
+	surface.DrawRect(0, self.SY / 3, self.SY, self.SY / 3)
 	surface.SetDrawColor(255,0,0,255)
-	surface.DrawRect(0, self.SY/3, self.SY, width.y)
-	surface.DrawRect(0, self.SY*2/3-4, self.SY, width.y)
+	surface.DrawRect(0, self.SY / 3, self.SY, width.y)
+	surface.DrawRect(0, self.SY * 2 / 3 - 4, self.SY, width.y)
 
 	surface.SetFont("DermaLarge")
 	surface.SetTextColor(255, 255, 255, 255)
 	self:DrawTextXCentered(0, "ERROR")
 	local sw, sh = surface.GetTextSize("GURU MEDITATION")
-	surface.SetTextPos((self.SX-sw)/2,(self.SY-sh)/2-20)
+	surface.SetTextPos((self.SX-sw) / 2, (self.SY-sh) / 2 - 20)
 	surface.DrawText("GURU MEDITATION")
 	surface.SetFont("DermaDefault")
 
@@ -402,7 +400,7 @@ end
 function GAME:InitData (seed)
 	table.Empty (self.game_data)
 
-	if not isstring(seed) or #seed ~= 9*9 then
+	if not isstring(seed) or #seed ~= 9 * 9 then
 		self.error = "Could not load game data."
 		return false, self.error
 	end
@@ -421,7 +419,7 @@ function GAME:InitData (seed)
 			x = x,
 			y = y,
 			digit = digit,
-			group = math.floor(x/3)..':'..math.floor(y/3), -- the same for all in a 3x3 box
+			group = math.floor(x / 3) .. ':' .. math.floor(y / 3), -- the same for all in a 3x3 box
 			seed = digit and true or nil
 		}
 		x = x + 1
@@ -503,7 +501,7 @@ function GAME:IsComplete()
 			end
 		end
 	end
-	return number_count == 9*9
+	return number_count == 9 * 9
 end
 
 function GAME:IsValid()
@@ -544,7 +542,7 @@ function GAME:IsValid()
 				local numbers = {}
 				for x = 1, 3 do
 					for y = 1, 3 do
-						local entry = self.game_data[factor_x*3+x][factor_y*3+y]
+						local entry = self.game_data[factor_x * 3 + x][factor_y * 3 + y]
 						if entry.digit then
 							if not numbers[entry.digit] then
 								numbers[entry.digit] = entry
@@ -674,15 +672,15 @@ function GAME:Start()
 	}
 
 	for i = 1, 9 do
-		self:RegisterAltKeyHandler(_G['KEY_PAD_' .. i], function()
+		self:RegisterAltKeyHandler(_G["KEY_PAD_" .. i], function()
 			if self.cursor.go_mode then -- GO mode!
 				if not (self.cursor.x and self.cursor.y) then -- first stage
 					local target = go_mode_map[i]
 					self.cursor.x, self.cursor.y = target.x, target.y
 				else -- second stage
 					local target = go_mode_map[i]
-					self.cursor.x = self.cursor.x*3 + target.x + 1
-					self.cursor.y = self.cursor.y*3 + target.y + 1
+					self.cursor.x = self.cursor.x * 3 + target.x + 1
+					self.cursor.y = self.cursor.y * 3 + target.y + 1
 					self.cursor.go_mode = false
 				end
 			else -- normal mode!
@@ -764,7 +762,7 @@ function GAME:OnCoinsInserted(ply, old, new)
 end
 
 function GAME:OnCoinsLost(ply, old, new)
-    if ply ~= LocalPlayer() then return end
+	if ply ~= LocalPlayer() then return end
 	self:SetWinStateFromGameData()
 end
 

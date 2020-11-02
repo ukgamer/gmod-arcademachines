@@ -15,7 +15,7 @@ function GAME:Init()
 end
 
 function GAME:Destroy()
-    
+
 end
 
 function GAME:Start()
@@ -100,11 +100,11 @@ function GAME:Draw()
     surface.SetFont("DermaLarge")
     local tw, th = surface.GetTextSize(txt)
     surface.SetTextColor(255, 255, 255, 255)
-    surface.SetTextPos((SCREEN_WIDTH / 2) - tw / 2, (th * 2))
+    surface.SetTextPos((SCREEN_WIDTH / 2) - tw / 2, th * 2)
     surface.DrawText(txt)
 
     surface.SetFont("DermaDefault")
-    local tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
+    tw, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
     surface.SetTextColor(255, 255, 255, 255)
     surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
     surface.DrawText(COINS:GetCoins() .. " COIN(S)")
