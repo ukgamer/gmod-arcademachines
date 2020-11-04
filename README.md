@@ -1,5 +1,7 @@
 # Arcade Machines
 
+**Please read [CONTRIBUTING](https://github.com/ukgamer/gmod-arcademachines/blob/master/CONTRIBUTING.md) before submitting your game.**
+
 ## Developer information
 
 See `lua/arcademachine_games/test/testgame.lua` for an example minimal game implementation.
