@@ -23,15 +23,15 @@ Your game must implement the following methods:
 
 ### Optional methods/properties
 
-Your game table can implement the `Description` property. This will be shown when the player looks at the machine before entering. You should tell the player how to play your game here.
-
-Your game table can implement the `Bodygroup` property. This will control the physical appearance of the cabinet. Available bodygroups are:
-
-* `BG_GENERIC_JOYSTICK`
-* `BG_GENERIC_TRACKBALL`
-* `BG_GENERIC_RECESSED_JOYSTICK`
-* `BG_GENERIC_RECESSED_TRACKBALL`
-* `BG_DRIVING`
+Your game table can implement following properties:
+* `Author` - Your name.
+* `Description` - Tell the player how to play your game here.
+* `Bodygroup` - This will control the physical appearance of the cabinet. Available bodygroups are:
+    * `BG_GENERIC_JOYSTICK`
+    * `BG_GENERIC_TRACKBALL`
+    * `BG_GENERIC_RECESSED_JOYSTICK`
+    * `BG_GENERIC_RECESSED_TRACKBALL`
+    * `BG_DRIVING`
 
 Your game can implement the following methods:
 
