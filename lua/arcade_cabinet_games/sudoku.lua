@@ -24,6 +24,7 @@ local STATE_LOST = 3
 
 local GAME = {
 	Name = "Sudoku",
+	Author = "PotcFdk",
 	Description = [[
 	You will be presented with a 9x9 grid of fields. Some contain numbers between 1 and 9, some don't.
 	This 9x9 grid is subdivided into 9 smaller 3x3 boxes.

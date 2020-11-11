@@ -2,6 +2,7 @@ local GAME = {}
 local URL = "https://ukgamer.github.io/gmod-arcademachines-assets/pacman/pacman.html"
 
 GAME.Name = "PacMan"
+GAME.Author = "ukgamer"
 GAME.Description = [[The original PacMan game.
 
 Start = SPACE

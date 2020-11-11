@@ -26,6 +26,7 @@ local GAME = {}
 GAME.LateUpdateMarquee = true
 GAME.Bodygroup = BG_GENERIC_TRACKBALL
 GAME.Name = "Börk Berker"
+GAME.Author = "Henke"
 GAME.Description = [[Controls:
 Press SPACE (Jump key) to launch the ball.
 Use A and D (Walk keys) to move the pad left or right.

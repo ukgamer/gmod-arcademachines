@@ -56,8 +56,11 @@ local NextQueueAt = 0
 
 local LookDist = 100
 
-ARCADE.Cabinet.UI.SettingsPanel = ARCADE.Cabinet.UI.SettingsPanel or nil
-if not IsValid(ARCADE.Cabinet.UI.SettingsPanel) then
+if IsValid(ARCADE.Cabinet.UI.SettingsPanel) then
+    ARCADE.Cabinet.UI.SettingsPanel:Remove()
+end
+
+do
     ARCADE.Cabinet.UI.SettingsPanel = vgui.Create("DFrame")
     ARCADE.Cabinet.UI.SettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
     ARCADE.Cabinet.UI.SettingsPanel:SetMinimumSize(200, 200)
@@ -149,8 +152,11 @@ list.Set("DesktopWindows", "ArcadeMachines", {
     end
 })
 
-ARCADE.Cabinet.UI.InfoPanel = ARCADE.Cabinet.UI.InfoPanel or nil
-if not IsValid(ARCADE.Cabinet.UI.InfoPanel) then
+if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
+    ARCADE.Cabinet.UI.InfoPanel:Remove()
+end
+
+do
     ARCADE.Cabinet.UI.InfoPanel = vgui.Create("DFrame")
     ARCADE.Cabinet.UI.InfoPanel:SetPaintedManually(true)
     ARCADE.Cabinet.UI.InfoPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
@@ -204,6 +210,14 @@ if not IsValid(ARCADE.Cabinet.UI.InfoPanel) then
     label:SetFont("AMInfoFontBold")
     label:SetText("Game Information")
 
+    ARCADE.Cabinet.UI.AuthorLabel = vgui.Create("DLabel", scroll)
+    ARCADE.Cabinet.UI.AuthorLabel:Dock(TOP)
+    ARCADE.Cabinet.UI.AuthorLabel:SetWrap(true)
+    ARCADE.Cabinet.UI.AuthorLabel:SetAutoStretchVertical(true)
+    ARCADE.Cabinet.UI.AuthorLabel:DockMargin(0, 0, 0, 15)
+    ARCADE.Cabinet.UI.AuthorLabel:SetFont("AMInfoFont")
+    ARCADE.Cabinet.UI.AuthorLabel:SetText("")
+
     ARCADE.Cabinet.UI.DescriptionLabel = vgui.Create("DLabel", scroll)
     ARCADE.Cabinet.UI.DescriptionLabel:Dock(TOP)
     ARCADE.Cabinet.UI.DescriptionLabel:SetWrap(true)
@@ -238,6 +252,13 @@ local function ToggleInfoPanel(machine)
     end
 
     ARCADE.Cabinet.UI.GameLabel:SetText(machine.Game.Name)
+
+    if machine.Game.Author then
+        ARCADE.Cabinet.UI.AuthorLabel:SetVisible(true)
+        ARCADE.Cabinet.UI.AuthorLabel:SetText("Author: " .. machine.Game.Author)
+    else
+        ARCADE.Cabinet.UI.AuthorLabel:SetVisible(false)
+    end
 
     if machine.Game.Description then
         ARCADE.Cabinet.UI.DescriptionLabel:SetVisible(true)

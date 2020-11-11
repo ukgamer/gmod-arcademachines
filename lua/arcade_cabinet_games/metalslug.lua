@@ -2,6 +2,7 @@ local GAME = {}
 local URL = "https://ukgamer.github.io/gmod-arcademachines-assets/metalslug/metalslug.html"
 
 GAME.Name = "Metal Slug"
+GAME.Author = "ukgamer"
 GAME.Description = [[Metal Slug arcade game.
 
 Start = SHIFT

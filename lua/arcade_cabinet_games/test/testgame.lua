@@ -2,6 +2,7 @@
 local GAME = {}
 
 GAME.Name = "Test Game"
+GAME.Author = "ukgamer"
 GAME.Description = "Here's a test game. WASD to move the box!"
 
 local thePlayer = nil
