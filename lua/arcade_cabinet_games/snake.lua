@@ -42,6 +42,7 @@
     end
 
     local GAME = { Name = "Snake", State = nil }
+    GAME.Author = "Jule"
     GAME.Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD."
 
     local PLAYER = nil

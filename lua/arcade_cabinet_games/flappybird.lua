@@ -53,6 +53,7 @@ local HCSS = {
 
 local GAME = {}
 GAME.Name = "Flappy Bird"
+GAME.Author = "twentysix"
 GAME.Description = "Avoid the pipes! Use your spacebar to make the bird flap, pushing it up a bit.\nFYI: You can't go over the pipes, so don't even try."
 GAME.LateUpdateMarquee = true
 

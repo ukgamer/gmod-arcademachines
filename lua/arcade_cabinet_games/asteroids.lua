@@ -11,6 +11,7 @@
 local GAME = {}
 
 GAME.Name = "Asteroids"
+GAME.Author = "ukgamer"
 GAME.Description = [[Blast the asteroids for points! Watch out for UFOs and be careful with your velocity.
 
 Press W to move your ship forward, and A/D to turn. Press SPACE to fire.]]

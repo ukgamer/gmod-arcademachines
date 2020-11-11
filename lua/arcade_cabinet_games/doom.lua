@@ -2,6 +2,7 @@ local GAME = {}
 local DOOM_URL = "https://www.playdosgames.com/play/doom/"
 
 GAME.Name = "DOOM"
+GAME.Author = "Earu"
 GAME.Description = [[The original DOOM game.
 WASD to move,
 R to interact,
