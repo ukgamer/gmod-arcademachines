@@ -9,6 +9,7 @@ function COINS:TakeCoins(amount)
 end
 
 function COINS:GetCoins()
+    if not IsValid(MACHINE) then return end
     return MACHINE:GetCoins()
 end
 

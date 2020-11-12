@@ -7,6 +7,8 @@ local SOUND = {
 }
 
 function SOUND:LoadFromURL(url, key, callback)
+    if not IsValid(MACHINE) then return end
+
     if self.Sounds[key] then
         if self.Sounds[key].status == self.STATUS_LOADED and callback then
             callback(self.Sounds[key].sound)
@@ -34,13 +36,15 @@ function SOUND:LoadQueued(tbl)
     self.Sounds[tbl.key].status = self.STATUS_LOADING
 
     sound.PlayURL(tbl.url, "3d noplay noblock", function(snd, err, errstr)
+        if not IsValid(MACHINE) then return end
+
         if not IsValid(snd) then
             self.Sounds[tbl.key].status = self.STATUS_ERROR
             self.Sounds[tbl.key].err = errstr
             return
         end
 
-        snd:SetPos(MACHINE.Entity:GetPos())
+        snd:SetPos(MACHINE:GetPos())
         MACHINE.LoadedSounds[tbl.key] = snd
 
         self.Sounds[tbl.key].status = self.STATUS_LOADED
@@ -51,14 +55,17 @@ function SOUND:LoadQueued(tbl)
 end
 
 function SOUND:Play(name, level, pitch, volume)
+    if not IsValid(MACHINE) then return end
     sound.Play(name, MACHINE:GetPos(), level, pitch, volume)
 end
 
 function SOUND:EmitSound(...)
+    if not IsValid(MACHINE) then return end
     MACHINE:EmitSound(...)
 end
 
 function SOUND:StopSound(...)
+    if not IsValid(MACHINE) then return end
     MACHINE:StopSound(...)
 end
 
