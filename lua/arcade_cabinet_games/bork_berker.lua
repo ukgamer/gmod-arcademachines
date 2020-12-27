@@ -24,6 +24,7 @@
 --local function game() -- For testing
 local GAME = {}
 GAME.LateUpdateMarquee = true
+GAME.CabinetArtURL = "https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_artwork.png"
 GAME.Bodygroup = BG_GENERIC_TRACKBALL
 GAME.Name = "Börk Berker"
 GAME.Author = "Henke"
@@ -768,10 +769,6 @@ function GAME:Init()
 	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_marque.png", "marquee", function(image)
 		CABINET:UpdateMarquee()
 	end)
-
-	IMAGE:LoadFromURL("https://github.com/ukgamer/gmod-arcademachines-assets/raw/master/borkberker/images/ms_acabinet_artwork.png", "cabinet", function(image)
-		CABINET:UpdateCabinetArt()
-	end)
 end
 
 function GAME:Start()
@@ -922,12 +919,6 @@ function GAME:DrawMarquee()
 	surface.SetDrawColor(255, 255, 255, 255)
 	surface.SetMaterial(IMAGE.Images.marquee.mat)
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-end
-
-function GAME:DrawCabinetArt()
-	surface.SetMaterial(IMAGE.Images.cabinet.mat)
-	surface.SetDrawColor(255, 255, 255)
-	surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 local demoObjects = {}

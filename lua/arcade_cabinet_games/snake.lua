@@ -44,6 +44,7 @@
     local GAME = { Name = "Snake", State = nil }
     GAME.Author = "Jule"
     GAME.Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD."
+    GAME.CabinetArtURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png"
 
     local PLAYER = nil
 
@@ -149,10 +150,6 @@
 
         SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "music", function( snd )
             snd:EnableLooping( true )
-        end )
-
-        IMAGE:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png", "cabinet", function()
-            CABINET:UpdateCabinetArt()
         end )
     end
 
@@ -504,12 +501,6 @@
         -- Apple
         surface.SetDrawColor( Color( 255, 50, 50 ) )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 100, 20, 20 )
-    end
-
-    function GAME:DrawCabinetArt()
-        surface.SetMaterial( IMAGE.Images.cabinet.mat )
-        surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
-        surface.DrawTexturedRect( 0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT )
     end
 
     return GAME

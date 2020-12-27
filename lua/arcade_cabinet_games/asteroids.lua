@@ -16,6 +16,7 @@ GAME.Description = [[Blast the asteroids for points! Watch out for UFOs and be c
 
 Press W to move your ship forward, and A/D to turn. Press SPACE to fire.]]
 GAME.LateUpdateMarquee = true
+GAME.CabinetArtURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/cabinet.png"
 
 local function map(s, a1, a2, b1, b2)
     return b1 + (s - a1) * (b2 - b1) / (a2 - a1)
@@ -190,10 +191,6 @@ local yawVec = Vector(0, 0, 1)
 function GAME:Init()
     IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/marquee.jpg", "marquee", function(image)
         CABINET:UpdateMarquee()
-    end)
-
-    IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/cabinet.png", "cabinet", function(image)
-        CABINET:UpdateCabinetArt()
     end)
 
     self:SpawnAsteroids()
@@ -648,12 +645,6 @@ function GAME:DrawMarquee()
     surface.SetDrawColor(255, 255, 255, 255)
     surface.SetMaterial(IMAGE.Images.marquee.mat)
     surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
-end
-
-function GAME:DrawCabinetArt()
-    surface.SetMaterial(IMAGE.Images["cabinet"].mat)
-    surface.SetDrawColor(255, 255, 255)
-    surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
 end
 
 function GAME:DrawPlayerTriangle(pos, ang, thrusting)
