@@ -7,8 +7,6 @@ local ScreenWidth = 512
 local ScreenHeight = 512
 local MarqueeWidth = 512
 local MarqueeHeight = 179
-local CabinetArtWidth = 1024
-local CabinetArtHeight = 1024
 
 local PressedWalk = false
 
@@ -73,7 +71,6 @@ ENT.Initialized = false
 function ENT:Initialize()
     self.Initialized = true
     self.MarqueeHasDrawn = self.MarqueeHasDrawn or false
-    self.CabinetArtHasDrawn = self.CabinetArtHasDrawn or false
 
     local num = math.random(9999)
 
@@ -117,26 +114,6 @@ function ENT:Initialize()
             ["$nodecal"] = 1,
             ["$selfillum"] = 1,
             ["$selfillummask"] = "dev/reflectivity_30b"
-        }
-    )
-
-    self.CabinetArtTexture = self.CabinetArtTexture or GetRenderTargetEx(
-        "ArcadeMachine_CabinetArt_" .. self:EntIndex() .. "_" .. num,
-        CabinetArtWidth,
-        CabinetArtHeight,
-        RT_SIZE_LITERAL,
-        MATERIAL_RT_DEPTH_NONE,
-        16,
-        CREATERENDERTARGETFLAGS_HDR,
-        IMAGE_FORMAT_DEFAULT
-    )
-    self.CabinetArtMaterial = self.CabinetArtMaterial or CreateMaterial(
-        "ArcadeMachine_CabinetArt_Material_" .. self:EntIndex() .. "_" .. num,
-        "VertexLitGeneric",
-        {
-            ["$basetexture"] = self.CabinetArtTexture:GetName(),
-            ["$model"] = 1,
-            ["$nodecal"] = 1
         }
     )
 
@@ -286,7 +263,7 @@ function ENT:Draw()
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
-    if self.CabinetArtHasDrawn then
+    if self.CabinetArtMaterial then
         render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, self.CabinetArtMaterial)
     end
     self:DrawModel()
@@ -385,22 +362,6 @@ function ENT:UpdateMarquee()
     render.PopRenderTarget()
 end
 
-function ENT:UpdateCabinetArt()
-    if self.CabinetArtHasDrawn then return end
-
-    render.PushRenderTarget(self.CabinetArtTexture)
-        cam.Start2D()
-            surface.SetDrawColor(0, 0, 0, 255)
-            surface.DrawRect(0, 0, CabinetArtWidth, CabinetArtHeight)
-
-            if self.Game and self.Game.DrawCabinetArt then
-                self.Game:DrawCabinetArt()
-                self.CabinetArtHasDrawn = true
-            end
-        cam.End2D()
-    render.PopRenderTarget()
-end
-
 function ENT:UpdateScreen()
     render.PushRenderTarget(self.ScreenTexture)
         cam.Start2D()
@@ -469,7 +430,6 @@ function ENT:SetGame(game, forceLibLoad)
     self:StopSounds()
 
     self.MarqueeHasDrawn = false
-    self.CabinetArtHasDrawn = false
 
     if game and game ~= "" then
         self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game))
@@ -483,6 +443,20 @@ function ENT:SetGame(game, forceLibLoad)
         end
     end
 
+    if self.Game and self.Game.CabinetArtURL then
+        LoadedLibs[game].IMAGE:LoadFromURL(
+            self.Game.CabinetArtURL,
+            "cabinet",
+            function(image)
+                self.CabinetArtMaterial = image.mat
+            end,
+            false,
+            "vertexlitgeneric"
+        )
+    else
+        self.CabinetArtMaterial = nil
+    end
+
     if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
         self:UpdateMarquee()
     end
@@ -494,9 +468,7 @@ function ENT:GetUpvalues(game)
         SCREEN_WIDTH = ScreenWidth,
         SCREEN_HEIGHT = ScreenHeight,
         MARQUEE_WIDTH = MarqueeWidth,
-        MARQUEE_HEIGHT = MarqueeHeight,
-        CABINET_ART_WIDTH = CabinetArtWidth,
-        CABINET_ART_HEIGHT = CabinetArtHeight
+        MARQUEE_HEIGHT = MarqueeHeight
     }
 
     for k, v in pairs(BG) do

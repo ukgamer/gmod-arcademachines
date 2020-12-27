@@ -38,7 +38,6 @@ Your game can implement the following methods:
 * `Init()`
 * `Destroy()`
 * `DrawMarquee()`
-* `DrawCabinetArt()`
 * `OnCoinsInserted(ply, old, new)`
 * `OnCoinsLost(ply, old, new)`
 * `OnLocalPlayerNearby()`
@@ -50,8 +49,6 @@ Your game can implement the following methods:
 * `SCREEN_HEIGHT`
 * `MARQUEE_WIDTH`
 * `MARQUEE_HEIGHT`
-* `CABINET_ART_WIDTH`
-* `CABINET_ART_HEIGHT`
 
 ### Coins
 
@@ -73,9 +70,9 @@ The machine has a marquee that can be drawn to using the `DrawMarquee` method. T
 
 If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then call `CABINET:UpdateMarquee()` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
 
-The machine can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcademachines-model/tree/master/matsrc)) that can be drawn to using the `DrawCabinetArt` method. Once any assets you need have loaded and you are ready to draw the cabinet art, call `CABINET:UpdateCabinetArt()`.
+The machine can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcademachines-model/tree/master/matsrc)) that can be specified with the `CabinetArtURL` property on your game table.
 
-**The marquee and cabinet artwork can only be drawn once per game load as they are designed to be static for performance reasons.**
+**The marquee can only be drawn once per game load as it is designed to be static for performance reasons.**
 
 ### Helper libraries
 
@@ -96,13 +93,15 @@ Used to check if a font has already been created. Do not use `surface.CreateFont
 
 Creates a copy of the given material and registers it with your game. Use this to avoid unnecessary duplicate material loading and to allow materials to use alpha if they do not allow it already.
 
-`IMAGE:LoadFromURL(url, key, callback = nil, noCache = false)`
+`IMAGE:LoadFromURL(url, key, callback = nil, noCache = false, materialParams = nil)`
 
 Used for loading images dynamically from the web as usable `Material`s.
 
 If defined, `callback` will be called on successful load with the below table.
 
 `noCache` can be used during development to bypass the built in caching mechanism.
+
+`materialParams` can be passed to the underlying `Material` function - see [the GMod wiki](https://wiki.facepunch.com/gmod/Material_Parameters).
 
 Access your image with `IMAGE.Images[key]`, which will look like
 
