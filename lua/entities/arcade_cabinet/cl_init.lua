@@ -451,7 +451,7 @@ function ENT:SetGame(game, forceLibLoad)
                 self.CabinetArtMaterial = image.mat
             end,
             false,
-            "vertexlitgeneric"
+            "vertexlitgeneric smooth"
         )
     else
         self.CabinetArtMaterial = nil
