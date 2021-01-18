@@ -11,8 +11,11 @@ local MarqueeHeight = 179
 local PressedWalk = false
 
 local LoadedLibs = {}
+local IMAGE = include("arcade_cabinet_lib/image.lua") -- We need a shared copy of the library for loading cabinet art on each machine
 
 concommand.Add("arcade_cabinet_reload", function()
+    IMAGE:ClearImages()
+
     for _, v in ipairs(ents.FindByClass("arcade_cabinet")) do
         if v:GetCurrentGame() then
             v:SetGame(v:GetCurrentGame())
@@ -259,12 +262,17 @@ function ENT:Draw()
         cam.IgnoreZ(true)
     end
 
+    local cabinetArt = nil
+    if self.CabinetArtKey then
+        cabinetArt = IMAGE.Images[self.CabinetArtKey]
+    end
+
     -- To prevent using string table slots, don't set the submaterial on the server
     -- and just override it here
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
-    if self.CabinetArtMaterial then
-        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, self.CabinetArtMaterial)
+    if cabinetArt and cabinetArt.status == IMAGE.STATUS_LOADED then
+        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, cabinetArt.mat)
     end
     self:DrawModel()
     render.MaterialOverrideByIndex()
@@ -443,18 +451,18 @@ function ENT:SetGame(game, forceLibLoad)
         end
     end
 
+    self.CabinetArtKey = nil
+
     if self.Game and self.Game.CabinetArtURL then
-        LoadedLibs[game].IMAGE:LoadFromURL(
+        self.CabinetArtKey = "cabinet_art_" .. tostring(game)
+
+        IMAGE:LoadFromURL(
             self.Game.CabinetArtURL,
-            "cabinet",
-            function(image)
-                self.CabinetArtMaterial = image.mat
-            end,
+            self.CabinetArtKey,
+            nil, -- Can't use the callback as it will only be called once per image load
             false,
             "vertexlitgeneric smooth"
         )
-    else
-        self.CabinetArtMaterial = nil
     end
 
     if not self.Game or (self.Game and not self.Game.LateUpdateMarquee) then
