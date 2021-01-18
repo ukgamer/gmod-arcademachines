@@ -11,6 +11,10 @@ IMAGE.Images = {}
 local path = "arcade/cache/images"
 file.CreateDir(path)
 
+function IMAGE:ClearImages()
+    self.Images = {}
+end
+
 function IMAGE:LoadFromURL(url, key, callback, noCache, materialParams)
     if self.Images[key] and not noCache then
         if self.Images[key].status == self.STATUS_LOADED and callback then
