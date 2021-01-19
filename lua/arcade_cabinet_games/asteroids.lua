@@ -7,14 +7,14 @@
     All trademarks are property of their respective owners
 ]]
 
---TESTGAME = function()
+-- TESTGAME = function()
 local GAME = {}
 
 GAME.Name = "Asteroids"
 GAME.Author = "ukgamer"
 GAME.Description = [[Blast the asteroids for points! Watch out for UFOs and be careful with your velocity.
 
-Press W to move your ship forward, and A/D to turn. Press SPACE to fire.]]
+Press W to move your ship forward, and A/D to turn. Press SPACE to fire. Press SHIFT to enter hyperspace - but beware, you could end up in an even worse spot!]]
 GAME.LateUpdateMarquee = true
 GAME.CabinetArtURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/asteroids/images/cabinet.png"
 
@@ -35,10 +35,11 @@ local now = RealTime()
 
 local score, extraLifeScore = 0, 0
 local lives = 3
-local livesPos = Vector(10, 40)
-local livesOffset = Vector(10, 0)
+local livesPos = Vector(18, 40)
 local livesAngle = Angle(0, -90, 0)
 local nextFire = 0
+local nextHyperspace = 0
+local shiftPressed = false
 local respawnAt = 0
 local nextUfo = 0
 local asteroidTypes = {
@@ -215,23 +216,27 @@ function GAME:PauseSound(snd)
     end
 end
 
-function GAME:Start()
+function GAME:Start(respawn)
     lives = 3
-
-    self:SpawnAsteroids()
-
-    self:SpawnPlayer()
 
     gameState = GAME_STATE_PLAYING
 
-    self:PauseSound("saucerSmall")
-    self:PauseSound("saucerBig")
+    self:SpawnPlayer()
 
-    table.Empty(objects.explosions)
-    table.Empty(objects.ufos)
-    table.Empty(objects.lasers)
+    nextFire = now + 0.2 -- Prevent us immediately firing when starting the game due to pressing fire
 
-    nextUfo = now + math.random(10, 20)
+    if respawn then
+        self:SpawnAsteroids()
+
+        self:PauseSound("saucerSmall")
+        self:PauseSound("saucerBig")
+
+        table.Empty(objects.explosions)
+        table.Empty(objects.ufos)
+        table.Empty(objects.lasers)
+
+        nextUfo = now + math.random(10, 20)
+    end
 end
 
 function GAME:Stop()
@@ -302,6 +307,13 @@ function GAME:DestroyPlayer()
 
     gameState = GAME_STATE_DYING
     respawnAt = now + 2
+end
+
+function GAME:EnterHyperspace()
+    objects.player.pos.x = math.random(0, SCREEN_WIDTH)
+    objects.player.pos.y = math.random(0, SCREEN_HEIGHT)
+
+    nextHyperspace = now + 1
 end
 
 function GAME:WrapPos(pos)
@@ -482,6 +494,11 @@ end
 function GAME:Update()
     now = RealTime()
 
+    if gameState == GAME_STATE_ATTRACT and COINS:GetCoins() > 0 and thePlayer:KeyDown(IN_JUMP) then
+        self:Start(true)
+        return
+    end
+
     for _, v in ipairs(objects.asteroids) do
         v.pos:Add(v.vel * 25 * FrameTime())
         v.ang:RotateAroundAxis(yawVec, FrameTime() * 10)
@@ -562,6 +579,17 @@ function GAME:Update()
 
         if thePlayer:KeyDown(IN_JUMP) and now >= nextFire and #objects.bullets < 4 then
             self:SpawnBullet()
+        end
+
+        if thePlayer:KeyDown(IN_SPEED) then
+            if not shiftPressed then
+                if now >= nextHyperspace then
+                    self:EnterHyperspace()
+                end
+                shiftPressed = true
+            end
+        else
+            shiftPressed = false
         end
 
         objects.player.pos:Add(objects.player.vel * 25 * FrameTime())
@@ -767,24 +795,26 @@ function GAME:Draw()
         surface.SetTextPos(10, 0)
         surface.DrawText(score)
 
-        livesOffset.x = 10
+        livesPos.x = 18
         for i = 1, lives do
-            self:DrawPlayerTriangle(livesPos + livesOffset, livesAngle)
-            livesOffset.x = livesOffset.x + 15
+            self:DrawPlayerTriangle(livesPos, livesAngle)
+            livesPos.x = livesPos.x + 15
         end
-
-        surface.SetFont("DermaDefault")
-        local _, th = surface.GetTextSize(COINS:GetCoins() .. " COIN(S)")
-        surface.SetTextColor(255, 255, 255, 255)
-        surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
-        surface.DrawText(COINS:GetCoins() .. " COIN(S)")
     else
+        local text = COINS:GetCoins() > 0 and "PRESS FIRE" or "INSERT COIN"
         surface.SetFont("DermaLarge")
-        local tw, th = surface.GetTextSize("INSERT COIN")
+        local tw, th = surface.GetTextSize(text)
         surface.SetTextColor(255, 255, 255, now % 1 > 0.5 and 255 or 0)
         surface.SetTextPos((SCREEN_WIDTH / 2) - (tw / 2), SCREEN_HEIGHT - (th * 2))
-        surface.DrawText("INSERT COIN")
+        surface.DrawText(text)
     end
+
+    local text = COINS:GetCoins() .. " COIN(S)"
+    surface.SetFont("DermaDefault")
+    local _, th = surface.GetTextSize(text)
+    surface.SetTextColor(255, 255, 255, 255)
+    surface.SetTextPos(10, SCREEN_HEIGHT - (th * 2))
+    surface.DrawText(text)
 end
 
 function GAME:OnStartPlaying(ply)
@@ -816,14 +846,6 @@ function GAME:OnStopPlaying(ply)
     end
 end
 
-function GAME:OnCoinsInserted(ply, old, new)
-    if ply ~= LocalPlayer() then return end
-
-    if new > 0 and gameState == GAME_STATE_ATTRACT then
-        self:Start()
-    end
-end
-
 function GAME:OnCoinsLost(ply, old, new)
     if ply ~= LocalPlayer() then return end
 
@@ -837,4 +859,4 @@ function GAME:OnCoinsLost(ply, old, new)
 end
 
 return GAME
---end
+-- end
