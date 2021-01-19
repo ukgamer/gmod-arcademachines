@@ -26,7 +26,7 @@ local function NewBoxCollisionObject()
 		pos = Vector(),
 		ang = Angle(),
 		collision = {
-			type = COLLISION.types.BOX
+			type = COLLISION.TYPE_BOX
 		}
 	}
 end

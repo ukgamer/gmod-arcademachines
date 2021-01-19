@@ -266,7 +266,7 @@ function GAME:SpawnPlayer()
         ang = Angle(),
         vel = Vector(),
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = {
                 Vector(-5, -5),
                 Vector(-5, 5),
@@ -291,7 +291,7 @@ function GAME:SpawnBullet()
         size = 1,
         dieTime = now + 2,
         collision = {
-            type = COLLISION.types.CIRCLE,
+            type = COLLISION.TYPE_CIRCLE,
             radius = 1
         }
     })
@@ -366,7 +366,7 @@ function GAME:SpawnAsteroid(pos, type)
         vel = self:GenerateVelocity(),
         type = type,
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = type.collisionVertices
         }
     })
@@ -390,7 +390,7 @@ function GAME:SpawnUfo()
         vel = Vector(velX, 0),
         type = type,
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = type.collisionVertices
         },
         nextShot = now + 0.8
@@ -420,7 +420,7 @@ function GAME:UfoFire(ufo)
         ang = ang,
         vel = ang:Forward() * 15,
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = { -- Thin "box" collision for a line
                 Vector(0, 0),
                 Vector(5, 0),

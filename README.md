@@ -159,9 +159,9 @@ A simple collision library using a mixture of methods including SAT (Separating 
 
 Available types:
 
-* COLLISION_TYPE_BOX
-* COLLISION_TYPE_CIRCLE
-* COLLISION_TYPE_POLY
+* TYPE_BOX
+* TYPE_CIRCLE
+* TYPE_POLY
 
 Supported collision checks:
 
@@ -181,11 +181,11 @@ Objects passed to `IsColliding` must look like:
     pos = Vector(),
     ang = Angle(),
     collision = {
-        type = COLLISION.types.COLLISION_TYPE_BOX, -- see types above
-        width = 5, -- if COLLISION_TYPE_BOX
-        height = 5, -- if COLLISION_TYPE_BOX
-        radius = 5, -- if COLLISION_TYPE_CIRCLE
-        vertices = { -- if COLLISION_TYPE_POLY
+        type = COLLISION.TYPE_BOX, -- see types above
+        width = 5, -- if TYPE_BOX
+        height = 5, -- if TYPE_BOX
+        radius = 5, -- if TYPE_CIRCLE
+        vertices = { -- if TYPE_POLY
             Vector(),
             Vector(),
             Vector(),
