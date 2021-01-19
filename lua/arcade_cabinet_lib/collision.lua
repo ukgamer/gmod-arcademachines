@@ -1,9 +1,7 @@
 local COLLISION = {
-    types = {
-        BOX = 0,
-        CIRCLE = 1,
-        POLY = 2
-    }
+    TYPE_BOX = 0,
+    TYPE_CIRCLE = 1,
+    TYPE_POLY = 2
 }
 
 local axisRotateAng = Angle(0, 90, 0)
@@ -70,7 +68,7 @@ end
 
 function COLLISION:Projection(obj, axis)
     local min, max = 0, 0
-    if obj.collision.type == self.types.CIRCLE then
+    if obj.collision.type == self.TYPE_CIRCLE then
         local circlePro = obj.pos:Dot(axis)
         min = circlePro - obj.collision.radius
         max = circlePro + obj.collision.radius
@@ -101,7 +99,7 @@ function COLLISION:CirclePolyCollision(objA, objB)
     local poly = {}
     local circle = {}
 
-    if objA.collision.type == self.types.CIRCLE then
+    if objA.collision.type == self.TYPE_CIRCLE then
         circle = objA
         poly = objB
     else
@@ -212,30 +210,26 @@ function COLLISION:CircleCollision(objA, objB)
 end
 
 function COLLISION:IsColliding(objA, objB)
-    if objA.collision.type == self.types.BOX and objB.collision.type == self.types.BOX then
+    if objA.collision.type == self.TYPE_BOX and objB.collision.type == self.TYPE_BOX then
         return self:BoxCollision(objA, objB)
     end
 
-    if objA.collision.type == self.types.CIRCLE and objB.collision.type == self.types.CIRCLE then
+    if objA.collision.type == self.TYPE_CIRCLE and objB.collision.type == self.TYPE_CIRCLE then
         return self:CircleCollision(objA, objB)
     end
 
-    if objA.collision.type == self.types.POLY and objB.collision.type == self.types.POLY then
+    if objA.collision.type == self.TYPE_POLY and objB.collision.type == self.TYPE_POLY then
         return self:PolyPolyCollision(objA, objB)
     end
 
     if
-        objA.collision.type == self.types.CIRCLE and objB.collision.type == self.types.POLY or
-        objA.collision.type == self.types.POLY and objB.collision.type == self.types.CIRCLE
+        objA.collision.type == self.TYPE_CIRCLE and objB.collision.type == self.TYPE_POLY or
+        objA.collision.type == self.TYPE_POLY and objB.collision.type == self.TYPE_CIRCLE
     then
         return self:CirclePolyCollision(objA, objB)
     end
 
-    error(
-        "Unsupported collision type combination: "
-        .. table.KeyFromValue(self.types, objA.collision.type) .. " "
-        .. table.KeyFromValue(self.types, objB.collision.type)
-    )
+    error("Unsupported collision type combination: " .. objA.collision.type .. " " .. objB.collision.type)
 
     return false
 end

@@ -107,7 +107,7 @@ local baseBoxObject =  {
 		color = Color(255, 255, 255),
 	},
 	collision = {
-		type = COLLISION.types.BOX,
+		type = COLLISION.TYPE_BOX,
 		width = 0,
 		height = 0,
 	}

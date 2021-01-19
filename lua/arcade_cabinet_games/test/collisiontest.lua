@@ -11,7 +11,7 @@ local objects = {
         pos = Vector(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
         ang = Angle(),
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = {
                 Vector(-10, 10),
                 Vector(10, 10),
@@ -25,7 +25,7 @@ local objects = {
         pos = Vector(SCREEN_WIDTH - 115, 300),
         ang = Angle(),
         collision = {
-            type = COLLISION.types.CIRCLE,
+            type = COLLISION.TYPE_CIRCLE,
             radius = 10
         }
     },
@@ -34,7 +34,7 @@ local objects = {
         pos = Vector(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100),
         ang = Angle(),
         collision = {
-            type = COLLISION.types.POLY,
+            type = COLLISION.TYPE_POLY,
             vertices = {
                 Vector(-10, 10),
                 Vector(10, 10),
@@ -92,15 +92,15 @@ function GAME:Draw()
         local c = v.colliding and Color(255, 0, 0, 255) or Color(255, 255, 255)
         surface.SetDrawColor(c)
 
-        if v.collision.type == COLLISION.types.BOX then
+        if v.collision.type == COLLISION.TYPE_BOX then
             surface.DrawRect(v.pos.x, v.pos.y, v.collision.width, v.collision.height)
         end
 
-        if v.collision.type == COLLISION.types.CIRCLE then
+        if v.collision.type == COLLISION.TYPE_CIRCLE then
             surface.DrawCircle(v.pos.x, v.pos.y, v.collision.radius, c)
         end
 
-        if v.collision.type == COLLISION.types.POLY then
+        if v.collision.type == COLLISION.TYPE_POLY then
             if not v.collision.actualVertices then continue end
             for i = 1, #v.collision.actualVertices do
                 local s = v.collision.actualVertices[i]
