@@ -115,7 +115,7 @@ Access your image with `IMAGE.Images[key]`, which will look like
 
 #### Sounds
 
-The sound library is mostly a wrapper to GMod's sound functions in order to handle positioning of sounds and cleaning up when games are unloaded.
+The sound library is mostly a wrapper to GMod's sound functions in order to handle positioning/playing of sounds and cleaning up when games are unloaded.
 
 `SOUND:LoadFromURL(url, key, callback = nil)`
 
@@ -133,7 +133,9 @@ To access your sound use `SOUND.Sounds[key]`, which will look like
 
 Where possible, try to load your sounds in `OnStartPlaying` and not in `Init` (unless you need sounds for the attract mode). You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been loaded.
 
-`SOUND:EmitSound` and `SOUND:StopSound` are also available and have the same signatures the entity methods. `SOUND:Play(name, level, pitch, volume)` is available as an alternative to `sound.Play`.
+If your game makes sounds in its attract mode, ensure you check the boolean result of `SOUND:ShouldPlaySound` to know if you should actually play the sound (in case the player has disabled sounds playing outside of their current cabinet).
+
+`SOUND:EmitSound` and `SOUND:StopSound` are also available and have the same signatures as the entity methods. `SOUND:Play(name, level, pitch, volume)` is available as an alternative to `sound.Play`.
 
 #### Files
 

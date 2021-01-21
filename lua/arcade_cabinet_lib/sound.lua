@@ -5,6 +5,18 @@ local SOUND = {
     Sounds = {}
 }
 
+function SOUND:ShouldPlaySound()
+    if not IsValid(ENTITY) then return false end
+
+    if not ARCADE.Cabinet.DisableSoundsOutside:GetBool() then return true end
+
+    if not ARCADE.Cabinet.CurrentCabinet then return false end
+
+    if ARCADE.Cabinet.CurrentCabinet ~= ENTITY then return false end
+
+    return true
+end
+
 function SOUND:LoadFromURL(url, key, callback)
     if not IsValid(ENTITY) then return end
 
@@ -39,12 +51,12 @@ function SOUND:LoadFromURL(url, key, callback)
 end
 
 function SOUND:Play(name, level, pitch, volume)
-    if not IsValid(ENTITY) then return end
+    if not self:ShouldPlaySound() then return end
     sound.Play(name, ENTITY:GetPos(), level, pitch, volume)
 end
 
 function SOUND:EmitSound(...)
-    if not IsValid(ENTITY) then return end
+    if not self:ShouldPlaySound() then return end
     ENTITY:EmitSound(...)
 end
 
