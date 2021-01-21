@@ -1,14 +1,14 @@
-# Arcade Machines
+# Arcade Cabinets
 
 **Please read [CONTRIBUTING](https://github.com/ukgamer/gmod-arcademachines/blob/master/CONTRIBUTING.md) before submitting your game.**
 
 ## Developer information
 
-See `lua/arcademachine_games/test/testgame.lua` for an example minimal game implementation.
+See `lua/arcade_cabinet_games/test/testgame.lua` for an example minimal game implementation.
 
 For development your script must return a function that returns the game table to prevent errors when running via luadev. Once ready for release, your script must return the game table directly.
 
-You can assign the function to a global variable (e.g. `TESTGAME`) and call `machine:SetGame(TESTGAME)` on the client to test your game.
+You can assign the function to a global variable (e.g. `TESTGAME`) and call `cabinet:SetGame(TESTGAME)` on the client to test your game.
 
 ### Required methods/properties
 
@@ -52,13 +52,13 @@ Your game can implement the following methods:
 
 ### Coins
 
-The machine has its own internal coin count. You can query this count with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
+The cabinet has its own internal coin count. You can query this count with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
 
-When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade machine will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per machine with `ent:SetMSCoinCost(amount)` and is shown to the player before they enter the machine.
+When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade cabinet will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per cabinet with `ent:SetMSCoinCost(amount)` and is shown to the player before they enter the cabinet.
 
 Your `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
 
-You can take a given number of coins from the machine using `COINS:TakeCoins(amount)`.
+You can take a given number of coins from the cabinet using `COINS:TakeCoins(amount)`.
 
 When a coin is "used" the method `OnCoinsLost` will be called with the same arguments as `OnCoinsInserted`.
 
@@ -66,11 +66,11 @@ Be aware that because `TakeCoins` sends a netmessage to the server to update the
 
 ### The Cabinet
 
-The machine has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists.
+The cabinet has a marquee that can be drawn to using the `DrawMarquee` method. This method is automatically called when your game is loaded if it exists.
 
-If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then call `CABINET:UpdateMarquee()` on the machine after your assets have loaded which will cause `DrawMarquee` to be called once more.
+If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then call `CABINET:UpdateMarquee()` on the cabinet after your assets have loaded which will cause `DrawMarquee` to be called once more.
 
-The machine can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcademachines-model/tree/master/matsrc)) that can be specified with the `CabinetArtURL` property on your game table.
+The cabinet can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcadecabinets-model/tree/master/matsrc)) that can be specified with the `CabinetArtURL` property on your game table.
 
 **The marquee can only be drawn once per game load as it is designed to be static for performance reasons.**
 
@@ -115,6 +115,8 @@ Access your image with `IMAGE.Images[key]`, which will look like
 
 #### Sounds
 
+The sound library is mostly a wrapper to GMod's sound functions in order to handle positioning of sounds and cleaning up when games are unloaded.
+
 `SOUND:LoadFromURL(url, key, callback = nil)`
 
 If defined, `callback`, is called on successful load with the created `IGModAudioChannel`. This can be used for example to enable looping.
@@ -123,13 +125,13 @@ To access your sound use `SOUND.Sounds[key]`, which will look like
 
 ```lua
 {
-    status = (0 = STATUS_QUEUED, 1 = STATUS_LOADING, 2 = STATUS_LOADED, 3 = STATUS_ERROR),
+    status = (0 = STATUS_LOADING, 1 = STATUS_LOADED, 2 = STATUS_ERROR),
     err = "BASS_SOMEERROR", -- if status == STATUS_ERROR
     sound = IGModAudioChannel -- if status == STATUS_LOADED
 }
 ```
 
-Sounds that are loaded via `LoadFromURL` are queued in order to prevent performance issues when lots of instances of the same game all load their sounds at once. Where possible, try to load your sounds in `OnStartPlaying` and not in `Init`. You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been queued/loaded.
+Where possible, try to load your sounds in `OnStartPlaying` and not in `Init` (unless you need sounds for the attract mode). You should always be checking that the sound you are trying to play `IsValid` before playing it. Subsequent calls to `LoadFromURL` will not do anything if the requested sound has already been loaded.
 
 `SOUND:EmitSound` and `SOUND:StopSound` are also available and have the same signatures the entity methods. `SOUND:Play(name, level, pitch, volume)` is available as an alternative to `sound.Play`.
 
@@ -202,5 +204,5 @@ Objects passed to `IsColliding` must look like:
 * Python1320 - for help various things
 * Twistalicky - various ideas/suggestions
 * Xayr - For letting me ~~steal~~ use his HTTP cache stuff
-* All the people who have made/are making games for the machine
+* All the people who have made/are making games for the cabinet
 * Anyone else I forgot

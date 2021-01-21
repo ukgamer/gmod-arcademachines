@@ -1,8 +1,8 @@
 local CABINET = {}
 
 function CABINET:UpdateMarquee()
-    if not IsValid(MACHINE) then return end
-    MACHINE:UpdateMarquee()
+    if not IsValid(ENTITY) then return end
+    ENTITY:UpdateMarquee()
 end
 
 return CABINET

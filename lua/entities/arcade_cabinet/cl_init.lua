@@ -11,7 +11,7 @@ local MarqueeHeight = 179
 local PressedWalk = false
 
 local LoadedLibs = {}
-local IMAGE = include("arcade_cabinet_lib/image.lua") -- We need a shared copy of the library for loading cabinet art on each machine
+local IMAGE = include("arcade_cabinet_lib/image.lua") -- We need a shared copy of the library for loading cabinet art on each cabinet
 
 concommand.Add("arcade_cabinet_reload", function()
     IMAGE:ClearImages()
@@ -78,7 +78,7 @@ function ENT:Initialize()
     local num = math.random(9999)
 
     self.ScreenTexture = self.ScreenTexture or GetRenderTargetEx(
-        "ArcadeMachine_Screen_" .. self:EntIndex() .. "_" .. num,
+        "ArcadeCabinet_Screen_" .. self:EntIndex() .. "_" .. num,
         ScreenWidth,
         ScreenHeight,
         RT_SIZE_LITERAL,
@@ -88,7 +88,7 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.ScreenMaterial = self.ScreenMaterial or CreateMaterial(
-        "ArcadeMachine_Screen_Material_" .. self:EntIndex() .. "_" .. num,
+        "ArcadeCabinet_Screen_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
             ["$basetexture"] = self.ScreenTexture:GetName(),
@@ -99,7 +99,7 @@ function ENT:Initialize()
     )
 
     self.MarqueeTexture = self.MarqueeTexture or GetRenderTargetEx(
-        "ArcadeMachine_Marquee_" .. self:EntIndex() .. "_" .. num,
+        "ArcadeCabinet_Marquee_" .. self:EntIndex() .. "_" .. num,
         MarqueeWidth,
         256, -- Not the same as the drawable area
         RT_SIZE_LITERAL,
@@ -109,7 +109,7 @@ function ENT:Initialize()
         IMAGE_FORMAT_DEFAULT
     )
     self.MarqueeMaterial = self.MarqueeMaterial or CreateMaterial(
-        "ArcadeMachine_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
+        "ArcadeCabinet_Marquee_Material_" .. self:EntIndex() .. "_" .. num,
         "VertexLitGeneric",
         {
             ["$basetexture"] = self.MarqueeTexture:GetName(),
@@ -155,9 +155,9 @@ function ENT:Think()
         self:OnPlayerChange("Player", self.LastPlayer, self:GetPlayer())
     end
 
-    -- If we weren't nearby when the machine was spawned we won't get notified
+    -- If we weren't nearby when the cabinet was spawned we won't get notified
     -- when the seat was created so manually call
-    if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeMachine then
+    if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeCabinet then
         self:OnSeatCreated("Seat", nil, self:GetSeat())
     end
 
@@ -190,7 +190,7 @@ function ENT:Think()
         self:SetBodygroup(1, Bodygroups[self.Game.Bodygroup][2])
     end
 
-    if ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentMachine and ARCADE.Cabinet.CurrentMachine ~= self then
+    if ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentCabinet and ARCADE.Cabinet.CurrentCabinet ~= self then
         return
     end
 
@@ -258,7 +258,7 @@ end
 function ENT:Draw()
     local marqueeIndex = self:GetBodygroup(0)
 
-    if IsValid(ARCADE.Cabinet.CurrentMachine) and ARCADE.Cabinet.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if IsValid(ARCADE.Cabinet.CurrentCabinet) and ARCADE.Cabinet.CurrentCabinet == self and not LocalPlayer():ShouldDrawLocalPlayer() then
         cam.IgnoreZ(true)
     end
 
@@ -277,11 +277,11 @@ function ENT:Draw()
     self:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if IsValid(ARCADE.Cabinet.CurrentMachine) and ARCADE.Cabinet.CurrentMachine == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if IsValid(ARCADE.Cabinet.CurrentCabinet) and ARCADE.Cabinet.CurrentCabinet == self and not LocalPlayer():ShouldDrawLocalPlayer() then
         cam.IgnoreZ(false)
     end
 
-    if not self.InRange or not self.Game or (ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentMachine and ARCADE.Cabinet.CurrentMachine ~= self) then
+    if not self.InRange or not self.Game or (ARCADE.Cabinet.DisableOthers:GetBool() and ARCADE.Cabinet.CurrentCabinet and ARCADE.Cabinet.CurrentCabinet ~= self) then
         return
     end
 
@@ -320,7 +320,7 @@ function ENT:OnPlayerChange(name, old, new)
 end
 
 function ENT:OnLocalPlayerEntered()
-    ARCADE.Cabinet.CurrentMachine = self
+    ARCADE.Cabinet.CurrentCabinet = self
 
     if ARCADE.Cabinet.DisableBloom:GetBool() and not cvars.Bool("mat_disable_bloom") then
         LocalPlayer():ConCommand("mat_disable_bloom 1")
@@ -361,10 +361,10 @@ function ENT:UpdateMarquee()
                 self.MarqueeHasDrawn = true
             else
                 surface.SetFont("DermaLarge")
-                local w, h = surface.GetTextSize(self.Game and self.Game.Name or "Arcade Machine")
+                local w, h = surface.GetTextSize(self.Game and self.Game.Name or "Arcade Cabinet")
                 surface.SetTextColor(255, 255, 255, 255)
                 surface.SetTextPos((MarqueeWidth / 2) - (w / 2), (MarqueeHeight / 2) - (h / 2))
-                surface.DrawText(self.Game and self.Game.Name or "Arcade Machine")
+                surface.DrawText(self.Game and self.Game.Name or "Arcade Cabinet")
             end
         cam.End2D()
     render.PopRenderTarget()
@@ -422,9 +422,6 @@ function ENT:StopSounds()
     end
 
     table.Empty(self.LoadedSounds)
-    if ARCADE.Cabinet.QueuedSounds[self:EntIndex()] then
-        ARCADE.Cabinet.QueuedSounds[self:EntIndex()] = nil
-    end
 end
 
 function ENT:SetGame(game, forceLibLoad)
@@ -502,12 +499,11 @@ function ENT:GetUpvalues(game)
         upvalues.FILE = LoadedLibs[game].FILE
     end
 
-    -- Allow each instance to have its own copy of sound library in case they want to
-    -- play the same sound at the same time (needs to emit from the machine)
-    upvalues.SOUND = WrappedInclusion("arcade_cabinet_lib/sound.lua", { MACHINE = self, QUEUE = ARCADE.Cabinet.QueuedSounds })
+    -- Some libraries need to be loaded per cabinet not per game - e.g. sound (in order to emit sounds from the cabinet)
+    upvalues.SOUND = WrappedInclusion("arcade_cabinet_lib/sound.lua", { ENTITY = self })
 
-    upvalues.COINS = WrappedInclusion("arcade_cabinet_lib/coins.lua", { MACHINE = self })
-    upvalues.CABINET = WrappedInclusion("arcade_cabinet_lib/cabinet.lua", { MACHINE = self })
+    upvalues.COINS = WrappedInclusion("arcade_cabinet_lib/coins.lua", { ENTITY = self })
+    upvalues.CABINET = WrappedInclusion("arcade_cabinet_lib/cabinet.lua", { ENTITY = self })
 
     return upvalues
 end
