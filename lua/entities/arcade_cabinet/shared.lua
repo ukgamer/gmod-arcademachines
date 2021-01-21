@@ -1,6 +1,6 @@
 ENT.Type = "anim"
 ENT.Base = "base_gmodentity"
-ENT.PrintName = "Arcade Machine"
+ENT.PrintName = "Arcade Cabinet"
 ENT.Author = "ukgamer"
 ENT.Category = "ukgamer"
 ENT.Spawnable = false
@@ -14,7 +14,7 @@ function ENT:OnSeatCreated(name, old, new)
             return ply:LookupSequence("idle_all_01")
         end
 
-        new.ArcadeMachine = self
+        new.ArcadeCabinet = self
 
         new.HasUpdatedAnim = true
     end

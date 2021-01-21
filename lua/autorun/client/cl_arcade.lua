@@ -14,25 +14,25 @@ function ARCADE:DebugPrint(...)
 end
 
 hook.Add("SpawnMenuOpen", "arcade_no_spawnmenu", function()
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
     return false
 end)
 
 hook.Add("ScoreboardShow", "arcade_no_scoreboard", function()
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
     return false
 end)
 
 hook.Add("HUDDrawTargetID", "arcade_no_targetid", function()
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
     return false
 end)
 
 hook.Add("ContextMenuOpen", "arcade_no_contextmenu", function()
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
     return false
 end)
@@ -69,7 +69,7 @@ hook.Add("HUDPaint", "arcade_hud", function()
         ARCADE.Cabinet.UI.InfoPanel:PaintManual()
     end
 
-    if IsValid(ARCADE.Cabinet.CurrentMachine) then
+    if IsValid(ARCADE.Cabinet.CurrentCabinet) then
         DrawControls({
             ["[F1] Toggle Game Info"] = 0,
             ["[" .. string.upper(input.LookupBinding("+walk") or "alt") .. "] Insert Coins"] = 0,

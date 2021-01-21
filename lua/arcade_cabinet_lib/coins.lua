@@ -9,8 +9,8 @@ function COINS:TakeCoins(amount)
 end
 
 function COINS:GetCoins()
-    if not IsValid(MACHINE) then return end
-    return MACHINE:GetCoins()
+    if not IsValid(ENTITY) then return end
+    return ENTITY:GetCoins()
 end
 
 return COINS

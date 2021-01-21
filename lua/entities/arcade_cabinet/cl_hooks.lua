@@ -1,6 +1,5 @@
 ARCADE.Cabinet = ARCADE.Cabinet or {
     UI = {},
-    QueuedSounds = {},
     FOV = CreateClientConVar("arcade_cabinet_fov", 70, true, false),
     DisableBloom = CreateClientConVar("arcade_cabinet_disable_bloom", 1, true, false),
     DisablePAC = CreateClientConVar("arcade_cabinet_disable_pac", 1, true, false),
@@ -13,7 +12,7 @@ ARCADE.Cabinet = ARCADE.Cabinet or {
 }
 
 function ARCADE.Cabinet:OnLocalPlayerLeft()
-    self.CurrentMachine = nil
+    self.CurrentCabinet = nil
 
     if self.DisableBloom:GetBool() and self.BloomWasDisabled then
         LocalPlayer():ConCommand("mat_disable_bloom 0")
@@ -52,8 +51,6 @@ local ShowInfoPanel = false
 
 local PressedUse = false
 
-local NextQueueAt = 0
-
 local LookDist = 100
 
 if IsValid(ARCADE.Cabinet.UI.SettingsPanel) then
@@ -64,7 +61,7 @@ do
     ARCADE.Cabinet.UI.SettingsPanel = vgui.Create("DFrame")
     ARCADE.Cabinet.UI.SettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
     ARCADE.Cabinet.UI.SettingsPanel:SetMinimumSize(200, 200)
-    ARCADE.Cabinet.UI.SettingsPanel:SetTitle("Arcade Machine Settings")
+    ARCADE.Cabinet.UI.SettingsPanel:SetTitle("Arcade Cabinet Settings")
     ARCADE.Cabinet.UI.SettingsPanel:DockPadding(10, 30, 10, 10)
     ARCADE.Cabinet.UI.SettingsPanel:SetDeleteOnClose(false)
     ARCADE.Cabinet.UI.SettingsPanel:SetVisible(false)
@@ -84,7 +81,7 @@ do
     checkbox:Dock(TOP)
     checkbox:DockMargin(0, 0, 0, 5)
     checkbox:SetFont("AMInfoFont")
-    checkbox:SetText("Disable bloom when in machine")
+    checkbox:SetText("Disable bloom when in cabinet")
     checkbox:SetConVar("arcade_cabinet_disable_bloom")
     checkbox:SetValue(ARCADE.Cabinet.DisableBloom:GetBool())
     checkbox:SizeToContents()
@@ -101,7 +98,7 @@ do
     checkbox:Dock(TOP)
     checkbox:DockMargin(0, 0, 0, 5)
     checkbox:SetFont("AMInfoFont")
-    checkbox:SetText("Disable PAC when in machine")
+    checkbox:SetText("Disable PAC when in cabinet")
     checkbox:SetConVar("arcade_cabinet_disable_pac")
     checkbox:SetValue(ARCADE.Cabinet.DisablePAC:GetBool())
     checkbox:SizeToContents()
@@ -110,7 +107,7 @@ do
     checkbox:Dock(TOP)
     checkbox:DockMargin(0, 0, 0, 5)
     checkbox:SetFont("AMInfoFont")
-    checkbox:SetText("Disable other machines when in machine")
+    checkbox:SetText("Disable other cabinets when in cabinet")
     checkbox:SetConVar("arcade_cabinet_disable_others_when_active")
     checkbox:SetValue(ARCADE.Cabinet.DisableOthers:GetBool())
     checkbox:SizeToContents()
@@ -136,14 +133,14 @@ do
     button:Dock(TOP)
     button:DockMargin(0, 0, 0, 5)
     button:SetFont("AMInfoFont")
-    button:SetText("Reload machines")
+    button:SetText("Reload cabinets")
     button.DoClick = function()
         LocalPlayer():ConCommand("arcade_cabinet_reload")
     end
 end
 
-list.Set("DesktopWindows", "ArcadeMachines", {
-    title = "Arcade Machines",
+list.Set("DesktopWindows", "ArcadeCabinets", {
+    title = "Arcade Cabinets",
     icon = "icon64/arcade_cabinet.png",
     init = function(icon, window)
         ARCADE.Cabinet.UI.SettingsPanel:SetVisible(true)
@@ -227,8 +224,8 @@ do
     ARCADE.Cabinet.UI.DescriptionLabel:SetText("")
 end
 
-local function ToggleInfoPanel(machine)
-    if not IsValid(machine) or not machine.Game then
+local function ToggleInfoPanel(cabinet)
+    if not IsValid(cabinet) or not cabinet.Game then
         if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
             ARCADE.Cabinet.UI.InfoPanel:SetVisible(false)
         end
@@ -236,46 +233,46 @@ local function ToggleInfoPanel(machine)
         return
     end
 
-    if LookingAt == machine then return end
+    if LookingAt == cabinet then return end
 
-    LookingAt = machine
+    LookingAt = cabinet
 
     ARCADE.Cabinet.UI.InfoPanel:SetVisible(true)
 
-    local cost = machine:GetMSCoinCost()
+    local cost = cabinet:GetMSCoinCost()
 
     if cost > 0 then
         ARCADE.Cabinet.UI.CoinsLabel:SetVisible(true)
-        ARCADE.Cabinet.UI.CoinsLabel:SetText("This machine costs " .. cost .. " coin(s) to play.")
+        ARCADE.Cabinet.UI.CoinsLabel:SetText("This game costs " .. cost .. " coin(s) to play.")
     else
         ARCADE.Cabinet.UI.CoinsLabel:SetVisible(false)
     end
 
-    ARCADE.Cabinet.UI.GameLabel:SetText(machine.Game.Name)
+    ARCADE.Cabinet.UI.GameLabel:SetText(cabinet.Game.Name)
 
-    if machine.Game.Author then
+    if cabinet.Game.Author then
         ARCADE.Cabinet.UI.AuthorLabel:SetVisible(true)
-        ARCADE.Cabinet.UI.AuthorLabel:SetText("Author: " .. machine.Game.Author)
+        ARCADE.Cabinet.UI.AuthorLabel:SetText("Author: " .. cabinet.Game.Author)
     else
         ARCADE.Cabinet.UI.AuthorLabel:SetVisible(false)
     end
 
-    if machine.Game.Description then
+    if cabinet.Game.Description then
         ARCADE.Cabinet.UI.DescriptionLabel:SetVisible(true)
-        ARCADE.Cabinet.UI.DescriptionLabel:SetText(machine.Game.Description)
+        ARCADE.Cabinet.UI.DescriptionLabel:SetText(cabinet.Game.Description)
     else
         ARCADE.Cabinet.UI.DescriptionLabel:SetVisible(false)
     end
 end
 
 hook.Add("CalcVehicleView", "arcade_cabinet_view", function(veh, ply, view)
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
     local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
 
     if tp then return end
 
-    if ARCADE.Cabinet.CurrentMachine:GetBodygroup(0) == 1 then
+    if ARCADE.Cabinet.CurrentCabinet:GetBodygroup(0) == 1 then
         view.origin = veh:GetPos() + veh:GetRight() * -8 + veh:GetUp() * 72
     else
         view.origin = veh:GetPos() + veh:GetUp() * 64
@@ -287,7 +284,7 @@ hook.Add("CalcVehicleView", "arcade_cabinet_view", function(veh, ply, view)
 end)
 
 hook.Add("CreateMove", "arcade_cabinet_scroll", function(cmd)
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then
         PressedUse = false
         PressedF1 = false
         return
@@ -327,13 +324,13 @@ end)
 
 hook.Add("Think", "arcade_cabinet_think", function()
     if
-        (IsValid(ARCADE.Cabinet.CurrentMachine) and ARCADE.Cabinet.CurrentMachine:GetPlayer() ~= LocalPlayer()) or -- The player was pulled out of the machine somehow
-        (ARCADE.Cabinet.CurrentMachine and not IsValid(ARCADE.Cabinet.CurrentMachine)) -- The machine was removed while we were in it
+        (IsValid(ARCADE.Cabinet.CurrentCabinet) and ARCADE.Cabinet.CurrentCabinet:GetPlayer() ~= LocalPlayer()) or -- The player was pulled out of the cabinet somehow
+        (ARCADE.Cabinet.CurrentCabinet and not IsValid(ARCADE.Cabinet.CurrentCabinet)) -- The cabinet was removed while we were in it
     then
         ARCADE.Cabinet:OnLocalPlayerLeft()
     end
 
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) then
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) then
         local tr = util.TraceLine({
             start = LocalPlayer():EyePos(),
             endpos = LocalPlayer():EyePos() + EyeAngles():Forward() * LookDist,
@@ -345,7 +342,7 @@ hook.Add("Think", "arcade_cabinet_think", function()
         ToggleInfoPanel(tr.Entity)
     else
         if ShowInfoPanel then
-            ToggleInfoPanel(ARCADE.Cabinet.CurrentMachine)
+            ToggleInfoPanel(ARCADE.Cabinet.CurrentCabinet)
         else
             if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
                 ARCADE.Cabinet.UI.InfoPanel:SetVisible(false)
@@ -353,25 +350,10 @@ hook.Add("Think", "arcade_cabinet_think", function()
             LookingAt = nil
         end
     end
-
-    if RealTime() < NextQueueAt then return end
-
-    local k, v = next(ARCADE.Cabinet.QueuedSounds)
-
-    if k then
-        if #v > 0 then
-            v[1].context:LoadQueued(v[1])
-            table.remove(v, 1)
-        else
-            ARCADE.Cabinet.QueuedSounds[k] = nil
-        end
-    end
-
-    NextQueueAt = RealTime() + 0.05
 end)
 
 hook.Add("PrePlayerDraw", "arcade_cabinet_hideplayers", function(ply)
-    if not IsValid(ARCADE.Cabinet.CurrentMachine) or ply == LocalPlayer() then return end
+    if not IsValid(ARCADE.Cabinet.CurrentCabinet) or ply == LocalPlayer() then return end
 
     local min, max = LocalPlayer():WorldSpaceAABB()
 

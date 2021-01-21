@@ -125,21 +125,21 @@ function ENT:OnRemove()
 end
 
 hook.Add("PlayerLeaveVehicle", "arcade_cabinet_leavevehicle", function(ply, veh)
-    if not IsValid(veh.ArcadeMachine) then return end
+    if not IsValid(veh.ArcadeCabinet) then return end
 
     ply:SetPos(veh:GetPos() + veh:GetForward() * -10 + veh:GetUp() * 10)
-    ply:SetEyeAngles((veh.ArcadeMachine:GetPos() - ply:EyePos()):Angle())
+    ply:SetEyeAngles((veh.ArcadeCabinet:GetPos() - ply:EyePos()):Angle())
 end)
 
 util.AddNetworkString("arcade_cabinet_insertcoin")
 net.Receive("arcade_cabinet_insertcoin", function(len, ply)
     local veh = ply:GetVehicle()
 
-    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
+    if not IsValid(veh) or not IsValid(veh.ArcadeCabinet) or veh.ArcadeCabinet:GetPlayer() ~= ply then return end
 
-    local cost = veh.ArcadeMachine:GetMSCoinCost()
+    local cost = veh.ArcadeCabinet:GetMSCoinCost()
 
-    if cost > 0 and ply.TakeCoins and veh.ArcadeMachine:GetPlayer() == ply then
+    if cost > 0 and ply.TakeCoins and veh.ArcadeCabinet:GetPlayer() == ply then
         if ply:GetCoins() > cost then
             ply:TakeCoins(cost, "Arcade")
         else
@@ -147,18 +147,18 @@ net.Receive("arcade_cabinet_insertcoin", function(len, ply)
         end
     end
 
-    veh.ArcadeMachine:SetCoins(veh.ArcadeMachine:GetCoins() + 1)
+    veh.ArcadeCabinet:SetCoins(veh.ArcadeCabinet:GetCoins() + 1)
 end)
 
 util.AddNetworkString("arcade_cabinet_takecoins")
 net.Receive("arcade_cabinet_takecoins", function(len, ply)
     local veh = ply:GetVehicle()
 
-    if not IsValid(veh) or not IsValid(veh.ArcadeMachine) or veh.ArcadeMachine:GetPlayer() ~= ply then return end
+    if not IsValid(veh) or not IsValid(veh.ArcadeCabinet) or veh.ArcadeCabinet:GetPlayer() ~= ply then return end
 
     local amount = net.ReadInt(16)
 
-    if not amount or amount > veh.ArcadeMachine:GetCoins() then return end
+    if not amount or amount > veh.ArcadeCabinet:GetCoins() then return end
 
-    veh.ArcadeMachine:SetCoins(veh.ArcadeMachine:GetCoins() - amount)
+    veh.ArcadeCabinet:SetCoins(veh.ArcadeCabinet:GetCoins() - amount)
 end)

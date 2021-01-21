@@ -65,7 +65,7 @@ function IMAGE:LoadFromMaterial(name, key)
     self.Images[key] = {
         status = self.STATUS_LOADED,
         mat = CreateMaterial(
-            "arcademachines_" .. key .. "_" .. math.random(9999),
+            "arcadecabinets_" .. key .. "_" .. math.random(9999),
             "UnlitGeneric",
             {
                 ["$basetexture"] = name,
