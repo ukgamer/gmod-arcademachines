@@ -5,6 +5,7 @@ ARCADE.Cabinet = ARCADE.Cabinet or {
     DisablePAC = CreateClientConVar("arcade_cabinet_disable_pac", 1, true, false),
     DisableOutfitter = CreateClientConVar("arcade_cabinet_disable_outfitter", 1, true, false),
     DisableOthers = CreateClientConVar("arcade_cabinet_disable_others_when_active", 0, true, false),
+    DisableSoundsOutside = CreateClientConVar("arcade_cabinet_disable_sounds_outside", 0, true, false),
     BloomWasDisabled = false,
     PACWasDisabled = false,
     OutfitterWasDisabled = false,
@@ -59,7 +60,7 @@ end
 
 do
     ARCADE.Cabinet.UI.SettingsPanel = vgui.Create("DFrame")
-    ARCADE.Cabinet.UI.SettingsPanel:SetSize(ScrW() * 0.15, ScrH() * 0.2)
+    ARCADE.Cabinet.UI.SettingsPanel:SetSize(ScrW() * 0.18, ScrH() * 0.2)
     ARCADE.Cabinet.UI.SettingsPanel:SetMinimumSize(200, 200)
     ARCADE.Cabinet.UI.SettingsPanel:SetTitle("Arcade Cabinet Settings")
     ARCADE.Cabinet.UI.SettingsPanel:DockPadding(10, 30, 10, 10)
@@ -84,6 +85,15 @@ do
     checkbox:SetText("Disable bloom when in cabinet")
     checkbox:SetConVar("arcade_cabinet_disable_bloom")
     checkbox:SetValue(ARCADE.Cabinet.DisableBloom:GetBool())
+    checkbox:SizeToContents()
+
+    checkbox = vgui.Create("DCheckBoxLabel", scroll)
+    checkbox:Dock(TOP)
+    checkbox:DockMargin(0, 0, 0, 5)
+    checkbox:SetFont("AMInfoFont")
+    checkbox:SetText("Disable sounds when outside cabinet (does not stop current sounds)")
+    checkbox:SetConVar("arcade_cabinet_disable_sounds_outside")
+    checkbox:SetValue(ARCADE.Cabinet.DisableSoundsOutside:GetBool())
     checkbox:SizeToContents()
 
     label = vgui.Create("DLabel", scroll)
