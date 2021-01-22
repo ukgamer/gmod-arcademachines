@@ -70,7 +70,7 @@ The cabinet has a marquee that can be drawn to using the `DrawMarquee` method. T
 
 If your marquee requires external images to be loaded before drawing, set the `LateUpdateMarquee` property to `true` on your game table and then call `CABINET:UpdateMarquee()` on the cabinet after your assets have loaded which will cause `DrawMarquee` to be called once more.
 
-The cabinet can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcadecabinets-model/tree/master/matsrc)) that can be specified with the `CabinetArtURL` property on your game table.
+The cabinet can also have custom artwork (templates available [here](https://github.com/ukgamer/gmod-arcademachines-model/tree/master/matsrc)) that can be specified with the `CabinetArtURL` property on your game table.
 
 **The marquee can only be drawn once per game load as it is designed to be static for performance reasons.**
 
