@@ -56,7 +56,11 @@
 
     local CoinsTaken = false
 
-    local SNAKE = { x = 0, y = 0, Tail = {}, Col = Color( 25, 255, 25 ) }
+    local SNAKE = { x = 0, y = 0, Tail = {} }
+    SNAKE.DefaultCol = Color( 25, 255, 25 )
+    SNAKE.Col = SNAKE.DefaultCol
+    SNAKE.GoalReachedCol = Color( 255, 216, 0 )
+    SNAKE.InsertCoinCol = Color( 255, 255, 255 )
     SNAKE.Dead = false
     SNAKE.DiedAt = math.huge
     SNAKE.MoveInterval = 0.1
@@ -239,16 +243,16 @@
 
     function SNAKE:HandleApparel()
         if self.Boosted then
-            self.Col = Color( 50, 50, 255 )
+            self.Col = APPLE_TYPE_BOOST.Col
             return
         end
 
         if self.GoalReached then
-            self.Col = Color( 255, 216, 0 )
+            self.Col = self.GoalReachedCol
             return
         end
 
-        self.Col = Color( 25, 255, 25 )
+        self.Col = self.DefaultCol
     end
 
     function SNAKE:Draw()
@@ -318,7 +322,7 @@
         StopLoaded( "music" )
 
         table.Empty( SNAKE.Tail )
-        SNAKE.Col = Color( 25, 255, 25 )
+        SNAKE.Col = self.DefaultCol
         SNAKE.Dead = false
         SNAKE.DiedAt = math.huge
         SNAKE.GoldenApplesEaten = 0
@@ -403,19 +407,21 @@
     end
 
     function GAME:Draw()
-        draw.SimpleText( COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, Color( 255, 255, 255 ) )
+        draw.SimpleText( COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, color_white )
 
         if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
+            self.InsertCoinCol.a = RealTime() % 1 > 0.5 and 255 or 0
+
             draw.SimpleText(
                 "INSERT COINS",
                 "Snake32",
                 SCREEN_WIDTH / 2,
                 SCREEN_HEIGHT - 100,
-                Color( 255, 255, 255, CurTime() % 1 > 0.5 and 255 or 0 ),
+                self.InsertCoinCol,
                 TEXT_ALIGN_CENTER
             )
 
-            surface.SetDrawColor( Color( 25, 255, 25 ) )
+            surface.SetDrawColor( self.DefaultCol )
             if AttractorSnake.LastFrameAdvance + 0.25 < RealTime() then
                 AttractorSnake.ActiveFrame = ( AttractorSnake.ActiveFrame == "FRAME.1" and "FRAME.2" or "FRAME.1" )
                 AttractorSnake.LastFrameAdvance = RealTime()
@@ -428,9 +434,9 @@
             surface.SetDrawColor( 255, 25, 25 )
             surface.DrawRect( SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10 )
         else
-            draw.SimpleText( "Score: " .. Score, "Snake32", SCREEN_WIDTH / 2, 25, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER )
+            draw.SimpleText( "Score: " .. Score, "Snake32", SCREEN_WIDTH / 2, 25, color_white, TEXT_ALIGN_CENTER )
 
-            draw.SimpleText( SNAKE.GoldenApplesEaten .. "/10", "Trebuchet24", SCREEN_WIDTH - 75, 25, Color( 255, 255, 255 ) )
+            draw.SimpleText( SNAKE.GoldenApplesEaten .. "/10", "Trebuchet24", SCREEN_WIDTH - 75, 25, color_white )
             surface.SetDrawColor( APPLE_TYPE_GOLDEN.Col )
             surface.DrawRect( SCREEN_WIDTH - 90, 30, 10, 10 )
 
@@ -491,10 +497,10 @@
 
     function GAME:DrawMarquee()
         -- Title text
-        draw.SimpleText( "SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, Color( 255, 255, 255 ) )
+        draw.SimpleText( "SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, color_white )
 
         -- Snake
-        surface.SetDrawColor( Color( 25, 255, 25 ) )
+        surface.SetDrawColor( self.DefaultCol )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 20, 40, 120, 20 )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 40, 20, 40 )
 
