@@ -494,7 +494,7 @@ end
 function GAME:Update()
     now = RealTime()
 
-    if gameState == GAME_STATE_ATTRACT and COINS:GetCoins() > 0 and thePlayer:KeyDown(IN_JUMP) then
+    if gameState == GAME_STATE_ATTRACT and COINS:GetCoins() > 0 and IsValid(thePlayer) and thePlayer:KeyDown(IN_JUMP) then
         self:Start(true)
         return
     end
