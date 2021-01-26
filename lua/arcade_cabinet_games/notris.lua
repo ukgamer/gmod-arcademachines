@@ -42,7 +42,7 @@ local gameState = 0 -- 0 = Attract mode 1 = Playing 2 = Waiting for coins update
 
 local LINES_LEVEL_UP = 5
 
-local TICK_TIME = 0.05          --every 0.05 it will update the logic
+local TICK_TIME = 0.05 --every 0.05 it will update the logic
 
 --we are scaling up a 12x18 field of tetris
 local FIELD_WIDTH, FIELD_HEIGHT = 12, 25
@@ -84,27 +84,32 @@ local muteHeld = false
 
 local sideMove1Held = false
 local sideMove2Held = false
-local downMoveHeld  = fallingLines
+local downMoveHeld  = false
 
 --insta dropping piece
 local shouldDropIt  = false
+--Add slight delay after dropping to prevent double drops
+local droppedAt = 0
 -------------------------
 
 ----SOUND----
 local soundList = {}
-local muteMode = 1 --1 off, 2 music, 3 all off
+local muteMode = 1 --1 not muted, 2 music, 3 all off
 -------------
 
 -----ART-----
-local cabinetArt
 local marqueeArt
-local backgroundAmount = 9
-local bgOffset = 1 / backgroundAmount
-local currentBackground = 9
-local backgroundColor = Color(75, 75, 75)
 local backgroundArt
--------------
 
+local soundIcon
+local xMarkIcon
+
+local backgroundCount = 9 --how many backgrounds exist on the atlas
+local bgOffset = 1 / backgroundCount
+local currentBackground = 1
+local backgroundColor = Color(75, 75, 75)
+
+-------------
 
 ----MUSIC----
 local musicList = {}
@@ -147,6 +152,14 @@ local function LoadResources()
 	IMAGE:LoadFromURL(resourceLink .. "art/background_atlas.png", "bg", function(image)
 		backgroundArt = image.mat
 	end)
+
+
+	IMAGE:LoadFromMaterial("voice/icntlk_sv", "soundIcon")
+	IMAGE:LoadFromMaterial("debug/particleerror", "xMark")
+
+	soundIcon = IMAGE.Images["soundIcon"].mat
+	xMarkIcon = IMAGE.Images["xMark"].mat
+
 end
 
 function GAME:Init()
@@ -157,23 +170,27 @@ end
 function GAME:Destroy()
 	score = 0
 	level = 0
+	speedTime = 1
 
 	lineCount = 0
 	field = {}
 	fallingLines = {}
 	pieces = {}
 
-	curPiece = 1
-	nextPiece = 2
+	curPiece = -1
+	nextPiece = -1
 	currentLineCount = 0
+	nextForcedDownMove = 0
 
 	nextTick = 0
 	tickCounter = 0
 
-	startX = 4
 	curX = startX
 	curY = 0
 	curRotation = 0
+
+	shouldDropIt = false
+	droppedAt = 0
 end
 
 local function PlaySound(snd)
@@ -258,6 +275,7 @@ end
 function GAME:Reset()
 	self:Destroy()
 	self:Setup()
+	PauseSound()
 	StopMusic()
 end
 
@@ -337,9 +355,9 @@ local tetros = {
 function GAME:RandomizePieces()
 	if table.IsEmpty(pieces) then --fill table with 4 of each piece to pick from
 		for tetro = 1, #tetros do
-			for i = 1, 2 do -- insert this piece 4 times
+			--for i = 1, 2 do -- insert this piece 4 times
 				table.insert(pieces, tetro)
-			end
+			--end
 		end
 	end
 
@@ -464,7 +482,7 @@ function GAME:UpdateInputs()
 					COINS:TakeCoins(1)
 					self:Start()
 				end
-			else
+			elseif RealTime() > droppedAt + 0.2 then
 				shouldDropIt = true
 			end
 
@@ -479,7 +497,7 @@ function GAME:UpdateInputs()
 	if thePlayer:KeyDown(IN_FORWARD) then
 		if not rotHeld or RealTime() > nextRot then
 			TryMovePiece(0, 0, 90, rotHeld)
-			nextRot = RealTime() + 0.25
+			nextRot = RealTime() + 0.2
 		end
 		rotHeld = true
 	else
@@ -489,7 +507,7 @@ function GAME:UpdateInputs()
 	if thePlayer:KeyDown(IN_MOVELEFT) then
 		if not sideMove1Held or RealTime() >= nextSideMove1 then
 			TryMovePiece(-1, nil, nil, sideMove1Held)
-			nextSideMove1 = RealTime() + 0.1
+			nextSideMove1 = RealTime() + 0.2
 		end
 		sideMove1Held = true
 	else
@@ -499,7 +517,7 @@ function GAME:UpdateInputs()
 	if thePlayer:KeyDown(IN_MOVERIGHT) then
 		if not sideMove2Held or RealTime() >= nextSideMove2 then
 			TryMovePiece(1, nil, nil, sideMove2Held)
-			nextSideMove2 = RealTime() + 0.1
+			nextSideMove2 = RealTime() + 0.25
 		end
 		sideMove2Held = true
 	else
@@ -582,7 +600,6 @@ local function AttractModePlay()
 
 	if not attractHasFoundSpot then --resets when placed
 		FindSpot()
-
 		return --less spastic behaviour
 	end
 
@@ -607,8 +624,6 @@ local function AttractModePlay()
 end
 
 function GAME:Update()
-	UpdateMusic()
-
 	local now = RealTime()
 
 	if gameState == 0 then
@@ -623,6 +638,7 @@ function GAME:Update()
 		self:UpdateInputs()
 	end
 
+	UpdateMusic()
 	-- game over
 	if gameState == 3 then
 		-- if we don't have enough coins we stop, shouldn't be possible to be less then 1 coin
@@ -637,6 +653,7 @@ function GAME:Update()
 		shouldDropIt = false
 		nextTick = now
 		nextForcedDownMove = now
+		droppedAt = now
 	end
 
 	if now < nextTick then return end
@@ -744,14 +761,6 @@ function GAME:DrawMarquee()
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 end
 
-function GAME:DrawCabinetArt()
-	if not cabinetArt then return end
-
-	surface.SetMaterial(cabinetArt)
-	surface.SetDrawColor(255, 255, 255)
-	surface.DrawTexturedRect(0, 0, CABINET_ART_WIDTH, CABINET_ART_HEIGHT)
-end
-
 local FIELD_RECT_X = FIELD_SCALE + 3 * FIELD_SCALE
 local FIELD_RECT_Y = FIELD_OFFSET_Y + 3 * FIELD_SCALE
 local FIELD_RECT_W = FIELD_WIDTH * FIELD_SCALE - FIELD_SCALE * 2 -2
@@ -796,24 +805,27 @@ local function UpdateBackground()
 		if muteMode == 1 and IsValid(currentSong) then
 			currentSong:FFT(songSamples, 1)
 
-			local sample = songSamples[1] * sampMod
+			if not table.IsEmpty(songSamples) then
+				local sample = songSamples[1] * sampMod
 
-			if sample < lastSample then
-				sample = Lerp(fallOff, lastSample, sample)
+				if sample < lastSample then
+					sample = Lerp(fallOff, lastSample, sample)
+				end
+
+				alphaValue = math.Clamp(sample * 255, 85, 255)
+				surface.SetDrawColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, alphaValue)
+
+				lastSample = sample
 			end
-
-			alphaValue = math.Clamp(sample * 255, 75, 255)
-			surface.SetDrawColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, alphaValue)
-
-			lastSample = sample
 		else
 			alphaValue = 25 + math.abs(math.sin(now * 0.5)) * 255
 			surface.SetDrawColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, alphaValue)
 		end
 
-		if now > nextBackground and alphaValue <= 50 then
-			currentBackground = math.random(1, backgroundAmount)
-			nextBackground = now + alphaValue
+		--Try change background when it's dark, but if it takes too long we swap anyway
+		if now > nextBackground and alphaValue <= 50 or now > nextBackground + 5 then
+			currentBackground = math.random(1, backgroundCount)
+			nextBackground = now + 15
 		end
 	end
 
@@ -909,11 +921,27 @@ function GAME:Draw()
 	surface.SetTextPos(THREE_QUARTER - tW / 2 + FIELD_SCALE, SCREEN_HEIGHT / 1.25)
 	surface.DrawText(text)
 
+	local soundIconPosX, soundIconPosY = SCREEN_WIDTH - 42, 10
+
+	if muteMode == 2 then
+		surface.SetDrawColor(255, 128, 0, 50)
+	elseif muteMode == 3 then
+		surface.SetDrawColor(255, 0, 0, 50)
+	else
+		surface.SetDrawColor(255, 255, 255, 50)
+	end
+
+	surface.SetMaterial(soundIcon)
+	surface.DrawTexturedRect(soundIconPosX, soundIconPosY, 32, 32)
+
+	if muteMode == 3 then
+		surface.SetMaterial(xMarkIcon)
+		surface.DrawTexturedRect(soundIconPosX, soundIconPosY, 32, 32)
+	end
+
 	if gameState == 3 then
 		DrawGameOver()
 	end
-
-
 end
 
 -- Called when someone sits in the seat
@@ -927,6 +955,9 @@ end
 function GAME:OnStopPlaying(ply)
 	if ply == thePlayer then
 		thePlayer = nil
+
+		StopMusic()
+		PauseSound()
 	end
 end
 
