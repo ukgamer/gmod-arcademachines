@@ -322,7 +322,7 @@
         StopLoaded( "music" )
 
         table.Empty( SNAKE.Tail )
-        SNAKE.Col = self.DefaultCol
+        SNAKE.Col = SNAKE.DefaultCol
         SNAKE.Dead = false
         SNAKE.DiedAt = math.huge
         SNAKE.GoldenApplesEaten = 0
@@ -410,18 +410,18 @@
         draw.SimpleText( COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, color_white )
 
         if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
-            self.InsertCoinCol.a = RealTime() % 1 > 0.5 and 255 or 0
+            SNAKE.InsertCoinCol.a = RealTime() % 1 > 0.5 and 255 or 0
 
             draw.SimpleText(
                 "INSERT COINS",
                 "Snake32",
                 SCREEN_WIDTH / 2,
                 SCREEN_HEIGHT - 100,
-                self.InsertCoinCol,
+                SNAKE.InsertCoinCol,
                 TEXT_ALIGN_CENTER
             )
 
-            surface.SetDrawColor( self.DefaultCol )
+            surface.SetDrawColor( SNAKE.DefaultCol )
             if AttractorSnake.LastFrameAdvance + 0.25 < RealTime() then
                 AttractorSnake.ActiveFrame = ( AttractorSnake.ActiveFrame == "FRAME.1" and "FRAME.2" or "FRAME.1" )
                 AttractorSnake.LastFrameAdvance = RealTime()
@@ -500,7 +500,7 @@
         draw.SimpleText( "SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, color_white )
 
         -- Snake
-        surface.SetDrawColor( self.DefaultCol )
+        surface.SetDrawColor( SNAKE.DefaultCol )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 20, 40, 120, 20 )
         surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 40, 20, 40 )
 
