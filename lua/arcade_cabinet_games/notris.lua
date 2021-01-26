@@ -517,7 +517,7 @@ function GAME:UpdateInputs()
 	if thePlayer:KeyDown(IN_MOVERIGHT) then
 		if not sideMove2Held or RealTime() >= nextSideMove2 then
 			TryMovePiece(1, nil, nil, sideMove2Held)
-			nextSideMove2 = RealTime() + 0.25
+			nextSideMove2 = RealTime() + 0.2
 		end
 		sideMove2Held = true
 	else
@@ -527,7 +527,7 @@ function GAME:UpdateInputs()
 	if thePlayer:KeyDown(IN_BACK) then
 		if not downMoveHeld or RealTime() >= nextDownMove then
 			TryMovePiece(nil, 1, nil, downMoveHeld)
-			nextDownMove = RealTime() + 0.1
+			nextDownMove = RealTime() + 0.15
 		end
 		downMoveHeld = true
 	else
