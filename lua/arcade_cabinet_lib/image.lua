@@ -8,15 +8,11 @@ IMAGE.STATUS_ERROR = 2
 
 IMAGE.Images = {}
 
-local imagePath = "arcade/cache/images"
-file.CreateDir(imagePath)
+local path = "arcade/cache/images"
+file.CreateDir(path)
 
 function IMAGE:ClearImages()
     self.Images = {}
-end
-
-function IMAGE:GetExtension(path)
-    return string.GetExtensionFromFilename(path:gsub("?(.*)", ""))
 end
 
 function IMAGE:LoadFromURL(url, key, callback, noCache, materialParams)
@@ -27,7 +23,7 @@ function IMAGE:LoadFromURL(url, key, callback, noCache, materialParams)
         return
     end
 
-    local filename = imagePath .. "/" .. HTTP:urlhash(url) .. "." .. self:GetExtension(url)
+    local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. HTTP:GetExtension(url)
 
     if not noCache and file.Exists(filename, "DATA") then
         self.Images[key] = {

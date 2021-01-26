@@ -26,6 +26,10 @@ function HTTP:urlhash(str)
     return hash
 end
 
+function HTTP:GetExtension(path)
+    return string.GetExtensionFromFilename(path:gsub("?(.*)", ""))
+end
+
 function HTTP:Fetch(url, success, fail)
     http.Fetch(
         url,
