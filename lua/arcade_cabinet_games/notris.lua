@@ -563,7 +563,6 @@ local function FindSpot()
 					bestY = y
 					bestRotation = r
 					swapPiece = curPiece
-					print(bestAttractX)
 				end
 
 				if CanPlace(nextPiece, r, x, y) and y > bestY then
