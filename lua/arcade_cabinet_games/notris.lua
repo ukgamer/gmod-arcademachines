@@ -859,7 +859,7 @@ function GAME:Draw()
 			if object and object > 0 then
 				local color = colors[object]
 				if gameState == 3 then
-					surface.SetDrawColor(255, 0, 0, 100 + math.clamp(math.abs(math.sin(RealTime() * 2)), 0, 1) * 155)
+					surface.SetDrawColor(255, 0, 0, 100 + math.Clamp(math.abs(math.sin(RealTime() * 2)), 0, 1) * 155)
 				else
 					surface.SetDrawColor(color)
 				end
