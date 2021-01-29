@@ -1,6 +1,7 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_hooks.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("arcade_cabinet_launcher.lua")
 include("shared.lua")
 
 resource.AddSingleFile("materials/icon64/arcade_cabinet.png")
