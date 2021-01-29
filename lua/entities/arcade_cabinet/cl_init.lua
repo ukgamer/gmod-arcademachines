@@ -128,7 +128,7 @@ function ENT:Initialize()
     -- empty to a game and back again when loaded into room on MS
     self.AllowGameChangeAt = 0
 
-    if self:GetCurrentGame() and not self.Game then
+    if self:GetCurrentGame() and not self.Game and not self.InLauncher then
         self:SetGame(self:GetCurrentGame())
     end
 
@@ -210,7 +210,7 @@ function ENT:Think()
     end
 
     if self.InRange and self.Game then
-        if IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
+        if not self.InLauncher and IsValid(self:GetPlayer()) and self:GetPlayer() == LocalPlayer() then
             local pressed = input.LookupBinding("+walk") and self:GetPlayer():KeyDown(IN_WALK) or input.IsKeyDown(KEY_LALT)
 
             if pressed then
@@ -379,16 +379,8 @@ function ENT:UpdateScreen()
             surface.SetDrawColor(0, 0, 0, 255)
             surface.DrawRect(0, 0, ScreenWidth, ScreenHeight)
 
-            if self.InRange then
-                if self.Game then
-                    self.Game:Draw()
-                else
-                    surface.SetFont("DermaLarge")
-                    local w = surface.GetTextSize("NO GAME LOADED")
-                    surface.SetTextColor(255, 255, 255, 255)
-                    surface.SetTextPos((ScreenWidth / 2) - (w / 2), ScreenHeight / 2)
-                    surface.DrawText("NO GAME LOADED")
-                end
+            if self.InRange and self.Game then
+                self.Game:Draw()
             end
         cam.End2D()
     render.PopRenderTarget()
@@ -440,8 +432,14 @@ function ENT:SetGame(game, forceLibLoad)
     self.MarqueeHasDrawn = false
 
     if game and game ~= "" then
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game))
+        self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game, forceLibLoad))
+        self.InLauncher = false
+    else
+        self.Game = WrappedInclusion("arcade_cabinet_launcher.lua", self:GetUpvalues("launcher", forceLibLoad))
+        self.InLauncher = true
+    end
 
+    if self.Game then
         if self.Game.Init then
             self.Game:Init()
         end
@@ -471,7 +469,7 @@ function ENT:SetGame(game, forceLibLoad)
     self:UpdateScreen()
 end
 
-function ENT:GetUpvalues(game)
+function ENT:GetUpvalues(game, forceLibLoad)
     local upvalues = {
         SCREEN_WIDTH = ScreenWidth,
         SCREEN_HEIGHT = ScreenHeight,
@@ -481,6 +479,11 @@ function ENT:GetUpvalues(game)
 
     for k, v in pairs(BG) do
         upvalues[k] = v
+    end
+
+    if game == "launcher" then
+        upvalues.LAUNCHER = WrappedInclusion("arcade_cabinet_lib/launcher.lua", { ENTITY = self })
+        return upvalues
     end
 
     if LoadedLibs[game] and not forceLibLoad then

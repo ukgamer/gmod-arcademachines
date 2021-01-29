@@ -235,7 +235,7 @@ do
 end
 
 local function ToggleInfoPanel(cabinet)
-    if not IsValid(cabinet) or not cabinet.Game then
+    if not IsValid(cabinet) or not cabinet.Game or cabinet.InLauncher then
         if IsValid(ARCADE.Cabinet.UI.InfoPanel) then
             ARCADE.Cabinet.UI.InfoPanel:SetVisible(false)
         end
