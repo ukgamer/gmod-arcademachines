@@ -1,9 +1,9 @@
 local GAME = {}
-local DOOM_URL = "https://www.playdosgames.com/play/doom/"
+local URL = "https://ukgamer.github.io/gmod-arcademachines-assets/doom/doom.html"
 
 GAME.Name = "DOOM"
-GAME.Author = "Earu"
-GAME.Description = [[The original DOOM game.
+GAME.Author = "ukgamer/Earu"
+GAME.Description = [[The original DOOM shareware episode.
 WASD to move,
 R to interact,
 SPACE to shoot,
@@ -13,12 +13,26 @@ M to show the map]]
 
 GAME.LateUpdateMarquee = true
 
+local current_player = nil
+local has_paid = false
+local next_coins_request = 0
+
+local warn_text = "Sorry! DOOM only works on the x64 branch of Garry's Mod."
+local pay_text = "Please insert coins to play / continue playing."
+local play_text = "Press USE to play!"
+local red_bg_color = Color(155, 0, 0)
+local black_bg_color = Color(0, 0, 0, 200)
+local red_color = Color(255, 0, 0)
+local white_color = Color(255, 255, 255)
+
 local function is_chromium()
 	if BRANCH == "x86-64" or BRANCH == "chromium" then return true end -- chromium also exists in x86 and on the chromium branch
 	return jit.arch == "x64" -- when x64 and chromium are finally pushed to stable
 end
 
 function GAME:InitializeEmulator()
+	if not is_chromium() then return end
+
 	if IsValid(self.Panel) then
 		self.Panel:Remove()
 	end
@@ -27,86 +41,41 @@ function GAME:InitializeEmulator()
 
 	local html = vgui.Create("DHTML")
 	html:SetPaintedManually(true)
-	html:OpenURL(DOOM_URL)
+	html:OpenURL(URL)
 
 	local doom_game = self
 	function html:OnDocumentReady()
 		doom_game.Ready = true
-
-		self:QueueJavascript([[{
-			var canvas = document.getElementById("canvas");
-			var header = document.getElementsByTagName("header")[0];
-
-			header.style.display = "none";
-			canvas.style.position = "fixed";
-			canvas.style.padding = "0";
-			canvas.style.margin = "0";
-			canvas.style.top = "0";
-			canvas.style.left = "0";
-			canvas.style.width = "100%";
-			canvas.style.transform = "scale(0.75, 1.2) translate(-90px, 40px)";
-			canvas.focus();
-
-			function simulateKeyEvent(eventType, keyCode, charCode) {
-				var e = document.createEventObject ? document.createEventObject() : document.createEvent("Events");
-				if (e.initEvent) e.initEvent(eventType, true, true);
-
-				e.keyCode = keyCode;
-				e.which = keyCode;
-				e.charCode = charCode;
-
-				// Dispatch directly to Emscripten's html5.h API (use this if page uses emscripten/html5.h event handling):
-				if (typeof JSEvents !== 'undefined' && JSEvents.eventHandlers && JSEvents.eventHandlers.length > 0) {
-					for(var i = 0; i < JSEvents.eventHandlers.length; ++i) {
-						if ((JSEvents.eventHandlers[i].target == Module['canvas'] || JSEvents.eventHandlers[i].target == window)
-						&& JSEvents.eventHandlers[i].eventTypeString == eventType) {
-							JSEvents.eventHandlers[i].handlerFunc(e);
-						}
-					}
-				} else {
-					// Dispatch to browser for real (use this if page uses SDL or something else for event handling):
-					Module['canvas'].dispatchEvent ? Module['canvas'].dispatchEvent(e) : Module['canvas'].fireEvent("on" + eventType, e);
-				}
-			}
-		}]])
 	end
 
 	self.Panel = html
 end
 
-
 function GAME:Init()
-	IMAGE:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/doom/logo.png", "doom_guy_logo", function(image)
+	IMAGE:LoadFromURL("https://ukgamer.github.io/gmod-arcademachines-assets/doom/images/marquee.png", "marquee", function(image)
 		CABINET:UpdateMarquee()
 	end)
-
-	if not is_chromium() then return end
 end
 
 function GAME:Destroy()
-	if not is_chromium() then return end
 	if IsValid(self.Panel) then
 		self.Panel:Remove()
 	end
 end
 
-local current_player = nil
-local has_paid = false
-local next_coins_request = 0
-
 local keys_down = {}
-function GAME:HandleKey(game_key, key_code, key_char)
+function GAME:HandleKey(game_key, key_code)
 	if input.IsKeyDown(game_key) then
 		if not keys_down[game_key] then
 			if IsValid(self.Panel) then
-				self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+				self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyEvent(]] .. key_code .. [[, true);]])
 			end
 			keys_down[game_key] = true
 		end
 	else
 		if keys_down[game_key] then
 			if IsValid(self.Panel) then
-				self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. key_code .. [[, ']] .. key_char .. [[');]])
+				self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyEvent(]] .. key_code .. [[, false);]])
 			end
 			keys_down[game_key] = false
 		end
@@ -119,8 +88,8 @@ local paused = false
 function GAME:Pause()
 	if paused then return end
 	if IsValid(self.Panel) then
-		self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
-		self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+		self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyPress(]] .. pause_key_code .. [[);]])
+		self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyPress(]] .. pause_key_code .. [[);]])
 	end
 	paused = true
 end
@@ -128,8 +97,8 @@ end
 function GAME:UnPause()
 	if not paused then return end
 	if IsValid(self.Panel) then
-		self.Panel:QueueJavascript([[simulateKeyEvent('keydown', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
-		self.Panel:QueueJavascript([[simulateKeyEvent('keyup', ]] .. pause_key_code .. [[, ']] .. pause_key_name .. [[');]])
+		self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyPress(]] .. pause_key_code .. [[);]])
+		self.Panel:QueueJavascript([[typeof(ci) !== "undefined" && ci.simulateKeyPress(]] .. pause_key_code .. [[);]])
 	end
 	paused = false
 end
@@ -147,50 +116,50 @@ function GAME:Update()
 	-- move forward
 	local forward_key = input.LookupBinding("+forward", true)
 	if forward_key then
-		self:HandleKey(input.GetKeyCode(forward_key), 38, "ArrowUp")
+		self:HandleKey(input.GetKeyCode(forward_key), 38)
 	end
 
 	-- move back
 	local back_key = input.LookupBinding("+back", true)
 	if back_key then
-		self:HandleKey(input.GetKeyCode(back_key), 40, "ArrowDown")
+		self:HandleKey(input.GetKeyCode(back_key), 40)
 	end
 
 	-- rotate left
 	local left_key = input.LookupBinding("+moveleft", true)
 	if left_key then
-		self:HandleKey(input.GetKeyCode(left_key), 37, "ArrowLeft")
+		self:HandleKey(input.GetKeyCode(left_key), 37)
 	end
 
 	-- rotate right
 	local right_key = input.LookupBinding("+moveright", true)
 	if right_key then
-		self:HandleKey(input.GetKeyCode(right_key), 39, "ArrowRight")
+		self:HandleKey(input.GetKeyCode(right_key), 39)
 	end
 
 	-- interact
 	local interact_key = input.LookupBinding("+reload", true)
 	if interact_key then
-		self:HandleKey(input.GetKeyCode(interact_key), 32, " ")
+		self:HandleKey(input.GetKeyCode(interact_key), 32)
 	end
 
 	-- shoot
 	local space_key = input.LookupBinding("+jump", true)
 	if space_key then
-		self:HandleKey(input.GetKeyCode(space_key), 17, "ControlLeft")
+		self:HandleKey(input.GetKeyCode(space_key), 17)
 	end
 
 	-- strafe
 	local speed_key = input.LookupBinding("+speed", true)
 	if speed_key then
-		self:HandleKey(input.GetKeyCode(speed_key), 18, "Alt")
+		self:HandleKey(input.GetKeyCode(speed_key), 18)
 	end
 
 	-- enter
-	self:HandleKey(KEY_ENTER, 13, "Enter")
+	self:HandleKey(KEY_ENTER, 13)
 
 	-- map
-	self:HandleKey(KEY_M, 9, "Tab")
+	self:HandleKey(KEY_M, 9)
 
 	self:HandleKey(KEY_P, pause_key_code, pause_key_name)
 
@@ -201,23 +170,14 @@ function GAME:Update()
 end
 
 function GAME:DrawMarquee()
-	local logo = IMAGE.Images["doom_guy_logo"]
 	surface.SetDrawColor(155, 0, 0)
 	surface.DrawRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 
 	draw.NoTexture()
-	surface.SetMaterial(logo.mat)
+	surface.SetMaterial(IMAGE.Images.marquee.mat)
 	surface.SetDrawColor(255, 255, 255)
 	surface.DrawTexturedRect(0, 0, MARQUEE_WIDTH, MARQUEE_HEIGHT)
 end
-
-local warn_text = "Sorry! DOOM only works on the x64 branch of Garry's Mod."
-local pay_text = "Please insert coins to play / continue playing."
-local play_text = "Press USE to play!"
-local red_bg_color = Color(155, 0, 0)
-local black_bg_color = Color(0, 0, 0, 200)
-local red_color = Color(255, 0, 0)
-local white_color = Color(255, 255, 255)
 
 local function draw_text(text, col_text, col_bg)
 	surface.SetDrawColor(col_bg)
@@ -291,8 +251,5 @@ function GAME:OnCoinsInserted(ply, old, new)
 
 	self:UnPause()
 end
-
--- player coin change was networked, we're ready
-function GAME:OnCoinsLost(ply, old, new) end
 
 return GAME
