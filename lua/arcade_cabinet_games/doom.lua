@@ -11,6 +11,7 @@ SHIFT to strafe left and right,
 Numerical keys to switch weapons,
 M to show the map]]
 
+GAME.CabinetArtURL = "https://ukgamer.github.io/gmod-arcademachines-assets/doom/images/ms_acabinet_artwork.png"
 GAME.LateUpdateMarquee = true
 
 local current_player = nil
