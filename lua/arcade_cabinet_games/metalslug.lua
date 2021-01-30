@@ -12,6 +12,7 @@ Fire = MOUSE1
 Grenade = MOUSE2
 ]]
 
+GAME.CabinetArtURL = "https://ukgamer.github.io/gmod-arcademachines-assets/metalslug/images/ms_acabinet_artwork.png"
 GAME.LateUpdateMarquee = true
 
 local function is_chromium()
