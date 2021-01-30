@@ -29,6 +29,7 @@ local GAME = {}
 GAME.Name = "Blitz"
 GAME.Author = "simlzx / :d"
 GAME.Description = "Destroy buildings by dropping bombs with SPACE and complete as many levels as possible!\n\nControls:\n    Space: drop bomb\n    S + Space: drop nuke"
+GAME.CabinetArtURL = "https://ukgamer.github.io/gmod-arcademachines-assets/blitz/images/ms_acabinet_artwork.png"
 
 local thePlayer = nil
 local now = RealTime()

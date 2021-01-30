@@ -209,6 +209,7 @@ local GAME = {}
 GAME.Name = "2048"
 GAME.Author = "Cynthia"
 GAME.Description = "Combine tiles to get to 2048. Use WASD to move tiles around."
+GAME.CabinetArtURL = "https://ukgamer.github.io/gmod-arcademachines-assets/2048/images/ms_acabinet_artwork.png"
 
 local thePlayer = nil
 local now = RealTime()
