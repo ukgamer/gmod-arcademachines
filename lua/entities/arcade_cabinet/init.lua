@@ -1,7 +1,6 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_hooks.lua")
 AddCSLuaFile("shared.lua")
-AddCSLuaFile("arcade_cabinet_launcher.lua")
 include("shared.lua")
 
 resource.AddSingleFile("materials/icon64/arcade_cabinet.png")
@@ -27,19 +26,25 @@ resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_screen.vmt")
 resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel.vmt")
 resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel_normal.vtf")
 
-local function AddCSGameFiles()
-    local paths = {
-        "arcade_cabinet_games/",
-        "arcade_cabinet_lib/"
-    }
+local function RecursiveAddCSGameFiles(path)
+    local prefix = path .. "/"
 
-    for _, p in ipairs(paths) do
-        for _, f in pairs(file.Find(p .. "*.lua", "LUA")) do
-            AddCSLuaFile(p .. f)
-        end
+    local _, dirs = file.Find(prefix .. "*", "LUA")
+    local files = file.Find(prefix .. "*.lua", "LUA")
+
+    for _, f in ipairs(files) do
+        AddSingleFile(prefix .. f)
+    end
+
+    for _, d in ipairs(dirs) do
+        RecursiveAddCSGameFiles(prefix .. d)
     end
 end
-AddCSGameFiles()
+
+RecursiveAddCSGameFiles("arcade_cabinet_games")
+RecursiveAddCSGameFiles("arcade_cabinet_lib")
+
+AddCSLuaFile("arcade_cabinet_launcher.lua")
 
 function ENT:SpawnFunction(ply, tr)
     if not tr.Hit then return end
