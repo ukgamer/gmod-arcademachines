@@ -618,9 +618,11 @@ function GAME:DrawScore(w, h, isDead)
 	local ws = mid
 	for i = 1, #digits do
 		local digit = IMAGE.Images[digits[i]]
-		surface.SetMaterial(digit.mat)
-		surface.SetDrawColor(255, 255, 255, 255)
-		surface.DrawTexturedRect(ws, height, single_width, total_height)
+		if digit and digit.status == IMAGE.STATUS_LOADED then
+			surface.SetMaterial(digit.mat)
+			surface.SetDrawColor(255, 255, 255, 255)
+			surface.DrawTexturedRect(ws, height, single_width, total_height)
+		end
 		ws = ws + single_width
 	end
 end
