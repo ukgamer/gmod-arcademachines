@@ -60,6 +60,7 @@ function GAME:DrawBackground()
         surface.SetDrawColor(0, 0, 50 + math.abs(val) * 50)
         surface.DrawRect(i * bgBarW, SCREEN_HEIGHT * 0.5 + val * h, bgBarW, h)
 
+        val = math.sin(((i * 2) * 0.1) + (RealTime() * 0.5))
         surface.SetDrawColor(0, 0, 50 + math.abs(-val) * 50)
         surface.DrawRect(i * bgBarW, SCREEN_HEIGHT * 0.5 + -val * h, bgBarW, h)
     end
