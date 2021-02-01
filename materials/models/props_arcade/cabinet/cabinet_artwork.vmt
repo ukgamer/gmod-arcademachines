@@ -1,0 +1,16 @@
+VertexLitGeneric
+{
+	$basetexture "models/props_arcade/cabinet/cabinet_artwork"
+	$bumpmap "models/props_arcade/cabinet/cabinet_artwork_normal"
+	$surfaceprop Metal
+
+	$envmap "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.25 0.25 0.25]"
+
+	$phong 1
+	$phongfresnelranges "[0.5 0.75 1]"
+	$halflambert 1
+	$phongexponent 5
+	$phongboost 5
+}
