@@ -275,7 +275,7 @@ function ENT:Draw()
     render.MaterialOverrideByIndex(marqueeIndex == 2 and 7 or 3, self.MarqueeMaterial)
     render.MaterialOverrideByIndex(4, self.ScreenMaterial)
     if cabinetArt and cabinetArt.status == IMAGE.STATUS_LOADED then
-        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 0, cabinetArt.mat)
+        render.MaterialOverrideByIndex(marqueeIndex == 2 and 5 or 2, cabinetArt.mat)
     end
     self:DrawModel()
     render.MaterialOverrideByIndex()

@@ -5,26 +5,26 @@ include("shared.lua")
 
 resource.AddSingleFile("materials/icon64/arcade_cabinet.png")
 
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.mdl")
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.phy")
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.sw.vtx")
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.vvd")
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.dx80.vtx")
-resource.AddSingleFile("models/metastruct/ms_acabinet_v2.dx90.vtx")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_driving.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_driving.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_normal.vtf")
-resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_artwork_driving_normal.vtf")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_buttons.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_buttons_normal.vtf")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_marque.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_marque_driving.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_outerglass.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_screen.vmt")
-resource.AddFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel.vmt")
-resource.AddSingleFile("materials/models/ms_acabinet_v2/ms_acabinet_wheel_normal.vtf")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.mdl")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.phy")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.sw.vtx")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.vvd")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.dx80.vtx")
+resource.AddSingleFile("models/props_arcade/cabinet/cabinet.dx90.vtx")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_artwork.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_driving.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_artwork_driving.vmt")
+resource.AddSingleFile("materials/models/props_arcade/cabinet/cabinet_artwork_normal.vtf")
+resource.AddSingleFile("materials/models/props_arcade/cabinet/cabinet_artwork_driving_normal.vtf")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_buttons.vmt")
+resource.AddSingleFile("materials/models/props_arcade/cabinet/cabinet_buttons_normal.vtf")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_marque.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_marque_driving.vmt")
+resource.AddSingleFile("materials/models/props_arcade/cabinet/cabinet_outerglass.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_screen.vmt")
+resource.AddFile("materials/models/props_arcade/cabinet/cabinet_wheel.vmt")
+resource.AddSingleFile("materials/models/props_arcade/cabinet/cabinet_wheel_normal.vtf")
 
 local function RecursiveAddCSGameFiles(path)
     local prefix = path .. "/"
@@ -33,7 +33,7 @@ local function RecursiveAddCSGameFiles(path)
     local files = file.Find(prefix .. "*.lua", "LUA")
 
     for _, f in ipairs(files) do
-        AddSingleFile(prefix .. f)
+        AddCSLuaFile(prefix .. f)
     end
 
     for _, d in ipairs(dirs) do
@@ -65,7 +65,7 @@ function ENT:SpawnFunction(ply, tr)
 end
 
 function ENT:Initialize()
-    self:SetModel("models/metastruct/ms_acabinet_v2.mdl")
+    self:SetModel("models/props_arcade/cabinet/cabinet.mdl")
 
     self:SetUseType(SIMPLE_USE)
 
