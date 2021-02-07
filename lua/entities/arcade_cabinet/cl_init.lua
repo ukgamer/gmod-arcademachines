@@ -150,11 +150,6 @@ function ENT:Think()
         self:Initialize()
     end
 
-    -- Workaround network var notify not triggering for null entity
-    if self.LastPlayer and self.LastPlayer ~= self:GetPlayer() then
-        self:OnPlayerChange("Player", self.LastPlayer, self:GetPlayer())
-    end
-
     -- If we weren't nearby when the cabinet was spawned we won't get notified
     -- when the seat was created so manually call
     if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeCabinet then
@@ -291,28 +286,31 @@ function ENT:Draw()
     self:UpdateScreen()
 end
 
--- Isn't called when player becomes nil...
 function ENT:OnPlayerChange(name, old, new)
+    -- This has started happening on Meta for some reason
+    if old == new then
+        ARCADE:DebugPrint(self:EntIndex(), "Old and new player equal?!", old, new)
+        old = NULL
+    end
+
     if IsValid(new) then
-        if old and self.Game then
-            self.Game:OnStopPlaying(old)
-        end
+        if old ~= new then
+            if self.Game then
+                self.Game:OnStopPlaying(old)
+            end
 
-        if self.Game then
-            self.Game:OnStartPlaying(new)
-        end
+            if self.Game then
+                self.Game:OnStartPlaying(new)
+            end
 
-        self.LastPlayer = new
-
-        if new == LocalPlayer() then
-            self:OnLocalPlayerEntered()
+            if new == LocalPlayer() then
+                self:OnLocalPlayerEntered()
+            end
         end
     else
         if self.Game then
             self.Game:OnStopPlaying(old)
         end
-
-        self.LastPlayer = nil
 
         if old == LocalPlayer() then
             ARCADE.Cabinet:OnLocalPlayerLeft()
