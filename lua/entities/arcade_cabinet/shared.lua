@@ -26,14 +26,6 @@ function ENT:SetupDataTables()
     self:NetworkVar("String", 0, "CurrentGame")
     self:NetworkVar("Int", 0, "Coins")
     self:NetworkVar("Int", 1, "MSCoinCost")
-
-    if CLIENT then
-        self:NetworkVarNotify("Player", self.OnPlayerChange)
-        self:NetworkVarNotify("CurrentGame", self.OnGameChange)
-        self:NetworkVarNotify("Coins", self.OnCoinsChange)
-    end
-
-    self:NetworkVarNotify("Seat", self.OnSeatCreated)
 end
 
 function ENT:CanConstruct()
