@@ -73,6 +73,14 @@ ENT.Initialized = false
 
 function ENT:Initialize()
     self.Initialized = true
+
+    self.LastNWVars = {
+        ["Player"] = self:GetPlayer(),
+        ["Coins"] = self:GetCoins(),
+        ["CurrentGame"] = self:GetCurrentGame(),
+        ["Seat"] = self:GetSeat()
+    }
+
     self.MarqueeHasDrawn = self.MarqueeHasDrawn or false
 
     local num = math.random(9999)
@@ -124,10 +132,6 @@ function ENT:Initialize()
     self.Game = self.Game or nil
     self.LoadedSounds = self.LoadedSounds or {}
 
-    -- Used to work around network variable spamming being changed from
-    -- empty to a game and back again when loaded into room on MS
-    self.AllowGameChangeAt = 0
-
     if self:GetCurrentGame() and not self.Game and not self.InLauncher then
         self:SetGame(self:GetCurrentGame())
     end
@@ -150,37 +154,21 @@ function ENT:Think()
         self:Initialize()
     end
 
+    -- NetworkVarNotify is unreliable so manually checking for changes here
+    if self:GetPlayer() ~= self.LastNWVars.Player then
+        self:OnPlayerChange("Player", self.LastNWVars.Player, self:GetPlayer())
+    end
+    if self:GetCoins() ~= self.LastNWVars.Coins then
+        self:OnCoinsChange("Coins", self.LastNWVars.Coins, self:GetCoins())
+    end
+    if self:GetCurrentGame() ~= self.LastNWVars.CurrentGame then
+        self:OnGameChange("CurrentGame", self.LastNWVars.CurrentGame, self:GetCurrentGame())
+    end
+
     -- If we weren't nearby when the cabinet was spawned we won't get notified
     -- when the seat was created so manually call
     if IsValid(self:GetSeat()) and not self:GetSeat().ArcadeCabinet then
-        self:OnSeatCreated("Seat", nil, self:GetSeat())
-    end
-
-    if self.LastGameNWVar ~= nil and self.AllowGameChangeAt - RealTime() <= 0 then
-        ARCADE:DebugPrint(self:EntIndex(), "change game to", self.LastGameNWVar, "at", RealTime())
-        self:SetGame(self.LastGameNWVar)
-        self.LastGameNWVar = nil
-        self.AllowGameChangeAt = RealTime() + 1
-    end
-
-    -- Used to work around GetCoins not returning the correct value after the
-    -- network var notify was called
-    if self.CoinChange and self.CoinChange.new == self:GetCoins() and IsValid(self:GetPlayer()) then
-        if self.Game then
-            if self.CoinChange.new > self.CoinChange.old then
-                if self.Game.OnCoinsInserted then
-                    self.Game:OnCoinsInserted(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
-                end
-
-                self:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
-            end
-
-            if self.CoinChange.new < self.CoinChange.old and self.Game.OnCoinsLost then
-                self.Game:OnCoinsLost(self:GetPlayer(), self.CoinChange.old, self.CoinChange.new)
-            end
-        end
-
-        self.CoinChange = nil
+        self:OnSeatCreated("Seat", NULL, self:GetSeat())
     end
 
     if self.Game and self.Game.Bodygroup and Bodygroups[self.Game.Bodygroup] then
@@ -287,11 +275,12 @@ function ENT:Draw()
 end
 
 function ENT:OnPlayerChange(name, old, new)
-    -- This has started happening on Meta for some reason
-    if old == new then
-        ARCADE:DebugPrint(self:EntIndex(), "Old and new player equal?!", old, new)
-        old = NULL
-    end
+    ARCADE:DebugPrint(
+        self:EntIndex(),
+        "OnPlayerChange",
+        "new", new,
+        "old", old
+    )
 
     if IsValid(new) then
         if old ~= new then
@@ -316,6 +305,8 @@ function ENT:OnPlayerChange(name, old, new)
             ARCADE.Cabinet:OnLocalPlayerLeft()
         end
     end
+
+    self.LastNWVars.Player = new
 end
 
 function ENT:OnLocalPlayerEntered()
@@ -383,26 +374,41 @@ function ENT:UpdateScreen()
 end
 
 function ENT:OnCoinsChange(name, old, new)
-    self.CoinChange = { old = old, new = new }
+    ARCADE:DebugPrint(
+        self:EntIndex(),
+        "OnCoinsChange",
+        "new", new,
+        "old", old
+    )
+
+    if self.Game then
+        if new > old then
+            if self.Game.OnCoinsInserted then
+                self.Game:OnCoinsInserted(self:GetPlayer(), old, new)
+            end
+
+            self:EmitSound("ambient/levels/labs/coinslot1.wav", 50)
+        end
+
+        if new < old and self.Game.OnCoinsLost then
+            self.Game:OnCoinsLost(self:GetPlayer(), old, new)
+        end
+    end
+
+    self.LastNWVars.Coins = new
 end
 
 function ENT:OnGameChange(name, old, new)
-    if old == new then return end
-
     ARCADE:DebugPrint(
         self:EntIndex(),
+        "OnGameChange",
         "new", new,
-        "old", old,
-        "at", RealTime(),
-        "remain", self.AllowGameChangeAt ~= 0 and self.AllowGameChangeAt - RealTime() or "(first load)"
+        "old", old
     )
 
-    self.LastGameNWVar = new
+    self:SetGame(new)
 
-    if self.AllowGameChangeAt == 0 or self.AllowGameChangeAt - RealTime() > 0 then
-        self.AllowGameChangeAt = RealTime() + 1
-        ARCADE:DebugPrint(self:EntIndex(), "delaying game change until", self.AllowGameChangeAt)
-    end
+    self.LastNWVars.CurrentGame = new
 end
 
 function ENT:StopSounds()

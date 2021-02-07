@@ -98,6 +98,7 @@ function ENT:Initialize()
 
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
+        self:OnSeatCreated("Seat", NULL, seat)
         seat:SetOwner(self:GetOwner())
     end)
 
