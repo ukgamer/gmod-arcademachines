@@ -294,20 +294,18 @@ end
 -- Isn't called when player becomes nil...
 function ENT:OnPlayerChange(name, old, new)
     if IsValid(new) then
-        if old ~= new then
-            if old and self.Game then
-                self.Game:OnStopPlaying(old)
-            end
+        if old and self.Game then
+            self.Game:OnStopPlaying(old)
+        end
 
-            if self.Game then
-                self.Game:OnStartPlaying(new)
-            end
+        if self.Game then
+            self.Game:OnStartPlaying(new)
+        end
 
-            self.LastPlayer = new
+        self.LastPlayer = new
 
-            if new == LocalPlayer() then
-                self:OnLocalPlayerEntered()
-            end
+        if new == LocalPlayer() then
+            self:OnLocalPlayerEntered()
         end
     else
         if self.Game then
