@@ -422,7 +422,8 @@ local function CanPlace(piece, rot, posX, posY)
 			local fi = (posY + y) * FIELD_WIDTH + (posX + x)
 
 			if posX + x >= 0 and posX + x <= FIELD_WIDTH + 1 and posY + y >= 0 and posY + y <= FIELD_HEIGHT + 1 then
-				local p = tetros[piece][pi]
+
+				local p = tetros[piece] and tetros[piece][pi] or 0
 
 				if p and p ~= 0 and field[fi] ~= 0 then
 					return false
