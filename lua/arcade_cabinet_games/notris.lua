@@ -18,7 +18,7 @@ Strafe Keys (A & D) to move block.
 Back Key (S) to push block down.
 Forward Key (W) to rotate block.
 Jump Key (SPACE) to instantly drop block.
-Sprint Key (L Shift) to rotate blocks.
+Sprint Key (L Shift) to swap blocks.
 Reload Key (R) to switch between mute modes.
 ]]
 
