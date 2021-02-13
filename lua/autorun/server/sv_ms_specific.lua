@@ -7,3 +7,11 @@ hook.Add("MTAShouldPickpocket", "arcade_nomug", function(ply)
 
     return false
 end)
+
+hook.Add("ArcadeCabinetInsertCoin", "arcade_insertcoin", function(ply, cost)
+    if ply:GetCoins() > cost then
+        ply:TakeCoins(cost, "Arcade")
+    else
+        return false
+    end
+end)
