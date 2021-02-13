@@ -140,6 +140,16 @@ function ENT:Initialize()
     self:UpdateScreen()
 end
 
+function ENT:StopSounds()
+    for k, v in pairs(self.LoadedSounds) do
+        if IsValid(v) then
+            v:Stop()
+        end
+    end
+
+    table.Empty(self.LoadedSounds)
+end
+
 function ENT:OnRemove()
     if self.Game and self.Game.Destroy then
         self.Game:Destroy()
@@ -411,14 +421,9 @@ function ENT:OnGameChange(name, old, new)
     self.LastNWVars.CurrentGame = new
 end
 
-function ENT:StopSounds()
-    for k, v in pairs(self.LoadedSounds) do
-        if IsValid(v) then
-            v:Stop()
-        end
-    end
-
-    table.Empty(self.LoadedSounds)
+function ENT:LoadLauncher(forceLibLoad)
+    self.Game = WrappedInclusion("arcade_cabinet_launcher.lua", self:GetUpvalues("launcher", forceLibLoad))
+    self.InLauncher = true
 end
 
 function ENT:SetGame(game, forceLibLoad)
@@ -434,11 +439,15 @@ function ENT:SetGame(game, forceLibLoad)
     self.MarqueeHasDrawn = false
 
     if game and game ~= "" then
-        self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game, forceLibLoad))
-        self.InLauncher = false
+        if not isfunction(game) and not file.Exists("arcade_cabinet_games/" .. game .. ".lua", "LUA") then
+            ARCADE:DebugPrint(self:EntIndex(), "Tried to load non-existent game", game)
+            self:LoadLauncher(forceLibLoad)
+        else
+            self.Game = WrappedInclusion(isfunction(game) and game or "arcade_cabinet_games/" .. game .. ".lua", self:GetUpvalues(game, forceLibLoad))
+            self.InLauncher = false
+        end
     else
-        self.Game = WrappedInclusion("arcade_cabinet_launcher.lua", self:GetUpvalues("launcher", forceLibLoad))
-        self.InLauncher = true
+        self:LoadLauncher(forceLibLoad)
     end
 
     if self.Game then
