@@ -249,7 +249,7 @@ local function ToggleInfoPanel(cabinet)
 
     ARCADE.Cabinet.UI.InfoPanel:SetVisible(true)
 
-    local cost = cabinet:GetMSCoinCost()
+    local cost = cabinet:GetCost()
 
     if cost > 0 then
         ARCADE.Cabinet.UI.CoinsLabel:SetVisible(true)

@@ -92,10 +92,6 @@ function ENT:Initialize()
     seat:SetNotSolid(true)
     self:DeleteOnRemove(seat)
 
-    if FindMetaTable("Player").TakeCoins then
-        self:SetMSCoinCost(1000)
-    end
-
     timer.Simple(0.05, function() -- Thanks gmod
         self:SetSeat(seat)
         self:OnSeatCreated("Seat", NULL, seat)
@@ -144,14 +140,10 @@ net.Receive("arcade_cabinet_insertcoin", function(len, ply)
 
     if not IsValid(veh) or not IsValid(veh.ArcadeCabinet) or veh.ArcadeCabinet:GetPlayer() ~= ply then return end
 
-    local cost = veh.ArcadeCabinet:GetMSCoinCost()
+    local cost = veh.ArcadeCabinet:GetCost()
 
-    if cost > 0 and ply.TakeCoins and veh.ArcadeCabinet:GetPlayer() == ply then
-        if ply:GetCoins() > cost then
-            ply:TakeCoins(cost, "Arcade")
-        else
-            return
-        end
+    if cost > 0 and veh.ArcadeCabinet:GetPlayer() == ply and hook.Run("ArcadeCabinetInsertCoin", ply, cost) == false then
+        return
     end
 
     veh.ArcadeCabinet:SetCoins(veh.ArcadeCabinet:GetCoins() + 1)

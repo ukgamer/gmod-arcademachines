@@ -52,11 +52,13 @@ Your game can implement the following methods:
 
 ### Coins
 
-The cabinet has its own internal coin count. You can query this count with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or showing the coins remaining.
+The cabinet has its own internal coin count. You can query this count in your game with `COINS:GetCoins()` to determine if the player should be allowed to continue playing or for showing the coins remaining.
 
-When the player inserts a coin, if the server implements the `Player:TakeCoins(amount)` method then the arcade cabinet will attempt to take the amount of coins defined by the networked data table variable `MSCoinCost`. This can be changed on the server per cabinet with `ent:SetMSCoinCost(amount)` and is shown to the player before they enter the cabinet.
+When the player attempts to insert a coin, the clientside hook `ArcadeCabinetCanPlayerAfford` is called with the cost defined by the networked data table variable `Cost`. If this hook returns `false` an error message is shown to the player. If it returns anything else, the serverside hook `ArcadeCabinetInsertCoin` is then called with the player and cost. If this hook returns `false` the coin will not be inserted.
 
-Your `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
+Your game's `OnCoinsInserted` method will then be called with the player who inserted coins, the old coin amount and the new amount.
+
+The cost can be changed on the server per cabinet with `ent:SetCost(amount)` and is shown to the player before they enter the cabinet.
 
 You can take a given number of coins from the cabinet using `COINS:TakeCoins(amount)`.
 

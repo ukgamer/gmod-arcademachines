@@ -25,7 +25,7 @@ function ENT:SetupDataTables()
     self:NetworkVar("Entity", 1, "Player")
     self:NetworkVar("String", 0, "CurrentGame")
     self:NetworkVar("Int", 0, "Coins")
-    self:NetworkVar("Int", 1, "MSCoinCost")
+    self:NetworkVar("Int", 1, "Cost")
 end
 
 function ENT:CanConstruct()

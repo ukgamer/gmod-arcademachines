@@ -210,10 +210,10 @@ function ENT:Think()
                 if not PressedWalk then
                     PressedWalk = true
 
-                    local cost = self:GetMSCoinCost()
+                    local cost = self:GetCost()
 
-                    if cost > 0 and LocalPlayer().GetCoins and LocalPlayer():GetCoins() < cost then
-                        notification.AddLegacy("You don't have enough coins!", NOTIFY_ERROR, 5)
+                    if cost > 0 and hook.Run("ArcadeCabinetCanPlayerAfford", cost) == false then
+                        notification.AddLegacy("You can't afford to play!", NOTIFY_ERROR, 5)
                         return
                     end
 
