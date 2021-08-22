@@ -56,6 +56,18 @@ local BORDER_HEIGHT = 400
 
 local SNAKESIZE = 10
 
+local SNAKE_UP = Vector(0, -SNAKESIZE)
+local SNAKE_DOWN = Vector(0, SNAKESIZE)
+local SNAKE_RIGHT = Vector(SNAKESIZE, 0)
+local SNAKE_LEFT = Vector(-SNAKESIZE, 0)
+
+local GOAL = 10
+
+local COLOR_SNAKE = Color(25, 255, 25)
+local COLOR_APPLE_N = Color(255, 25, 25)
+local COLOR_APPLE_B = Color(25, 25, 255)
+local COLOR_APPLE_G = Color(255, 223, 127)
+
 local state
 local pelaaja
 local score
@@ -78,8 +90,8 @@ function GAME:Init() -- Called when MACHINE:Set(Current)Game( game ) is called.
 end
 
 function GAME:Start()
-    queue       = {Vector(0, SNAKESIZE)}
-    snakecol    = Color(25, 255, 25)
+    queue       = {SNAKE_DOWN}
+    snakecol    = COLOR_SNAKE
     boosted_at  = RealTime() - 11
     state       = STATE_PLAYING
     delay       = 0.1
@@ -90,7 +102,7 @@ function GAME:Start()
     apples      = {}
 
     for i = 1, 3 do
-        snakebod[i] = Vector(BORDER_X + 100, BORDER_Y + 100 - 10 * i)
+        snakebod[i] = Vector(BORDER_X + 100, BORDER_Y + 100 - SNAKESIZE * i)
     end
 
     StopLoaded("intromusic")
@@ -112,16 +124,16 @@ function GAME:Input()
     if last_input + 0.025 > RealTime() then return end
 
     if pelaaja:KeyPressed(IN_FORWARD) and queue_o.x ~= 0 then
-        queue[#queue + 1] = Vector(0, -SNAKESIZE)
+        table.insert(queue, SNAKE_UP)
         last_input = RealTime()
     elseif pelaaja:KeyPressed(IN_BACK) and queue_o.x ~= 0 then
-        queue[#queue + 1] = Vector(0, SNAKESIZE)
+        table.insert(queue, SNAKE_DOWN)
         last_input = RealTime()
     elseif pelaaja:KeyPressed(IN_MOVERIGHT) and queue_o.y ~= 0 then
-        queue[#queue + 1] = Vector(SNAKESIZE, 0)
+        table.insert(queue, SNAKE_RIGHT)
         last_input = RealTime()
     elseif pelaaja:KeyPressed(IN_MOVELEFT) and queue_o.y ~= 0 then
-        queue[#queue + 1] = Vector(-SNAKESIZE, 0)
+        table.insert(queue, SNAKE_LEFT)
         last_input = RealTime()
     end
 end
@@ -151,13 +163,13 @@ end
 function GAME:CheckForDeath(head)
     local dead
 
-    dead = head.x > BORDER_X + BORDER_WIDTH and true or
-           head.y > BORDER_Y + BORDER_HEIGHT and true or
+    dead = head.x > BORDER_X + BORDER_WIDTH - SNAKESIZE and true or
+           head.y > BORDER_Y + BORDER_HEIGHT - SNAKESIZE and true or
            head.x < BORDER_X and true or
            head.y < BORDER_Y and true or false
     for key, part in ipairs(snakebod) do
         dead = dead == true and true or
-               key == 1 and 0 or -- putting false instead of 0 just breaks it idfk why, when this is called 0 is just tobool'd
+               key == 1 and 0 or
                part.x ~= head.x and 0 or
                part.y ~= head.y and 0 or true
     end
@@ -172,16 +184,18 @@ function GAME:CreateApple()
     -- Prevent spawning on top of other apples or the snake
     for _, part in ipairs(snakebod) do
         if part.x == x and part.y == y then return end
-    end for _, apple in ipairs(apples) do
+    end
+
+    for _, apple in ipairs(apples) do
         if apple[1].x == x and apple[1].y == y then return end
     end
 
     local a_type = math.random(0, 15)
     a_type = a_type > 2 and 0 or a_type
 
-    local a_color = a_type == 0 and Color(255, 25, 25) or
-                    a_type == 1 and Color(50, 50, 255) or
-                    a_type == 2 and Color(255, 223, 127)
+    local a_color = a_type == 0 and COLOR_APPLE_N or
+                    a_type == 1 and COLOR_APPLE_B or
+                    a_type == 2 and COLOR_APPLE_G
 
     table.insert(apples, {Vector(x, y), a_color, a_type})
 end
@@ -199,11 +213,11 @@ function GAME:EatApple(apple)
         PlayLoaded("eatboost")
         boosted_at = RealTime()
     elseif apple_type == 2 then
-        SOUND:EmitSound( "garrysmod/save_load3.wav" )
+        SOUND:EmitSound("garrysmod/save_load3.wav")
         golds_eaten = golds_eaten + 1
         score = score + 50
 
-        if golds_eaten == 10 then
+        if golds_eaten == GOAL then
             PlayLoaded("goalreached")
         end
 
@@ -239,8 +253,8 @@ function GAME:Update()
 
         -- Effects for eating boost apples and reaching 10 gold apples
         snakecol = boosted_at + 10 < RealTime() and
-                (golds_eaten >= 10 and Color(255, 223, 127) or Color(25, 255, 25))
-                or Color(50, 50, 255)
+                (golds_eaten >= GOAL and COLOR_APPLE_G or COLOR_SNAKE)
+                or COLOR_APPLE_B
 
         delay = boosted_at + 10 < RealTime() and 0.1 or 0.05
 
@@ -268,7 +282,7 @@ function GAME:Draw()
             TEXT_ALIGN_CENTER
         )
 
-        surface.SetDrawColor(Color(25, 255, 25))
+        surface.SetDrawColor(COLOR_SNAKE)
         if RealTime() % .45 > .225 then
             surface.DrawRect(SCREEN_WIDTH / 2 - 45, SCREEN_HEIGHT / 2, 90, 10)
         else
@@ -277,7 +291,7 @@ function GAME:Draw()
             surface.DrawRect(SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 7, 30, 10)
         end
 
-        surface.SetDrawColor(255, 25, 25)
+        surface.SetDrawColor(COLOR_APPLE_N)
         surface.DrawRect(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10)
 
         return
@@ -287,7 +301,7 @@ function GAME:Draw()
 
     -- Either display x/10 of golden apples eaten or the amount of time left for a boost in seconds
     draw.SimpleText(boosted_at + 10 < RealTime() and
-        golds_eaten .. "/10" or
+        math.min(golds_eaten, GOAL) .. "/" .. tostring(GOAL) or
         "0:" .. ((10 - math.Round(RealTime() - boosted_at) < 10) and
         "0" .. 10 - math.Round(RealTime() - boosted_at) or
         10 - math.Round(RealTime() - boosted_at)),
@@ -295,21 +309,24 @@ function GAME:Draw()
 
     -- Draw an apple beside the counter with gold/blue color
     surface.SetDrawColor(boosted_at + 10 < RealTime() and
-        Color(255, 223, 127) or
-        Color(50, 50, 255))
+        COLOR_APPLE_G or
+        COLOR_APPLE_B)
 
     surface.DrawRect(SCREEN_WIDTH - 90, 30, SNAKESIZE, SNAKESIZE)
 
-    -- Snake, borders and apples
-    surface.SetDrawColor(snakecol)
-    surface.DrawOutlinedRect(BORDER_X, BORDER_Y, BORDER_WIDTH, BORDER_HEIGHT)
-    for _, part in ipairs(snakebod) do
-        surface.DrawRect(part.x, part.y, SNAKESIZE, SNAKESIZE)
-    end
-
+    -- Apples, borders and snake
     for _, apple in ipairs(apples) do
         surface.SetDrawColor(apple[2])
         surface.DrawRect(apple[1].x, apple[1].y, SNAKESIZE, SNAKESIZE)
+    end
+
+    surface.SetDrawColor(snakecol)
+    surface.DrawOutlinedRect(BORDER_X, BORDER_Y, BORDER_WIDTH, BORDER_HEIGHT)
+    for key, part in ipairs(snakebod) do
+        local col = Color(snakecol.r, snakecol.g, snakecol.b)
+        col.a = math.max(col.a - key * 10, 20)
+        surface.SetDrawColor(col)
+        surface.DrawRect(part.x, part.y, SNAKESIZE, SNAKESIZE)
     end
 end
 
@@ -364,12 +381,12 @@ function GAME:DrawMarquee()
     draw.SimpleText("SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, color_white)
 
     -- Snake
-    surface.SetDrawColor(Color(25, 255, 25))
+    surface.SetDrawColor(COLOR_SNAKE)
     surface.DrawRect(MARQUEE_WIDTH / 2 + 20, 40, 120, 20)
     surface.DrawRect(MARQUEE_WIDTH / 2 + 140, 40, 20, 40)
 
     -- Apple
-    surface.SetDrawColor(Color( 255, 50, 50))
+    surface.SetDrawColor(COLOR_APPLE_N)
     surface.DrawRect(MARQUEE_WIDTH / 2 + 140, 100, 20, 20)
 end
 
