@@ -1,513 +1,393 @@
 
-
 -- gaming
 -- https://github.com/ukgamer/gmod-arcademachines
 -- Made by Jule
 
--- hey as long as it works
+if not FONT:Exists( "Snake32" ) then
+    surface.CreateFont( "Snake32", {
+        font = "Trebuchet MS",
+        size = 32,
+        weight = 500,
+        antialias = 1,
+        additive = 1
+    } )
+end
 
---function Snake()
-    if not FONT:Exists( "Snake32" ) then
-        surface.CreateFont( "Snake32", {
-            font = "Trebuchet MS",
-            size = 32,
-            weight = 500,
-            antialias = 1,
-            additive = 1
-        } )
+if not FONT:Exists( "SnakeTitle" ) then
+    surface.CreateFont( "SnakeTitle", {
+        font = "Trebuchet MS",
+        size = 70,
+        italic = true,
+        weight = 500,
+        antialias = 1,
+        additive = 1
+    } )
+end
+
+local function PlayLoaded( loaded )
+    if IsValid( SOUND.Sounds[loaded].sound ) then
+        SOUND.Sounds[loaded].sound:SetTime( 0 )
+        SOUND.Sounds[loaded].sound:Play()
+    end
+end
+
+local function StopLoaded( loaded )
+    if IsValid( SOUND.Sounds[loaded].sound ) then
+        SOUND.Sounds[loaded].sound:Pause()
+    end
+end
+
+local GAME = {
+    Name = "Snake",
+    Author = "Jule",
+    Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD.",
+    CabinetArtURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png",
+    Bodygroup = BG_GENERIC_RECESSED_JOYSTICK
+}
+
+local STATE_ATTRACT = 0
+local STATE_AWAITING = 1
+local STATE_PLAYING = 2
+
+local BORDER_X = 20
+local BORDER_Y = 60
+local BORDER_WIDTH = 470
+local BORDER_HEIGHT = 400
+
+local SNAKESIZE = 10
+
+local SNAKE_UP = Vector(0, -SNAKESIZE)
+local SNAKE_DOWN = Vector(0, SNAKESIZE)
+local SNAKE_RIGHT = Vector(SNAKESIZE, 0)
+local SNAKE_LEFT = Vector(-SNAKESIZE, 0)
+
+local GOAL = 10
+
+local COLOR_SNAKE = Color(25, 255, 25)
+local COLOR_APPLE_N = Color(255, 25, 25)
+local COLOR_APPLE_B = Color(25, 25, 255)
+local COLOR_APPLE_G = Color(255, 223, 127)
+
+local state
+local pelaaja
+local score
+local delay
+
+local snakebod
+local snakecol
+local boosted_at
+local golds_eaten
+local queue
+
+local apples
+
+function GAME:Init() -- Called when MACHINE:Set(Current)Game( game ) is called.
+    state = STATE_ATTRACT
+
+    SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "intromusic", function( snd )
+        snd:EnableLooping( true )
+    end )
+end
+
+function GAME:Start()
+    queue       = {SNAKE_DOWN}
+    snakecol    = COLOR_SNAKE
+    boosted_at  = RealTime() - 11
+    state       = STATE_PLAYING
+    delay       = 0.1
+    golds_eaten = 0
+    score       = 0
+
+    snakebod    = {}
+    apples      = {}
+
+    for i = 1, 3 do
+        snakebod[i] = Vector(BORDER_X + 100, BORDER_Y + 100 - SNAKESIZE * i)
     end
 
-    if not FONT:Exists( "SnakeTitle" ) then
-        surface.CreateFont( "SnakeTitle", {
-            font = "Trebuchet MS",
-            size = 70,
-            italic = true,
-            weight = 500,
-            antialias = 1,
-            additive = 1
-        } )
+    StopLoaded("intromusic")
+end
+
+function GAME:Stop()
+    COINS:TakeCoins(1)
+    state = STATE_AWAITING
+end
+
+-- There is still a 0.025s zone where input isn't taken because
+-- KeyPressed runs like 5 times over the course of something a bit less than 0.025s
+
+-- Before it was 0.1s so its still wayy better 
+
+local queue_o
+local last_input = RealTime()
+function GAME:Input()
+    if last_input + 0.025 > RealTime() then return end
+
+    if pelaaja:KeyPressed(IN_FORWARD) and queue_o.x ~= 0 then
+        table.insert(queue, SNAKE_UP)
+        last_input = RealTime()
+    elseif pelaaja:KeyPressed(IN_BACK) and queue_o.x ~= 0 then
+        table.insert(queue, SNAKE_DOWN)
+        last_input = RealTime()
+    elseif pelaaja:KeyPressed(IN_MOVERIGHT) and queue_o.y ~= 0 then
+        table.insert(queue, SNAKE_RIGHT)
+        last_input = RealTime()
+    elseif pelaaja:KeyPressed(IN_MOVELEFT) and queue_o.y ~= 0 then
+        table.insert(queue, SNAKE_LEFT)
+        last_input = RealTime()
     end
+end
 
-    local function PlayLoaded( loaded )
-        if IsValid( SOUND.Sounds[loaded].sound ) then
-            SOUND.Sounds[loaded].sound:SetTime( 0 )
-            SOUND.Sounds[loaded].sound:Play()
-        end
-    end
+function GAME:SnakeMove(head)
+    if not queue[1] then queue[1] = queue_o end
+    local newp = Vector(head.x, head.y)
 
-    local function StopLoaded( loaded )
-        if IsValid( SOUND.Sounds[loaded].sound ) then
-            SOUND.Sounds[loaded].sound:Pause()
-        end
-    end
-
-    local GAME = { Name = "Snake", State = nil }
-    GAME.Author = "Jule"
-    GAME.Description = "Get a score as high as possible by eating apples!\nMove the snake with WASD."
-    GAME.CabinetArtURL = "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/images/ms_acabinet_artwork.png"
-
-    local PLAYER = nil
-
-    local STATE_ATTRACT = 0
-    local STATE_AWAITING_COINS = 1
-    local STATE_PLAYING = 2
-
-    local Score = 0
-
-    local CoinsTaken = false
-
-    local SNAKE = { x = 0, y = 0, Tail = {} }
-    SNAKE.DefaultCol = Color( 25, 255, 25 )
-    SNAKE.Col = SNAKE.DefaultCol
-    SNAKE.GoalReachedCol = Color( 255, 216, 0 )
-    SNAKE.InsertCoinCol = Color( 255, 255, 255 )
-    SNAKE.Dead = false
-    SNAKE.DiedAt = math.huge
-    SNAKE.MoveInterval = 0.1
-    SNAKE.GoldenApplesEaten = 0
-    SNAKE.GoalReached = false
-    SNAKE.Boosted = false
-    SNAKE.TotalBoostTime = 0
-    SNAKE.BoostedAt = math.huge
-    SNAKE.LastMoved = RealTime()
-    SNAKE.MoveX, SNAKE.MoveY = 0, 0
-    SNAKE.QueuedMoves = {}
-    SNAKE.OldX, SNAKE.OldY = 0, 0
-
-    local AttractorSnake = {
-        ["FRAME.1"] = {
-            {
-                x = SCREEN_WIDTH / 2 - 45,
-                y = SCREEN_HEIGHT / 2,
-
-                w = 90,
-                h = 10
-            }
-        },
-        ["FRAME.2"] = {
-            {
-                x = SCREEN_WIDTH / 2 - 45,
-                y = SCREEN_HEIGHT / 2,
-
-                w = 30,
-                h = 10
-            },
-            {
-                x = SCREEN_WIDTH / 2 - 30,
-                y = SCREEN_HEIGHT / 2 - 7,
-
-                w = 30,
-                h = 10
-            },
-            {
-                x = SCREEN_WIDTH / 2 - 15,
-                y = SCREEN_HEIGHT / 2,
-
-                w = 30,
-                h = 10
-            }
-        }
-    }
-    AttractorSnake.ActiveFrame = "FRAME.1"
-    AttractorSnake.LastFrameAdvance = RealTime()
-
-    local APPLES = { MAX_APPLES = 4, OnScreen = {} }
-    local APPLE_TYPE_NORMAL = { Col = Color( 255, 25, 25 ) }
-    local APPLE_TYPE_GOLDEN = { Col = Color( 255, 223, 127) }
-    local APPLE_TYPE_BOOST = { Col = Color( 50, 50, 255 ) }
-
-    function APPLE_TYPE_NORMAL.OnEaten()
-        Score = Score + 100
-
-        PlayLoaded( "eatnormal" )
-    end
-
-    function APPLE_TYPE_GOLDEN.OnEaten()
-        Score = Score + 250
-
-        SNAKE.GoldenApplesEaten = math.min( SNAKE.GoldenApplesEaten + 1 , 10)
-
-        if SNAKE.GoldenApplesEaten == 10 and not SNAKE.GoalReached then
-            PlayLoaded( "goalreached" )
-            SNAKE.GoalReached = true
-        end
-
-        SOUND:EmitSound( "garrysmod/save_load3.wav" )
-    end
-
-    function APPLE_TYPE_BOOST.OnEaten()
-        Score = Score + 150
-
-        if not SNAKE.Boosted then
-            SNAKE.Boosted = true
-            SNAKE.TotalBoostTime = SNAKE.TotalBoostTime + 10
-            SNAKE.BoostedAt = RealTime()
-        end
-
-        SNAKE.TotalBoostTime = SNAKE.TotalBoostTime + 5
-
-        PlayLoaded( "eatboost" )
-    end
-
-    function GAME:Init() -- Called when MACHINE:SetGame( game ) is called.
-        self.State = STATE_ATTRACT
-
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "music", function( snd )
-            snd:EnableLooping( true )
-        end )
-    end
-
-    function SNAKE:Move()
-        self.OldX, self.OldY = SNAKE.x, SNAKE.y
-        SNAKE.x, SNAKE.y = SNAKE.x + self.MoveX, SNAKE.y + self.MoveY
-
-        if self.MoveX ~= 0 or self.MoveY ~= 0 then
-            SOUND:EmitSound( "garrysmod/ui_hover.wav" )
-        end
-
-        for _, TailPart in ipairs( SNAKE.Tail ) do
-            local x, y = TailPart.x, TailPart.y
-            TailPart.x, TailPart.y = self.OldX, self.OldY
-            self.OldX, self.OldY = x, y
-        end
-
-        self.LastMoved = RealTime()
-    end
-
-    function SNAKE:HandleSpeed()
-        if self.Boosted then
-            self.MoveInterval = 0.05
-            return
-        end
-
-        self.MoveInterval = 0.1
-    end
-
-    function SNAKE:Eat( Type )
-        table.insert( SNAKE.Tail, { x = SNAKE.x, y = SNAKE.y } )
-
-        Type.OnEaten()
-    end
-
-    function SNAKE:CheckForApplesEaten()
-        for _, Apple in ipairs( APPLES.OnScreen ) do
-            if SNAKE.x == Apple.x and SNAKE.y == Apple.y then
-                table.RemoveByValue( APPLES.OnScreen, Apple )
-                SNAKE:Eat( Apple.Type )
-            end
-        end
-    end
-
-    function SNAKE:Die()
-        self.Dead = true
-        self.DiedAt = RealTime()
-        PlayLoaded( "death" )
-        PlayLoaded( "gameover" )
-    end
-
-    function SNAKE:CheckForDeath()
-        for _, TailPart in ipairs( SNAKE.Tail ) do
-            if SNAKE.x == TailPart.x and SNAKE.y == TailPart.y then
-                SNAKE:Die()
-            end
-        end
-
-        if SNAKE.x >= SCREEN_WIDTH - 30 or SNAKE.y >= SCREEN_HEIGHT - 50 then
-            SNAKE:Die()
-        elseif SNAKE.x <= 10 or SNAKE.y <= 50 then
-            SNAKE:Die()
-        end
-    end
-
-    function SNAKE:CanMoveOnAxis( Axis )
-        if #self.Tail >= 1 and Axis ~= 0 then
-            return false
-        end
-
-        return true
-    end
-
-    function SNAKE:EventTimers()
-        if not SNAKE.Dead then
-            if SNAKE.Boosted and SNAKE.BoostedAt + SNAKE.TotalBoostTime <= RealTime() then
-                SNAKE.Boosted = false
-                SNAKE.TotalBoostTime = 0
+    for key, part in ipairs(snakebod) do
+        if key == 1 then
+            for _, queued in ipairs(queue) do
+                head.x, head.y = head.x + queued.x, head.y + queued.y
             end
         else
-            if SNAKE.DiedAt + 7 <= RealTime() and not CoinsTaken then
-                COINS:TakeCoins( 1 )
-                CoinsTaken = true -- :woozy_face:
+            local x, y = part.x, part.y
+            part.x, part.y = newp.x, newp.y
+            newp.x, newp.y = x, y
+        end
+    end
+
+    queue_o = queue[#queue]
+    queue = {}
+
+    SOUND:EmitSound("garrysmod/ui_hover.wav")
+end
+
+function GAME:CheckForDeath(head)
+    local dead
+
+    dead = head.x > BORDER_X + BORDER_WIDTH - SNAKESIZE and true or
+           head.y > BORDER_Y + BORDER_HEIGHT - SNAKESIZE and true or
+           head.x < BORDER_X and true or
+           head.y < BORDER_Y and true or false
+    for key, part in ipairs(snakebod) do
+        dead = dead == true and true or
+               key == 1 and 0 or
+               part.x ~= head.x and 0 or
+               part.y ~= head.y and 0 or true
+    end
+
+    return dead
+end
+
+function GAME:CreateApple()
+    local x = math.Round(math.random(BORDER_X + 30, BORDER_WIDTH - 30), -1)
+    local y = math.Round(math.random(BORDER_Y + 30, BORDER_HEIGHT - 30), -1)
+
+    -- Prevent spawning on top of other apples or the snake
+    for _, part in ipairs(snakebod) do
+        if part.x == x and part.y == y then return end
+    end
+
+    for _, apple in ipairs(apples) do
+        if apple[1].x == x and apple[1].y == y then return end
+    end
+
+    local a_type = math.random(0, 15)
+    a_type = a_type > 2 and 0 or a_type
+
+    local a_color = a_type == 0 and COLOR_APPLE_N or
+                    a_type == 1 and COLOR_APPLE_B or
+                    a_type == 2 and COLOR_APPLE_G
+
+    table.insert(apples, {Vector(x, y), a_color, a_type})
+end
+
+function GAME:EatApple(apple)
+    local head = snakebod[1]
+    local apple_type = apple[3]
+    table.RemoveByValue(apples, apple)
+
+    table.insert(snakebod, Vector(head.x, head.y))
+
+    if apple_type == 0 then
+        PlayLoaded("eatnormal")
+    elseif apple_type == 1 then
+        PlayLoaded("eatboost")
+        boosted_at = RealTime()
+    elseif apple_type == 2 then
+        SOUND:EmitSound("garrysmod/save_load3.wav")
+        golds_eaten = golds_eaten + 1
+        score = score + 50
+
+        if golds_eaten == GOAL then
+            PlayLoaded("goalreached")
+        end
+
+        return
+    end
+
+    score = score + 20
+end
+
+local last_move = RealTime()
+function GAME:Update()
+    if state < STATE_PLAYING or not IsValid(pelaaja) then return end
+
+    GAME:Input()
+
+    -- Snake tick
+    if last_move + delay < RealTime() then
+        last_move = RealTime()
+
+        if #apples < 8 then
+            self:CreateApple()
+        end
+
+        local head = snakebod[1]
+
+        for _, apple in ipairs(apples) do
+            if head.x == apple[1].x and head.y == apple[1].y then
+                self:EatApple(apple)
             end
         end
-    end
 
-    function SNAKE:HandleApparel()
-        if self.Boosted then
-            self.Col = APPLE_TYPE_BOOST.Col
-            return
-        end
+        self:SnakeMove(head)
 
-        if self.GoalReached then
-            self.Col = self.GoalReachedCol
-            return
-        end
+        -- Effects for eating boost apples and reaching 10 gold apples
+        snakecol = boosted_at + 10 < RealTime() and
+                (golds_eaten >= GOAL and COLOR_APPLE_G or COLOR_SNAKE)
+                or COLOR_APPLE_B
 
-        self.Col = self.DefaultCol
-    end
+        delay = boosted_at + 10 < RealTime() and 0.1 or 0.05
 
-    function SNAKE:Draw()
-        surface.SetDrawColor( self.Col )
-        surface.DrawRect( self.x, self.y, 10, 10 )
-
-        for _, TailPart in ipairs( self.Tail ) do
-            surface.DrawRect( TailPart.x, TailPart.y, 10, 10 )
-        end
-    end
-
-    function APPLES:CheckForSpawnReserved( x, y )
-        for _, Apple in pairs( APPLES.OnScreen ) do
-            if Apple.x == x and Apple.y == y then
-                return true
-            end
-        end
-
-        for _, TailPart in ipairs( SNAKE.Tail ) do
-            if TailPart.x == x and TailPart.y == y then
-                return true
-            end
-        end
-
-        if SNAKE.x == x and SNAKE.y == y then
-            return true
-        end
-
-        return false
-    end
-
-    function APPLES:Spawner()
-        if GAME.State == STATE_PLAYING and #self.OnScreen < self.MAX_APPLES then
-            local AppleX = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
-            local AppleY = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
-            AppleX = math.max( math.min( SCREEN_WIDTH - 42, AppleX ), 20 )
-            AppleY = math.max( math.min( SCREEN_HEIGHT - 52, AppleY ), 50 )
-
-            if self:CheckForSpawnReserved( AppleX, AppleY ) then
-                return
-            end
-
-            local Type = APPLE_TYPE_NORMAL
-
-            if math.random( 1, 10 ) == 4 then
-                Type = APPLE_TYPE_GOLDEN
-            elseif math.random( 1, 15 ) == 6 then
-                Type = APPLE_TYPE_BOOST
-            end
-
-            local NewApple = { x = AppleX, y = AppleY, Type = Type }
-            table.insert( self.OnScreen, NewApple )
-        end
-    end
-
-    function APPLES:Draw()
-        if GAME.State == STATE_PLAYING then
-            for _, Apple in ipairs( self.OnScreen ) do
-                surface.SetDrawColor( Apple.Type.Col )
-                surface.DrawRect( Apple.x, Apple.y, 10, 10 )
-            end
-        end
-    end
-
-    function GAME:Start()
-        self.State = STATE_PLAYING
-        StopLoaded( "music" )
-
-        table.Empty( SNAKE.Tail )
-        SNAKE.Col = SNAKE.DefaultCol
-        SNAKE.Dead = false
-        SNAKE.DiedAt = math.huge
-        SNAKE.GoldenApplesEaten = 0
-        SNAKE.GoalReached = false
-        SNAKE.Boosted = false
-        SNAKE.TotalBoostTime = 0
-        SNAKE.BoostedAt = math.huge
-        SNAKE.MoveInterval = 0.1
-        SNAKE.MoveX = 0
-        SNAKE.MoveY = 0
-        table.Empty( SNAKE.QueuedMoves )
-
-        table.Empty( APPLES.OnScreen )
-
-        SNAKE.x = math.random( 10, ( SCREEN_WIDTH - 22 ) / 10 ) * 10
-        SNAKE.y = math.random( 10, ( SCREEN_HEIGHT - 22 ) / 10 ) * 10
-        SNAKE.x = math.max( math.min( SCREEN_WIDTH - 42, SNAKE.x ), 20 )
-        SNAKE.y = math.max( math.min( SCREEN_HEIGHT - 52, SNAKE.y ), 50 )
-
-        Score = 0
-        CoinsTaken = false
-    end
-
-    function GAME:Stop()
-        self.State = STATE_AWAITING_COINS
-        PlayLoaded( "music" )
-    end
-
-    function GAME:Update()
-        if self.State == STATE_PLAYING and PLAYER == LocalPlayer() then
-            if not SNAKE.Dead then
-                APPLES:Spawner()
-
-                if SNAKE:CanMoveOnAxis( SNAKE.MoveY ) then
-                    if PLAYER:KeyPressed( IN_FORWARD ) then
-                        table.insert( SNAKE.QueuedMoves, function()
-                            SNAKE.MoveX = 0
-                            SNAKE.MoveY = -10
-                        end )
-                    end
-
-                    if PLAYER:KeyPressed( IN_BACK ) then
-                        table.insert( SNAKE.QueuedMoves, function()
-                            SNAKE.MoveX = 0
-                            SNAKE.MoveY = 10
-                        end )
-                    end
-                end
-
-                if SNAKE:CanMoveOnAxis( SNAKE.MoveX ) then
-                    if PLAYER:KeyPressed( IN_MOVERIGHT ) then
-                        table.insert( SNAKE.QueuedMoves, function()
-                            SNAKE.MoveY = 0
-                            SNAKE.MoveX = 10
-                        end )
-                    end
-
-                    if PLAYER:KeyPressed( IN_MOVELEFT ) then
-                        table.insert( SNAKE.QueuedMoves, function()
-                            SNAKE.MoveY = 0
-                            SNAKE.MoveX = -10
-                        end )
-                    end
-                end
-
-                if SNAKE.LastMoved + SNAKE.MoveInterval < RealTime() then
-                    for _, Queued in ipairs( SNAKE.QueuedMoves ) do
-                        Queued()
-                    end
-                    table.Empty( SNAKE.QueuedMoves )
-
-                    SNAKE:CheckForApplesEaten()
-                    SNAKE:Move()
-                    SNAKE:CheckForDeath()
-                    SNAKE:HandleSpeed()
-                    SNAKE:HandleApparel()
-                end
-            end
-
-            SNAKE:EventTimers()
-        end
-    end
-
-    function GAME:Draw()
-        draw.SimpleText( COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, color_white )
-
-        if self.State == STATE_ATTRACT or self.State == STATE_AWAITING_COINS then
-            SNAKE.InsertCoinCol.a = RealTime() % 1 > 0.5 and 255 or 0
-
-            draw.SimpleText(
-                "INSERT COINS",
-                "Snake32",
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT - 100,
-                SNAKE.InsertCoinCol,
-                TEXT_ALIGN_CENTER
-            )
-
-            surface.SetDrawColor( SNAKE.DefaultCol )
-            if AttractorSnake.LastFrameAdvance + 0.25 < RealTime() then
-                AttractorSnake.ActiveFrame = ( AttractorSnake.ActiveFrame == "FRAME.1" and "FRAME.2" or "FRAME.1" )
-                AttractorSnake.LastFrameAdvance = RealTime()
-            end
-
-            for _, object in ipairs( AttractorSnake[AttractorSnake.ActiveFrame] ) do
-                surface.DrawRect( object.x, object.y, object.w, object.h )
-            end
-
-            surface.SetDrawColor( 255, 25, 25 )
-            surface.DrawRect( SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10 )
-        else
-            draw.SimpleText( "Score: " .. Score, "Snake32", SCREEN_WIDTH / 2, 25, color_white, TEXT_ALIGN_CENTER )
-
-            draw.SimpleText( SNAKE.GoldenApplesEaten .. "/10", "Trebuchet24", SCREEN_WIDTH - 75, 25, color_white )
-            surface.SetDrawColor( APPLE_TYPE_GOLDEN.Col )
-            surface.DrawRect( SCREEN_WIDTH - 90, 30, 10, 10 )
-
-            APPLES:Draw()
-            SNAKE:Draw()
-
-            -- Borders
-            surface.SetDrawColor( SNAKE.Col )
-            surface.DrawOutlinedRect( 20, 60, SCREEN_WIDTH - 42, SCREEN_HEIGHT - 102 )
-        end
-    end
-
-    function GAME:OnStartPlaying( ply ) -- Called when the arcade machine is entered
-        if ply == LocalPlayer() then
-            PLAYER = ply
-        else return end
-
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg", "eatnormal" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg", "eatboost" )
-        -- Golden apples use a GMod sound when eaten.
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death" )
-        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover" )
-
-        self.State = STATE_AWAITING_COINS
-
-        PlayLoaded( "music" )
-    end
-
-    function GAME:OnStopPlaying( ply ) -- ^^ upon exit.
-        if ply == PLAYER and ply == LocalPlayer() then
-            PLAYER = nil
-        else return end
-
-        self:Stop()
-
-        self.State = STATE_ATTRACT
-        StopLoaded( "music" )
-    end
-
-    function GAME:OnCoinsInserted( ply, old, new )
-        if ply ~= LocalPlayer() then return end
-
-        if new > 0 and self.State == STATE_AWAITING_COINS then
-            self:Start()
-        end
-    end
-
-    function GAME:OnCoinsLost( ply, old, new )
-        if ply ~= LocalPlayer() then return end
-
-        if new <= 0 then
+        local dead = self:CheckForDeath(head)
+        if tobool(dead) then
+            PlayLoaded("death")
+            PlayLoaded("gameover")
             self:Stop()
-        elseif new > 0 then
-            self:Start()
+
+            return
         end
     end
+end
 
-    function GAME:DrawMarquee()
-        -- Title text
-        draw.SimpleText( "SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, color_white )
+function GAME:Draw()
+    draw.SimpleText(COINS:GetCoins() .. " COIN(S)", "Trebuchet18", 25, 25, color_white)
 
-        -- Snake
-        surface.SetDrawColor( SNAKE.DefaultCol )
-        surface.DrawRect( MARQUEE_WIDTH / 2 + 20, 40, 120, 20 )
-        surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 40, 20, 40 )
+    if state < STATE_PLAYING then
+        draw.SimpleText(
+            "INSERT COINS",
+            "Snake32",
+            SCREEN_WIDTH / 2,
+            SCREEN_HEIGHT - 100,
+            Color(255, 255, 255, RealTime() % 1 > .5 and 255 or 0),
+            TEXT_ALIGN_CENTER
+        )
 
-        -- Apple
-        surface.SetDrawColor( Color( 255, 50, 50 ) )
-        surface.DrawRect( MARQUEE_WIDTH / 2 + 140, 100, 20, 20 )
+        surface.SetDrawColor(COLOR_SNAKE)
+        if RealTime() % .45 > .225 then
+            surface.DrawRect(SCREEN_WIDTH / 2 - 45, SCREEN_HEIGHT / 2, 90, 10)
+        else
+            surface.DrawRect(SCREEN_WIDTH / 2 - 45, SCREEN_HEIGHT / 2, 30, 10)
+            surface.DrawRect(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2, 30, 10)
+            surface.DrawRect(SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 7, 30, 10)
+        end
+
+        surface.SetDrawColor(COLOR_APPLE_N)
+        surface.DrawRect(SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2, 10, 10)
+
+        return
     end
 
-    return GAME
---end
+    draw.SimpleText("Score: " .. score, "Snake32", SCREEN_WIDTH / 2, 25, color_white, TEXT_ALIGN_CENTER)
+
+    -- Either display x/10 of golden apples eaten or the amount of time left for a boost in seconds
+    draw.SimpleText(boosted_at + 10 < RealTime() and
+        math.min(golds_eaten, GOAL) .. "/" .. tostring(GOAL) or
+        "0:" .. ((10 - math.Round(RealTime() - boosted_at) < 10) and
+        "0" .. 10 - math.Round(RealTime() - boosted_at) or
+        10 - math.Round(RealTime() - boosted_at)),
+        "Trebuchet24", SCREEN_WIDTH - 75, 25, color_white)
+
+    -- Draw an apple beside the counter with gold/blue color
+    surface.SetDrawColor(boosted_at + 10 < RealTime() and
+        COLOR_APPLE_G or
+        COLOR_APPLE_B)
+
+    surface.DrawRect(SCREEN_WIDTH - 90, 30, SNAKESIZE, SNAKESIZE)
+
+    -- Apples, borders and snake
+    for _, apple in ipairs(apples) do
+        surface.SetDrawColor(apple[2])
+        surface.DrawRect(apple[1].x, apple[1].y, SNAKESIZE, SNAKESIZE)
+    end
+
+    surface.SetDrawColor(snakecol)
+    surface.DrawOutlinedRect(BORDER_X, BORDER_Y, BORDER_WIDTH, BORDER_HEIGHT)
+    for key, part in ipairs(snakebod) do
+        local col = Color(snakecol.r, snakecol.g, snakecol.b)
+        col.a = math.max(col.a - key * 10, 20)
+        surface.SetDrawColor(col)
+        surface.DrawRect(part.x, part.y, SNAKESIZE, SNAKESIZE)
+    end
+end
+
+function GAME:OnStartPlaying(ply) -- Called when the arcade machine is entered
+    if ply == LocalPlayer() then
+        pelaaja = ply
+    else return end
+
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg","eatnormal")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg","eatboost")
+    -- Golden apples use a GMod sound when eaten.
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death")
+    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover")
+
+    state = STATE_AWAITING
+
+    PlayLoaded("intromusic")
+end
+
+function GAME:OnStopPlaying(ply) -- ^^ upon exit.
+    if ply == pelaaja and ply == LocalPlayer() then
+        pelaaja = nil
+    else return end
+
+    self:Stop()
+
+    state = STATE_ATTRACT
+    StopLoaded("intromusic")
+end
+
+function GAME:OnCoinsInserted(ply, old, new)
+    if ply ~= LocalPlayer() then return end
+
+    if new > 0 and state == STATE_AWAITING then
+        self:Start()
+    end
+end
+
+function GAME:OnCoinsLost(ply, old, new)
+    if ply ~= LocalPlayer() then return end
+
+    if new <= 0 then
+        self:Stop()
+    elseif new > 0 then
+        self:Start()
+    end
+end
+
+function GAME:DrawMarquee()
+    -- Title text
+    draw.SimpleText("SNAKE", "SnakeTitle", MARQUEE_WIDTH / 2 - 140, MARQUEE_HEIGHT / 2 - 25, color_white)
+
+    -- Snake
+    surface.SetDrawColor(COLOR_SNAKE)
+    surface.DrawRect(MARQUEE_WIDTH / 2 + 20, 40, 120, 20)
+    surface.DrawRect(MARQUEE_WIDTH / 2 + 140, 40, 20, 40)
+
+    -- Apple
+    surface.SetDrawColor(COLOR_APPLE_N)
+    surface.DrawRect(MARQUEE_WIDTH / 2 + 140, 100, 20, 20)
+end
+
+return GAME
