@@ -378,7 +378,6 @@ function GAME:Update()
 
 	-- we're downloading sprites
 	if self:GetState() == GAME_STATE_SPRITEDL then
-		InitFlagIfNotExists("DoneDownloadingSprites", false)
 		InitFlagIfNotExists("AmountOfSprites", #self.SpriteQueue)
 		InitFlagIfNotExists("SpriteIndex", 1)
 		InitFlagIfNotExists("ProcessingSprite", false)
@@ -395,12 +394,13 @@ function GAME:Update()
 
 			if image and istable(image) and image.status == IMAGE.STATUS_LOADED then
 				self:SetFlag("ProcessingSprite", false)
-				self:SetFlag("SpriteIndex", self:GetFlag("SpriteIndex") + 1)
 
-				if self:GetFlag("SpriteIndex") > self:GetFlag("AmountOfSprites") then
+				if self:GetFlag("SpriteIndex") == self:GetFlag("AmountOfSprites") then
 					self:SetState(GAME_STATE_ATTRACT)
 					self:ResetPipes()
 					CABINET:UpdateMarquee()
+				else
+					self:SetFlag("SpriteIndex", self:GetFlag("SpriteIndex") + 1)
 				end
 			end
 			-- dont do anything if the image hasn't loaded
@@ -538,7 +538,6 @@ end
 
 function GAME:DrawMarquee()
 	local bg = IMAGE.Images["background_day"]
-	if not bg or bg.status ~= IMAGE.STATUS_LOADED then return end
 
 	local bg_data = HCSS.background_day
 
