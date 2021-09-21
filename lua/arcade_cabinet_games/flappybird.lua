@@ -59,7 +59,6 @@ GAME.CabinetArtURL = "https://ukgamer.github.io/gmod-arcademachines-assets/flapp
 GAME.LateUpdateMarquee = true
 
 --------------------------------------------------
-local GAME_STATE_SPRITEDL     = -1
 local GAME_STATE_ATTRACT      = 0
 local GAME_STATE_WAITCOIN     = 1
 local GAME_STATE_DEAD         = 2
@@ -67,7 +66,6 @@ local GAME_STATE_STARTING     = 3
 local GAME_STATE_PLAYING      = 4
 
 AccessorFunc(GAME, "m_iState", "State")
-GAME:SetState(GAME_STATE_SPRITEDL)
 
 -- flag stuff
 GAME.Flags = {}
@@ -343,19 +341,31 @@ function GAME:MovePipes()
 	end
 end
 
-GAME.SpriteQueue = {}
-function GAME:Init()
-	-- download sprites, sprite data and sounds
-	table.insert(self.SpriteQueue, "yellowbird-upflap.png")
-	table.insert(self.SpriteQueue, "yellowbird-midflap.png")
-	table.insert(self.SpriteQueue, "yellowbird-downflap.png")
-	table.insert(self.SpriteQueue, "pipe-green.png")
-	table.insert(self.SpriteQueue, "background-day.png")
+local LoadedImages = 0
+local function SpriteLoaded()
+	LoadedImages = LoadedImages + 1
 
-	for i = 0, 9 do
-		table.insert(self.SpriteQueue, i .. ".png")
+	if LoadedImages == 16 then
+		CABINET:UpdateMarquee()
 	end
-	table.insert(self.SpriteQueue, "logo.png")
+end
+
+function GAME:Init()
+	self:SetState(GAME_STATE_ATTRACT)
+	self:ResetPipes()
+
+	LoadedImages = 0
+
+	-- download sprites, sprite data and sounds
+	IMAGE:LoadFromURL(Image_BaseURL .. "yellowbird-upflap.png", "yellowbird_upflap", SpriteLoaded)
+	IMAGE:LoadFromURL(Image_BaseURL .. "yellowbird-midflap.png", "yellowbird_midflap", SpriteLoaded)
+	IMAGE:LoadFromURL(Image_BaseURL .. "yellowbird-downflap.png", "yellowbird_downflap", SpriteLoaded)
+	IMAGE:LoadFromURL(Image_BaseURL .. "pipe-green.png", "pipe_green", SpriteLoaded)
+	IMAGE:LoadFromURL(Image_BaseURL .. "background-day.png", "background_day", SpriteLoaded)
+	IMAGE:LoadFromURL(Image_BaseURL .. "logo.png", "logo", SpriteLoaded)
+	for i = 0, 9 do
+		IMAGE:LoadFromURL(Image_BaseURL .. i .. ".png", tostring(i), SpriteLoaded)
+	end
 
 	LoadSound("swoosh.ogg", function(snd) snd:SetVolume(0.65) end)
 	LoadSound("point.ogg", function(snd) snd:SetVolume(0.65) end)
@@ -376,38 +386,8 @@ function GAME:Update()
 		end
 	end
 
-	-- we're downloading sprites
-	if self:GetState() == GAME_STATE_SPRITEDL then
-		InitFlagIfNotExists("AmountOfSprites", #self.SpriteQueue)
-		InitFlagIfNotExists("SpriteIndex", 1)
-		InitFlagIfNotExists("ProcessingSprite", false)
-
-		local sprite = self.SpriteQueue[self:GetFlag("SpriteIndex")]
-		local cool_name = sprite:gsub("-", "_"):gsub("%.png", "")
-
-		if not self:GetFlag("ProcessingSprite") then
-			self:SetFlag("ProcessingSprite", true)
-
-			IMAGE:LoadFromURL(Image_BaseURL .. sprite, cool_name)
-		else
-			local image = IMAGE.Images[cool_name]
-
-			if image and istable(image) and image.status == IMAGE.STATUS_LOADED then
-				self:SetFlag("ProcessingSprite", false)
-
-				if self:GetFlag("SpriteIndex") == self:GetFlag("AmountOfSprites") then
-					self:SetState(GAME_STATE_ATTRACT)
-					self:ResetPipes()
-					CABINET:UpdateMarquee()
-				else
-					self:SetFlag("SpriteIndex", self:GetFlag("SpriteIndex") + 1)
-				end
-			end
-			-- dont do anything if the image hasn't loaded
-		end
-
 	-- attracting players
-	elseif self:GetState() == GAME_STATE_ATTRACT then
+	if self:GetState() == GAME_STATE_ATTRACT then
 		self:SetFlag("BackgroundMoving", true)
 		self:MovePipes()
 
@@ -538,6 +518,7 @@ end
 
 function GAME:DrawMarquee()
 	local bg = IMAGE.Images["background_day"]
+	if not bg or bg.status ~= IMAGE.STATUS_LOADED then return end
 
 	local bg_data = HCSS.background_day
 
@@ -685,16 +666,7 @@ function GAME:Draw()
 		end
 	end
 
-
-
-	-- we're downloading sprites
-	if self:GetState() == GAME_STATE_SPRITEDL then
-		local perc = self:GetFlag("SpriteIndex", 1) / self:GetFlag("AmountOfSprites", 1)
-
-		surface.SetDrawColor(HSVToColor(RealTime() * 50 % 360, 1, 0.5))
-		surface.DrawRect(0, 0, w - w * perc, h)
-	-- attracting players
-	elseif self:GetState() == GAME_STATE_ATTRACT then
+	if self:GetState() == GAME_STATE_ATTRACT then
 		self:DrawPipes(w, h)
 		self:DrawLogoOnScreen()
 		--print("Attracting...")
