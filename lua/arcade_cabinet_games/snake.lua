@@ -83,10 +83,6 @@ local apples
 
 function GAME:Init() -- Called when MACHINE:Set(Current)Game( game ) is called.
     state = STATE_ATTRACT
-
-    SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "intromusic", function( snd )
-        snd:EnableLooping( true )
-    end )
 end
 
 function GAME:Start()
@@ -332,19 +328,24 @@ end
 
 function GAME:OnStartPlaying(ply) -- Called when the arcade machine is entered
     if ply == LocalPlayer() then
+        SOUND:LoadFromURL( "https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/song.ogg", "intromusic", function(snd)
+            snd:EnableLooping(true)
+            if state ~= STATE_PLAYING then
+                PlayLoaded("intromusic")
+            end
+        end )
+
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg","eatnormal")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg","eatboost")
+        -- Golden apples use a GMod sound when eaten.
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death")
+        SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover")
+
         pelaaja = ply
     else return end
 
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_normal.ogg","eatnormal")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/eat_boost.ogg","eatboost")
-    -- Golden apples use a GMod sound when eaten.
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/goalreached.ogg", "goalreached")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/death.ogg", "death")
-    SOUND:LoadFromURL("https://raw.githubusercontent.com/ukgamer/gmod-arcademachines-assets/master/snake/sounds/gameover.ogg", "gameover")
-
     state = STATE_AWAITING
-
-    PlayLoaded("intromusic")
 end
 
 function GAME:OnStopPlaying(ply) -- ^^ upon exit.

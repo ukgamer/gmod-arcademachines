@@ -93,6 +93,7 @@ local droppedAt = 0
 -------------------------
 
 ----SOUND----
+local soundsLoaded = false
 local soundList = {}
 local muteMode = 1 --1 not muted, 2 music, 3 all off
 -------------
@@ -132,17 +133,9 @@ local function LoadResources()
 	SOUND:LoadFromURL(resourceLink .. "sfx/4_lines_cleared.ogg", "4_lines")
 	SOUND:LoadFromURL(resourceLink .. "sfx/block_placed.ogg", "placed")
 	SOUND:LoadFromURL(resourceLink .. "sfx/block_rotated.ogg", "rotate")
-	SOUND:LoadFromURL(resourceLink .. "sfx/game_over.ogg", "game_over")
 	SOUND:LoadFromURL(resourceLink .. "sfx/line_cleared.ogg", "line")
 	SOUND:LoadFromURL(resourceLink .. "sfx/wall.ogg", "wall")
 	SOUND:LoadFromURL(resourceLink .. "sfx/switch.ogg", "swap")
-
-	for k, song in ipairs(songFiles) do
-		local name = "music_" .. song
-
-		SOUND:LoadFromURL(resourceLink .. "music/" .. song .. ".ogg", name)
-		table.insert(musicList, name)
-	end
 
 	IMAGE:LoadFromURL(resourceLink .. "art/ms_acabinet_marque.png", "marquee", function(image)
 		marqueeArt = image.mat
@@ -948,6 +941,18 @@ end
 -- Called when someone sits in the seat
 function GAME:OnStartPlaying(ply)
 	if ply == LocalPlayer() then
+		if not soundsLoaded then
+			SOUND:LoadFromURL(resourceLink .. "sfx/game_over.ogg", "game_over")
+			for k, song in ipairs(songFiles) do
+				local name = "music_" .. song
+
+				SOUND:LoadFromURL(resourceLink .. "music/" .. song .. ".ogg", name)
+				table.insert(musicList, name)
+			end
+
+			soundsLoaded = true
+		end
+
 		thePlayer = ply
 	end
 end

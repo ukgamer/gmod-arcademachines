@@ -53,6 +53,8 @@ local ShowInfoPanel = false
 
 local PressedUse = false
 
+local NextQueueAt = 0
+
 local LookDist = 100
 
 if IsValid(ARCADE.Cabinet.UI.SettingsPanel) then
@@ -362,6 +364,8 @@ hook.Add("Think", "arcade_cabinet_think", function()
         end
     end
 
+    if RealTime() < NextQueueAt then return end
+
     local k, v = next(ARCADE.Cabinet.QueuedSounds)
 
     if k then
@@ -372,6 +376,8 @@ hook.Add("Think", "arcade_cabinet_think", function()
             ARCADE.Cabinet.QueuedSounds[k] = nil
         end
     end
+
+    NextQueueAt = RealTime() + 0.05
 end)
 
 hook.Add("PrePlayerDraw", "arcade_cabinet_hideplayers", function(ply)
