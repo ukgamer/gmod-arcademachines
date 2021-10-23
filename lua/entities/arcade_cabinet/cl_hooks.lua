@@ -1,5 +1,6 @@
 ARCADE.Cabinet = ARCADE.Cabinet or {
     UI = {},
+    QueuedSounds = {},
     FOV = CreateClientConVar("arcade_cabinet_fov", 70, true, false),
     DisableBloom = CreateClientConVar("arcade_cabinet_disable_bloom", 1, true, false),
     DisablePAC = CreateClientConVar("arcade_cabinet_disable_pac", 1, true, false),
@@ -358,6 +359,17 @@ hook.Add("Think", "arcade_cabinet_think", function()
                 ARCADE.Cabinet.UI.InfoPanel:SetVisible(false)
             end
             LookingAt = nil
+        end
+    end
+
+    local k, v = next(ARCADE.Cabinet.QueuedSounds)
+
+    if k then
+        if #v > 0 then
+            v[1].context:LoadQueued(v[1])
+            table.remove(v, 1)
+        else
+            ARCADE.Cabinet.QueuedSounds[k] = nil
         end
     end
 end)

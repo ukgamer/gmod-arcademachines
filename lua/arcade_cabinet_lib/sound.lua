@@ -1,7 +1,8 @@
 local SOUND = {
-    STATUS_LOADING = 0,
-    STATUS_LOADED = 1,
-    STATUS_ERROR = 2,
+    STATUS_QUEUED = 0,
+    STATUS_LOADING = 1,
+    STATUS_LOADED = 2,
+    STATUS_ERROR = 3,
     Sounds = {}
 }
 
@@ -28,25 +29,40 @@ function SOUND:LoadFromURL(url, key, callback)
     end
 
     self.Sounds[key] = {
-        status = self.STATUS_LOADING
+        status = self.STATUS_QUEUED
     }
 
-    sound.PlayURL(url, "3d noplay noblock", function(snd, err, errstr)
+    if not QUEUE[ENTITY:EntIndex()] then
+        QUEUE[ENTITY:EntIndex()] = {}
+    end
+
+    table.insert(QUEUE[ENTITY:EntIndex()], {
+        url = url,
+        key = key,
+        callback = callback,
+        context = self
+    })
+end
+
+function SOUND:LoadQueued(tbl)
+    self.Sounds[tbl.key].status = self.STATUS_LOADING
+
+    sound.PlayURL(tbl.url, "3d noplay noblock", function(snd, err, errstr)
         if not IsValid(ENTITY) then return end
 
         if not IsValid(snd) then
-            self.Sounds[key].status = self.STATUS_ERROR
-            self.Sounds[key].err = errstr
+            self.Sounds[tbl.key].status = self.STATUS_ERROR
+            self.Sounds[tbl.key].err = errstr
             return
         end
 
         snd:SetPos(ENTITY:GetPos())
-        ENTITY.LoadedSounds[key] = snd
+        ENTITY.LoadedSounds[tbl.key] = snd
 
-        self.Sounds[key].status = self.STATUS_LOADED
-        self.Sounds[key].sound = snd
+        self.Sounds[tbl.key].status = self.STATUS_LOADED
+        self.Sounds[tbl.key].sound = snd
 
-        if callback then callback(snd) end
+        if tbl.callback then tbl.callback(snd) end
     end)
 end
 

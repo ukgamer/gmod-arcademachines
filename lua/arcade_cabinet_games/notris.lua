@@ -135,7 +135,7 @@ local function LoadResources()
 	SOUND:LoadFromURL(resourceLink .. "sfx/game_over.ogg", "game_over")
 	SOUND:LoadFromURL(resourceLink .. "sfx/line_cleared.ogg", "line")
 	SOUND:LoadFromURL(resourceLink .. "sfx/wall.ogg", "wall")
-	SOUND:LoadFromURL(resourceLink .. "sfx/switch.ogg?", "swap")
+	SOUND:LoadFromURL(resourceLink .. "sfx/switch.ogg", "swap")
 
 	for k, song in ipairs(songFiles) do
 		local name = "music_" .. song

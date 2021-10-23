@@ -148,6 +148,10 @@ function ENT:StopSounds()
     end
 
     table.Empty(self.LoadedSounds)
+
+    if ARCADE.Cabinet.QueuedSounds[self:EntIndex()] then
+        ARCADE.Cabinet.QueuedSounds[self:EntIndex()] = nil
+    end
 end
 
 function ENT:OnRemove()
@@ -517,7 +521,7 @@ function ENT:GetUpvalues(game, forceLibLoad)
     end
 
     -- Some libraries need to be loaded per cabinet not per game - e.g. sound (in order to emit sounds from the cabinet)
-    upvalues.SOUND = WrappedInclusion("arcade_cabinet_lib/sound.lua", { ENTITY = self })
+    upvalues.SOUND = WrappedInclusion("arcade_cabinet_lib/sound.lua", { ENTITY = self, QUEUE = ARCADE.Cabinet.QueuedSounds })
 
     upvalues.COINS = WrappedInclusion("arcade_cabinet_lib/coins.lua", { ENTITY = self })
     upvalues.CABINET = WrappedInclusion("arcade_cabinet_lib/cabinet.lua", { ENTITY = self })
