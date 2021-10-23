@@ -366,11 +366,6 @@ function GAME:Init()
 	for i = 0, 9 do
 		IMAGE:LoadFromURL(Image_BaseURL .. i .. ".png", tostring(i), SpriteLoaded)
 	end
-
-	LoadSound("swoosh.ogg", function(snd) snd:SetVolume(0.65) end)
-	LoadSound("point.ogg", function(snd) snd:SetVolume(0.65) end)
-	LoadSound("hit.ogg")
-	LoadSound("die.ogg")
 end
 
 function GAME:Update()
@@ -485,6 +480,11 @@ end
 
 function GAME:OnStartPlaying(ply)
 	if ply == LocalPlayer() then
+		LoadSound("swoosh.ogg", function(snd) snd:SetVolume(0.65) end)
+		LoadSound("point.ogg", function(snd) snd:SetVolume(0.65) end)
+		LoadSound("hit.ogg")
+		LoadSound("die.ogg")
+
 		self.CurrentPlayer = ply
 		self:SetState(GAME_STATE_WAITCOIN)
 	end
