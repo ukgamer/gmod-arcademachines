@@ -258,7 +258,12 @@ end
 function ENT:Draw()
     local marqueeIndex = self:GetBodygroup(0)
 
-    if IsValid(ARCADE.Cabinet.CurrentCabinet) and ARCADE.Cabinet.CurrentCabinet == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if
+        IsValid(ARCADE.Cabinet.CurrentCabinet) and
+        ARCADE.Cabinet.CurrentCabinet == self and
+        not LocalPlayer():ShouldDrawLocalPlayer() and
+        (vrmod and vrmod.IsPlayerInVR and not vrmod.IsPlayerInVR())
+    then
         cam.IgnoreZ(true)
     end
 
@@ -277,7 +282,12 @@ function ENT:Draw()
     self:DrawModel()
     render.MaterialOverrideByIndex()
 
-    if IsValid(ARCADE.Cabinet.CurrentCabinet) and ARCADE.Cabinet.CurrentCabinet == self and not LocalPlayer():ShouldDrawLocalPlayer() then
+    if
+        IsValid(ARCADE.Cabinet.CurrentCabinet) and
+        ARCADE.Cabinet.CurrentCabinet == self and
+        not LocalPlayer():ShouldDrawLocalPlayer() and
+        (vrmod and vrmod.IsPlayerInVR and not vrmod.IsPlayerInVR())
+    then
         cam.IgnoreZ(false)
     end
 
@@ -341,6 +351,10 @@ function ENT:OnLocalPlayerEntered()
         ARCADE.Cabinet.PACWasDisabled = true
     else
         ARCADE.Cabinet.PACWasDisabled = false
+    end
+
+    if vrmod and vrmod.IsPlayerInVR and vrmod.IsPlayerInVR() then
+        vrmod.SetOriginPos(EyePos() - self:GetSeat():GetUp() * 30)
     end
 
     --[[if ARCADE.Cabinet.DisableOutfitter:GetBool() and outfitter then
