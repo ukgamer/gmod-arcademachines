@@ -281,6 +281,8 @@ end
 hook.Add("CalcVehicleView", "arcade_cabinet_view", function(veh, ply, view)
     if not IsValid(ARCADE.Cabinet.CurrentCabinet) then return end
 
+    if vrmod and vrmod.IsPlayerInVR and vrmod.IsPlayerInVR() then return end
+
     local tp = veh.GetThirdPersonMode and veh:GetThirdPersonMode() or false
 
     if tp then return end
