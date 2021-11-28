@@ -12,9 +12,14 @@ local path = "arcade/cache/files"
 file.CreateDir(path)
 
 function FILE:LoadFromURL(url, key, callback, noCache)
-    if self.Files[key] and not noCache then return end
+    if self.Files[key] and not noCache then
+        if self.Files[key].status == self.STATUS_LOADED and callback then
+            callback(self.Files[key])
+        end
+        return
+    end
 
-    local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. HTTP:GetExtension(url)
+    local filename = path .. "/" .. HTTP:urlhash(url) .. "." .. HTTP:GetExtension(url) .. ".dat"
 
     if not noCache and file.Exists(filename, "DATA") then
         self.Files[key] = {
