@@ -50,19 +50,19 @@ function GAME:Update()
     end
 
     if thePlayer:KeyDown(IN_MOVELEFT) then
-        x = x > 5 and x - (100 * FrameTime()) or x
+        x = x > 10 and x - (100 * FrameTime()) or x
     end
 
     if thePlayer:KeyDown(IN_MOVERIGHT) then
-        x = x < SCREEN_WIDTH - 5 and x + (100 * FrameTime()) or x
+        x = x < SCREEN_WIDTH - 10 and x + (100 * FrameTime()) or x
     end
 
     if thePlayer:KeyDown(IN_BACK) then
-        y = y < SCREEN_HEIGHT - 5 and y + (100 * FrameTime()) or y
+        y = y < SCREEN_HEIGHT - 10 and y + (100 * FrameTime()) or y
     end
 
     if thePlayer:KeyDown(IN_FORWARD) then
-        y = y > 5 and y - (100 * FrameTime()) or y
+        y = y > 10 and y - (100 * FrameTime()) or y
     end
 end
 
