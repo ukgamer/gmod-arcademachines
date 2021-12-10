@@ -1,0 +1,20 @@
+name: glualint
+
+on:
+  workflow_dispatch:
+    paths: 
+      - '**.lua'
+  pull_request:
+    paths: 
+      - '**.lua'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+      - uses: actions/checkout@v2
+
+      - name: GLua Linter
+        uses: TASSIA710/action-glua-lint@v1.1.4
