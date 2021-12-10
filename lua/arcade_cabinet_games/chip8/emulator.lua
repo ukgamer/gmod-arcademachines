@@ -25,7 +25,7 @@ return function(program)
     end
     -- Timers
     CHIP8.tS = 0
-    local tD = 0,0
+    local tD = 0
     --
     local tS_C, tD_C = 0,0
     local FontSet = {
@@ -113,7 +113,7 @@ return function(program)
     local function DPLWrite(x,y)
         local pixel_address = x + (SCREEN_W * y)
         local current_state = CHIP8.DISPLAY[pixel_address] or 0
-        CHIP8.DISPLAY[pixel_address] = bit.bxor(current_state,1)
+        CHIP8.DISPLAY[pixel_address] = bit.bxor(current_state, 1)
 
         return CHIP8.DISPLAY[current_state]
     end
@@ -165,84 +165,84 @@ return function(program)
 
         if (cIF == 0x00E0) then
             resetScreen()
-            int = "CLS"
+            -- int = "CLS"
         elseif (cIF == 0x00EE) then
             pc = STK[SP] + 2
             STK[SP] = nil
             SP = SP - 1
-            int = "RET"
+            -- int = "RET"
             return
         elseif (cMS == 1) then
             pc = bit.band(cIF,MASK_12)
-            int = "JP " .. string.format("%X",pc)
+            -- int = "JP " .. string.format("%X",pc)
             return
         elseif (cMS == 2) then
             SP = SP + 1
             STK[SP] = pc
             pc = bit.band(cIF,MASK_12)
-            int = "CALL " .. string.format("%X",pc) .. "@" .. SP
+            -- int = "CALL " .. string.format("%X",pc) .. "@" .. SP
             return
         elseif (cMS == 3) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-            int = "SEi " .. rt .. "," .. cFB
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+            -- int = "SEi " .. rt .. "," .. cFB
             if REG[rt] == cFB then
                 pc = pc + 2
-                int = "SEi " .. rt .. "," .. cFB .. " SKP"
+                -- int = "SEi " .. rt .. "," .. cFB .. " SKP"
             end
         elseif (cMS == 4) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-            int = "SNEi " .. rt .. "," .. cFB
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+            -- int = "SNEi " .. rt .. "," .. cFB
             if REG[rt] != cFB then
                 pc = pc + 2
-                int = "SNEi " .. rt .. "," .. cFB .. " SKP"
+                -- int = "SNEi " .. rt .. "," .. cFB .. " SKP"
             end
         elseif (cMS == 5) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-            local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
-            int = "SNEr " .. rt .. "," .. rl
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+            local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
+            -- int = "SNEr " .. rt .. "," .. rl
             if REG[rt] == REG[rl] then
                 pc = pc + 2
-                int = "SNEr " .. rt .. "," .. rl .. " SKP"
+                -- int = "SNEr " .. rt .. "," .. rl .. " SKP"
             end
         elseif (cMS == 6) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
             REG[rt] = cFB
-            int = "LD " .. rt .. "," .. cFB
+            -- int = "LD " .. rt .. "," .. cFB
         elseif (cMS == 7) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
             REG[rt] = clm(REG[rt] + cFB)
-            int = "ADD " .. rt .. "," .. cFB
+            -- int = "ADD " .. rt .. "," .. cFB
         elseif (cMS == 8) then
             if (cLS == 0) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
-                int = "LD " .. rt .. "," .. rl
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
+                -- int = "LD " .. rt .. "," .. rl
                 REG[rt] = REG[rl]
             elseif (cLS == 1) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
-                int = "OR " .. rt .. "," .. rl
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
+                -- int = "OR " .. rt .. "," .. rl
                 REG[rt] = bit.bor(REG[rt],REG[rl])
             elseif (cLS == 2) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
-                int = "AND " .. rt .. "," .. rl
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
+                -- int = "AND " .. rt .. "," .. rl
                 REG[rt] = bit.band(REG[rt],REG[rl])
             elseif (cLS == 3) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
-                int = "XOR " .. rt .. "," .. rl
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
+                -- int = "XOR " .. rt .. "," .. rl
                 REG[rt] = bit.bxor(REG[rt],REG[rl])
             elseif (cLS == 4) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
                 local vr1,vf = clm(REG[rt] + REG[rl])
-                int = "ADDn " .. rt .. "," .. rl
+                -- int = "ADDn " .. rt .. "," .. rl
                 REG[rt] = vr1
                 REG[0xF] = vf
             elseif (cLS == 5) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
                 local rtv = REG[rt]
                 local rtl = REG[rl]
                 if rtv > rtl then
@@ -250,22 +250,22 @@ return function(program)
                 else
                     REG[0xF] = 0
                 end
-                int = "SUB " .. rt .. "," .. rl
+                -- int = "SUB " .. rt .. "," .. rl
                 local vr1 = clm(REG[rt] - REG[rl])
                 REG[rt] = vr1
             elseif (cLS == 6) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0),4)
-                if (bit.band(REG[rt],1) > 0)  then
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                -- local rl = bit.rshift(bit.band(cIF, 0x00F0),4)
+                if (bit.band(REG[rt], 1) > 0)  then
                     REG[0xF] = 1
                 else
                     REG[0xF] = 0
                 end
-                int = "SHR " .. rt .. "," .. rl
-                REG[rt] = bit.rshift(REG[rt],1)
+                -- int = "SHR " .. rt .. "," .. rl
+                REG[rt] = bit.rshift(REG[rt], 1)
             elseif (cLS == 7) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
                 local rtv = REG[rt]
                 local rtl = REG[rl]
                 if rtl >  rtv then
@@ -274,38 +274,38 @@ return function(program)
                     REG[0xF] = 0
                 end
                 local vr1 = clm(REG[rl] - REG[rt])
-                int = "SUBN " .. rt .. "," .. rl
+                -- int = "SUBN " .. rt .. "," .. rl
                 REG[rt] = vr1
             elseif (cLS == 0xE) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-                local rl = bit.rshift(bit.band(cIF,0x00F0),4)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+                -- local rl = bit.rshift(bit.band(cIF, 0x00F0),4)
                 if (bit.band(REG[rt],0xFF) > 0) then
                     REG[0xF] = 1
                 else
                     REG[0xF] = 0
                 end
-                int = "SHL " .. rt .. "," .. rl
-                REG[rt] = bit.lshift(REG[rt],1)
+                -- int = "SHL " .. rt .. "," .. rl
+                REG[rt] = bit.lshift(REG[rt], 1)
             end
         elseif (cMS == 9) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-            local rl = bit.rshift(bit.band(cIF,0x00F0),4)
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+            local rl = bit.rshift(bit.band(cIF, 0x00F0),4)
             if REG[rt] != REG[rl] then
                 pc = pc + 2
             end
         elseif (cMS == 0xA) then
-            rI = bit.band(cIF,0x0FFF)
-            int = "LD(I)  " .. rI
+            rI = bit.band(cIF, 0x0FFF)
+            -- int = "LD(I)  " .. rI
         elseif (cMS == 0xB) then
-            pc = bit.band(cIF,0x0FFF) + REG[0]
-            int = "JP1 " .. pc
+            pc = bit.band(cIF, 0x0FFF) + REG[0]
+            -- int = "JP1 " .. pc
         elseif (cMS == 0xC) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
             REG[rt] = bit.band(math.Rand(0,0xFF),cFB)
-            int = "RND " .. rt
+            -- int = "RND " .. rt
         elseif (cMS == 0xD) then
-            local rt = bit.rshift(bit.band(cIF,0x0F00),8)
-            local rl = bit.rshift(bit.band(cIF,0x00F0) ,4)
+            local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
+            local rl = bit.rshift(bit.band(cIF, 0x00F0), 4)
             local rtv = REG[rt]
             local rtl = REG[rl]
             local height = cLS
@@ -314,34 +314,34 @@ return function(program)
             for Y = 0, height - 1 do
                 local spr = RAM[rI + Y] or 0
                 for X = 0,8 do
-                    if (bit.band(spr,0x80) > 0) and (DPLWrite(rtv + X,rtl + Y) > 0) then
+                    if (bit.band(spr, 0x80) > 0) and (DPLWrite(rtv + X, rtl + Y) > 0) then
                         REG[0xF] = 1
                     end
-                    spr = bit.lshift(spr,1)
+                    spr = bit.lshift(spr, 1)
                 end
             end
 
         elseif (cMS == 0xE) then
             if (cFB == 0x9E) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
-                    int = "SKP V" .. rtv
+                    -- int = "SKP V" .. rtv
                 if KEYS[rtv] == true then
                     pc = pc + 2
-                        int = "SKP V" .. rtv .. " [!!]"
+                        -- int = "SKP V" .. rtv .. " [!!]"
                 end
             elseif (cFB == 0xA1) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
-                int = "SKP V" .. rtv
+                -- int = "SKP V" .. rtv
                 if KEYS[rtv] == false then
                     pc = pc + 2
-                    int = "SKNP V" .. rtv .. " [!!]"
+                    -- int = "SKNP V" .. rtv .. " [!!]"
                 end
             end
         elseif (cMS == 0xF) then
             if (cFB == 0x0A) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local pressed = false
                 for I = 0,#KEYS do
                     if (KEYS[I] == true ) then
@@ -350,35 +350,35 @@ return function(program)
                         break
                     end
                 end
-                int = "LD V" .. rt .. ",K"
+                -- int = "LD V" .. rt .. ",K"
                 if not pressed then
                     return -- doesn't advance next opcode 
                 end
             elseif (cFB == 0x07) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 REG[rt] = tD
             elseif (cFB == 0x15) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
                 tD = rtv -- doesn't advance next opcode 
-                int = "LD DT," .. rt .. ""
+                -- int = "LD DT," .. rt .. ""
             elseif (cFB == 0x18) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
                 CHIP8.tS = rtv -- doesn't advance next opcode 
-                int = "LD ST," .. rt .. ""
+                -- int = "LD ST," .. rt .. ""
             elseif (cFB == 0x1E) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
                 rI = rI + rtv
-                int = "LDA I,V" .. rt .. ""
+                -- int = "LDA I,V" .. rt .. ""
             elseif (cFB == 0x29) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
                 rI = rtv * 5
-                int = "LD I,DD" .. rt .. ""
+                -- int = "LD I,DD" .. rt .. ""
             elseif (cFB == 0x33) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 local rtv = REG[rt]
                 local hun = math.floor(rtv / 100)
                 local ten = math.floor(rtv / 10) - hun * 100
@@ -386,20 +386,20 @@ return function(program)
                 RAM[rI] = hun
                 RAM[rI + 1] = ten
                 RAM[rI + 2] = one
-                int = "LD BCD," .. rt .. "," .. rI
+                -- int = "LD BCD," .. rt .. "," .. rI
             elseif (cFB == 0x55) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
                 for I = 0, rt do
                     RAM[rI + I] = REG[I]
                 end
-                int = "SAVE"
+                -- int = "SAVE"
             elseif (cFB == 0x65) then
-                local rt = bit.rshift(bit.band(cIF,0x0F00),8)
+                local rt = bit.rshift(bit.band(cIF, 0x0F00), 8)
 
                 for I = 0, rt do
                     REG[I] = RAM[rI + I]
                 end
-                int = "RESTORE"
+                -- int = "RESTORE"
             end
         end
         pc = pc + 2
@@ -427,9 +427,10 @@ return function(program)
         -- KEYS[0xF] = input.IsKeyDown(KEY_F)
 
         local clock_count = math.ceil((SysTime() - last_clock) * CLOCK_SPEED)
-                last_clock = SysTime()
+
+        last_clock = SysTime()
+
         if (clock_count > 3000) then
-            last_clock = SysTime()
             return
         end
 
