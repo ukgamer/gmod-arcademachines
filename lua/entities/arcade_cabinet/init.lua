@@ -64,6 +64,15 @@ function ENT:SpawnFunction(ply, tr)
     return ent
 end
 
+function ENT:KeyValue(key, value)
+    if key == "currentGame" then
+        self:SetCurrentGame(value)
+    end
+    if key == "cost" then
+        self:SetCost(value)
+    end
+end
+
 function ENT:Initialize()
     self:SetModel("models/props_arcade/cabinet/cabinet_v2.mdl")
 
@@ -77,32 +86,33 @@ function ENT:Initialize()
         phys:EnableMotion(false)
     end
 
-    -- Seat
-    local seat = ents.Create("prop_vehicle_prisoner_pod")
-    seat:SetModel("models/nova/airboat_seat.mdl")
-    seat:SetParent(self)
-    seat:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")
-    seat:SetKeyValue("limitview", "0")
-    seat:SetLocalPos(Vector(30, 0, -7))
-    seat:SetLocalAngles(Angle(0, 90, 0))
-    -- Can't use nodraw on server as entity will not be networked
-    seat:SetRenderMode(RENDERMODE_NONE)
-    seat:DrawShadow(false)
-    seat:Spawn()
-    seat:SetNotSolid(true)
-    self:DeleteOnRemove(seat)
-
-    timer.Simple(0.05, function() -- Thanks gmod
-        self:SetSeat(seat)
-        self:OnSeatCreated("Seat", NULL, seat)
-        seat:SetOwner(self:GetOwner())
-    end)
-
     self.CanLeaveVehicle = false
 end
 
 function ENT:Think()
-    if self:GetSeat():GetDriver() ~= self:GetPlayer() then
+    -- Delay creation of seat until first think (or create again if the seat was removed)
+    if not IsValid(self:GetSeat()) then
+        -- Seat
+        local seat = ents.Create("prop_vehicle_prisoner_pod")
+        seat:SetModel("models/nova/airboat_seat.mdl")
+        seat:SetParent(self)
+        seat:SetKeyValue("vehiclescript", "scripts/vehicles/prisoner_pod.txt")
+        seat:SetKeyValue("limitview", "0")
+        seat:SetLocalPos(Vector(30, 0, -7))
+        seat:SetLocalAngles(Angle(0, 90, 0))
+        -- Can't use nodraw on server as entity will not be networked
+        seat:SetRenderMode(RENDERMODE_NONE)
+        seat:DrawShadow(false)
+        seat:Spawn()
+        seat:SetNotSolid(true)
+        self:DeleteOnRemove(seat)
+
+        self:SetSeat(seat)
+        self:OnSeatCreated("Seat", NULL, seat)
+        seat:SetOwner(self:GetOwner())
+    end
+
+    if IsValid(self:GetSeat()) and self:GetSeat():GetDriver() ~= self:GetPlayer() then
         self:SetPlayer(self:GetSeat():GetDriver())
         self:SetCoins(0)
     end
@@ -112,7 +122,7 @@ function ENT:Think()
 end
 
 function ENT:Use(activator, caller)
-    if not IsValid(activator) or not activator:IsPlayer() then return end
+    if not IsValid(self:GetSeat()) or not IsValid(activator) or not activator:IsPlayer() then return end
 
     if not IsValid(self:GetPlayer()) then
         self:SetPlayer(activator)
@@ -121,10 +131,6 @@ function ENT:Use(activator, caller)
         self:GetPlayer().ArcadeWasAllowedWeaponsInVehicle = self:GetPlayer():GetAllowWeaponsInVehicle()
         self:GetPlayer():SetAllowWeaponsInVehicle(false)
     end
-end
-
-function ENT:OnRemove()
-
 end
 
 hook.Add("PlayerLeaveVehicle", "arcade_cabinet_leavevehicle", function(ply, veh)

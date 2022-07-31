@@ -4,7 +4,7 @@ ENT.PrintName = "Arcade Cabinet"
 ENT.Author = "ukgamer"
 ENT.Category = "ukgamer"
 ENT.Spawnable = false
-ENT.Instructions = "Spawn only if you are working on a game. Must have a game set before it can be used. Refer to developer documentation."
+ENT.Instructions = "Press your USE key to play."
 
 ENT.Class = "arcade_cabinet"
 
