@@ -184,7 +184,7 @@ for i = 1, 11 do
     }
 end
 
-if not FONT:Exists("2048_title") then
+--if not FONT:Exists("2048_title") then
     surface.CreateFont("2048_title", {
         size = 80,
         weight = 800,
@@ -202,7 +202,7 @@ if not FONT:Exists("2048_title") then
         weight = 800,
         font = "Roboto"
     })
-end
+--end
 
 local GAME = {}
 
