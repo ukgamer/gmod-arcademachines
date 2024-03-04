@@ -3,36 +3,36 @@
 -- https://github.com/ukgamer/gmod-arcademachines
 -- Made by Jule
 
-if not FONT:Exists( "Snake32" ) then
-    surface.CreateFont( "Snake32", {
+--if not FONT:Exists("Snake32") then
+    surface.CreateFont("Snake32", {
         font = "Trebuchet MS",
         size = 32,
         weight = 500,
         antialias = 1,
         additive = 1
-    } )
-end
+    })
+--end
 
-if not FONT:Exists( "SnakeTitle" ) then
-    surface.CreateFont( "SnakeTitle", {
+--if not FONT:Exists("SnakeTitle") then
+    surface.CreateFont("SnakeTitle", {
         font = "Trebuchet MS",
         size = 70,
         italic = true,
         weight = 500,
         antialias = 1,
         additive = 1
-    } )
-end
+    })
+--end
 
-local function PlayLoaded( loaded )
-    if IsValid( SOUND.Sounds[loaded].sound ) then
-        SOUND.Sounds[loaded].sound:SetTime( 0 )
+local function PlayLoaded(loaded)
+    if IsValid(SOUND.Sounds[loaded].sound) then
+        SOUND.Sounds[loaded].sound:SetTime(0)
         SOUND.Sounds[loaded].sound:Play()
     end
 end
 
-local function StopLoaded( loaded )
-    if IsValid( SOUND.Sounds[loaded].sound ) then
+local function StopLoaded(loaded)
+    if IsValid(SOUND.Sounds[loaded].sound) then
         SOUND.Sounds[loaded].sound:Pause()
     end
 end
