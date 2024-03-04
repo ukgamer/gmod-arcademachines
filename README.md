@@ -87,7 +87,9 @@ which should be the same between all instances of a game are not reloaded unnecc
 
 `FONT:Exists(name)`
 
-Used to check if a font has already been created. Do not use `surface.CreateFont` without first checking if the font has already been created as it is expensive!
+Has stopped working following an update to GMod, don't use!
+
+~~Used to check if a font has already been created. Do not use `surface.CreateFont` without first checking if the font has already been created as it is expensive!~~
 
 #### Images
 

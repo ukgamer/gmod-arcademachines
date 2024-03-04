@@ -37,7 +37,7 @@ local gameOverAt = 0
 local gameState = 0
 
 
-if not FONT:Exists("CustomFont0022") then
+--if not FONT:Exists("CustomFont0022") then
     surface.CreateFont("CustomFont0022",
     { font = "Consolas",
     extended = false,
@@ -54,9 +54,9 @@ if not FONT:Exists("CustomFont0022") then
     additive = false,
     outline = false
     })
-end
+--end
 
-if not FONT:Exists("CustomFont0023") then
+--if not FONT:Exists("CustomFont0023") then
     surface.CreateFont("CustomFont0023",
         { font = "Consolas",
         extended = false,
@@ -73,7 +73,7 @@ if not FONT:Exists("CustomFont0023") then
         additive = false,
         outline = false
     })
-end
+--end
 
 --<variables>
     local state = 9
